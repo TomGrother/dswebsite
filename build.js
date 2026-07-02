@@ -8,9 +8,16 @@
  */
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const PUBLIC = path.join(__dirname, "public");
 const BASE = "https://designandsupply.co.uk";
+
+function assetHash(rel) {
+  return crypto.createHash("md5").update(fs.readFileSync(path.join(PUBLIC, rel))).digest("hex").slice(0, 10);
+}
+const CSS_V = assetHash("css/style.css");
+const JS_V = assetHash("js/main.js");
 
 const header = fs.readFileSync(path.join(__dirname, "partials", "header.html"), "utf8").trim();
 const footer = fs.readFileSync(path.join(__dirname, "partials", "footer.html"), "utf8").trim();
@@ -139,6 +146,10 @@ for (const file of files) {
 
   // 4. Image dimensions for CLS
   html = addImageDimensions(html);
+
+  // 5. Cache-busted asset URLs (assets are served with a 7-day cache)
+  html = html.replace(/\/css\/style\.css(\?v=[a-f0-9]+)?/g, `/css/style.css?v=${CSS_V}`);
+  html = html.replace(/\/js\/main\.js(\?v=[a-f0-9]+)?/g, `/js/main.js?v=${JS_V}`);
 
   fs.writeFileSync(fp, html);
   console.log("built", file);

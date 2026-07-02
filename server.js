@@ -32,6 +32,7 @@ const PAGES = [
   { slug: "contact", priority: "0.8" },
   { slug: "terms", priority: "0.2" },
   { slug: "refund-policy", priority: "0.2" },
+  { slug: "privacy-policy", priority: "0.2" },
 ];
 
 // 301 redirects from the old website's URL structure (preserves link equity at go-live)
@@ -78,6 +79,12 @@ app.use((req, res, next) => {
   }
   if (p.endsWith(".html")) {
     return res.redirect(301, p.slice(0, -5));
+  }
+  // Old WordPress upload URLs -> local /files copies (preserves inbound
+  // links to data sheets after go-live)
+  if (p.startsWith("/wp-content/uploads/") && p.endsWith(".pdf")) {
+    const name = p.split("/").pop();
+    return res.redirect(301, "/files/" + name);
   }
   next();
 });
