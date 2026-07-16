@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=86a4739b75">
+<link rel="stylesheet" href="/css/style.css?v=fdd8ed05cf">
 <link rel="icon" href="/images/favicon.png">
 <meta name="theme-color" content="#0e6551">
 <link rel="canonical" href="https://designandsupply.co.uk/about">
@@ -101,7 +101,6 @@
       <p>Many standard sizes are available from stock, with installation in as little as 10 days.</p>
     </div>
     <div class="reveal">
-      <div class="split-figure"><img width="811" height="771" src="/images/about/about-top.png" alt="Design &amp; Supply — the door specialists" loading="lazy"></div>
       <div class="info-panel">
         <h3>Our Mission</h3>
         <p style="color:#c3c9d4;font-size:15px">To understand each client's requirement precisely, then deliver the right doorset for it — from free quotation and site survey, through in-house CAD design, manufacture and powder coating, to nationwide installation and aftercare.</p>
@@ -143,32 +142,41 @@
 </section>
 
 <section class="section">
-  <div class="container split">
-    <div class="reveal">
-      <span class="kicker">Our History</span>
-      <h2>Four Decades of <em>Growth</em></h2>
-      <p>From leased premises and rented equipment in 1986 to one of the UK's leading steel door manufacturers — our story is one of steady investment in people, testing and certification.</p>
-      <a class="btn btn-primary" href="/team" style="margin-top:10px">Meet the Team</a>
+  <div class="container">
+    <div class="ht-head reveal">
+      <div class="section-head">
+        <span class="kicker">Our History</span>
+        <h2>Four Decades of <em>Growth</em></h2>
+        <p>From leased premises and rented equipment in 1986 to one of the UK's leading steel door manufacturers — drag the timeline or use the arrows to explore our story.</p>
+      </div>
+      <div class="ht-nav">
+        <button type="button" id="htPrev" aria-label="Earlier milestones">&larr;</button>
+        <button type="button" id="htNext" aria-label="Later milestones">&rarr;</button>
+      </div>
     </div>
-    <ul class="timeline reveal">
-      <li><span class="year">1986</span><span class="event"><b>Terry Stares founds D&amp;S</b> from leased WDA premises with rented equipment. Kevin Edwards joins the team.</span></li>
-      <li><span class="year">1987</span><span class="event"><b>Christopher Weed</b> joins the workforce.</span></li>
-      <li><span class="year">1990</span><span class="event"><b>Relocation to Merthyr Tydfil</b> on Goat Mill Road; focus shifts to sub-contracting sheet metal work.</span></li>
-      <li><span class="year">1997</span><span class="event"><b>Move to Pant Industrial Estate</b> — the beginning of the steel door business.</span></li>
-      <li><span class="year">1998</span><span class="event"><b>Celtic Manor Hotel</b> — substantial order secured.</span></li>
-      <li><span class="year">2003</span><span class="event"><b>Fire certification</b> obtained for doors.</span></li>
-      <li><span class="year">2004</span><span class="event"><b>Security certification</b> earned.</span></li>
-      <li><span class="year">2005</span><span class="event"><b>Fire door range expanded</b> through additional testing investment.</span></li>
-      <li><span class="year">2011</span><span class="event"><b>Security range expanded</b> with more rigorous testing.</span></li>
-      <li><span class="year">2013</span><span class="event"><b>Prestigious award won</b> for our Flood Doors.</span></li>
-      <li><span class="year">2015</span><span class="event"><b>Jodan Contracts Ltd</b> acquired.</span></li>
-      <li><span class="year">2016</span><span class="event"><b>Full shares acquired</b> from founder Terry Stares.</span></li>
-      <li><span class="year">2017</span><span class="event"><b>Strategic overhaul</b> of sales, branding and marketing; Slimline business arm launched — 19.2% turnover increase.</span></li>
-      <li><span class="year">2018</span><span class="event"><b>Turnover up 20.9%</b> as growth continues.</span></li>
-      <li><span class="year">2019</span><span class="event"><b>Slimline portfolio enhanced</b> through rigorous security testing; 4% turnover increase.</span></li>
-      <li><span class="year">2020</span><span class="event"><b>Turnover maintained</b> despite the COVID-19 pandemic.</span></li>
-      <li><span class="year">2023</span><span class="event"><b>New leadership</b> — Scott Davies appointed Sales Director; Damian Regis appointed Operations Director.</span></li>
-    </ul>
+    <div class="htimeline reveal">
+      <div class="htimeline-track" id="htTrack" tabindex="0" aria-label="Company history timeline — scroll horizontally">
+        <div class="ht-item"><span class="ht-year">1986</span><p><b>Terry Stares founds D&amp;S</b>From leased WDA premises with rented equipment. Kevin Edwards joins the team.</p></div>
+        <div class="ht-item"><span class="ht-year">1987</span><p><b>Growing workforce</b>Christopher Weed joins the team.</p></div>
+        <div class="ht-item"><span class="ht-year">1990</span><p><b>Relocation to Merthyr Tydfil</b>New premises on Goat Mill Road; focus shifts to sub-contracting sheet metal work.</p></div>
+        <div class="ht-item"><span class="ht-year">1997</span><p><b>Move to Pant Industrial Estate</b>The beginning of the steel door business.</p></div>
+        <div class="ht-item"><span class="ht-year">1998</span><p><b>Celtic Manor Hotel</b>Substantial order secured.</p></div>
+        <div class="ht-item"><span class="ht-year">2003</span><p><b>Fire certification</b>Certification obtained for our fire door range.</p></div>
+        <div class="ht-item"><span class="ht-year">2004</span><p><b>Security certification</b>Certified security performance earned.</p></div>
+        <div class="ht-item"><span class="ht-year">2005</span><p><b>Fire range expanded</b>Additional investment in fire testing.</p></div>
+        <div class="ht-item"><span class="ht-year">2011</span><p><b>Security range expanded</b>More rigorous security testing across the range.</p></div>
+        <div class="ht-item"><span class="ht-year">2013</span><p><b>Flood door award</b>Prestigious industry award won for our flood doors.</p></div>
+        <div class="ht-item"><span class="ht-year">2015</span><p><b>Jodan Contracts Ltd</b>Acquisition completed.</p></div>
+        <div class="ht-item"><span class="ht-year">2016</span><p><b>Full ownership</b>Full shares acquired from founder Terry Stares.</p></div>
+        <div class="ht-item"><span class="ht-year">2017</span><p><b>Slimline launched</b>Strategic overhaul of sales and branding; Slimline business arm launched — 19.2% turnover increase.</p></div>
+        <div class="ht-item"><span class="ht-year">2018</span><p><b>Growth continues</b>Turnover up 20.9%.</p></div>
+        <div class="ht-item"><span class="ht-year">2019</span><p><b>Slimline enhanced</b>Portfolio strengthened through rigorous security testing; 4% turnover increase.</p></div>
+        <div class="ht-item"><span class="ht-year">2020</span><p><b>Resilience</b>Turnover maintained despite the COVID-19 pandemic.</p></div>
+        <div class="ht-item"><span class="ht-year">2023</span><p><b>New leadership</b>Scott Davies appointed Sales Director; Damian Regis appointed Operations Director.</p></div>
+      </div>
+      <div class="htimeline-progress"><span id="htBar"></span></div>
+    </div>
+    <div class="reveal" style="margin-top:34px"><a class="btn btn-primary" href="/team">Meet the Team</a></div>
   </div>
 </section>
 
@@ -275,6 +283,53 @@
 }
 </script>
 <!--/FOOTER-->
+<script>
+(function () {
+  var track = document.getElementById("htTrack");
+  var prev = document.getElementById("htPrev");
+  var next = document.getElementById("htNext");
+  var bar = document.getElementById("htBar");
+  if (!track || !prev || !next || !bar) return;
+
+  var smooth = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  function step() { return Math.min(track.clientWidth * 0.8, 620); }
+  prev.addEventListener("click", function () { track.scrollBy({ left: -step(), behavior: smooth }); });
+  next.addEventListener("click", function () { track.scrollBy({ left: step(), behavior: smooth }); });
+
+  function update() {
+    var max = track.scrollWidth - track.clientWidth;
+    bar.style.width = (max > 0 ? (track.scrollLeft / max) * 100 : 100) + "%";
+    prev.disabled = track.scrollLeft <= 2;
+    next.disabled = track.scrollLeft >= max - 2;
+  }
+  track.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+
+  // Drag to scroll (desktop)
+  var startX = 0, startLeft = 0, dragging = false;
+  track.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "mouse") return;
+    dragging = true;
+    startX = e.clientX;
+    startLeft = track.scrollLeft;
+    track.classList.add("dragging");
+    track.setPointerCapture(e.pointerId);
+  });
+  track.addEventListener("pointermove", function (e) {
+    if (!dragging) return;
+    track.scrollLeft = startLeft - (e.clientX - startX);
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    track.classList.remove("dragging");
+    if (e.pointerId !== undefined && track.hasPointerCapture(e.pointerId)) track.releasePointerCapture(e.pointerId);
+  }
+  track.addEventListener("pointerup", endDrag);
+  track.addEventListener("pointercancel", endDrag);
+})();
+</script>
 <script src="/js/main.js?v=3aaaa1a6a8"></script>
 </body>
 </html>

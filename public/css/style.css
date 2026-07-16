@@ -1084,6 +1084,88 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .table-scroll { overflow-x: auto; }
 
+/* ---------- Horizontal timeline ---------- */
+.ht-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.ht-head .section-head { margin-bottom: 0; }
+.ht-nav { display: flex; gap: 10px; flex: none; }
+.ht-nav button {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.ht-nav button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+.ht-nav button:disabled { opacity: .35; cursor: default; }
+.htimeline-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 14px 0 26px;
+  cursor: grab;
+}
+.htimeline-track::-webkit-scrollbar { display: none; }
+.htimeline-track.dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+.ht-item {
+  flex: 0 0 290px;
+  scroll-snap-align: start;
+  position: relative;
+  border-top: 2px solid var(--line);
+  padding: 26px 34px 0 0;
+}
+.ht-item::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  transition: transform .25s ease, background .25s ease;
+}
+.ht-item:hover::before { transform: scale(1.35); background: var(--cyan); }
+.ht-year {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.ht-item p { color: var(--slate); font-size: 14.5px; }
+.ht-item p b { color: var(--ink); display: block; }
+.htimeline-progress {
+  height: 3px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.htimeline-progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  transition: width .15s linear;
+}
+
 /* ---------- Reveal animation ---------- */
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
 .reveal.visible { opacity: 1; transform: none; }
@@ -1166,6 +1248,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   .timeline li::before { left: 58px; }
   .path-panels { grid-template-columns: 1fr; }
   .spec-strip > div { padding: 18px 20px; }
+  .ht-item { flex-basis: 240px; }
+  .ht-year { font-size: 32px; }
   .arch-hero { padding: 64px 0 56px; }
   .arch-table th { width: 130px; }
   .logo-strip { gap: 10px 26px; }
