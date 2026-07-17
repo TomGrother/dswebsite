@@ -93,6 +93,10 @@ app.use((req, res, next) => {
     const name = p.split("/").pop();
     return res.redirect(301, "/files/" + name);
   }
+  // The old site published case studies under /case_studies/<slug> (underscore)
+  if (p === "/case_studies" || p.startsWith("/case_studies/")) {
+    return res.redirect(301, p.replace("/case_studies", "/case-studies"));
+  }
   next();
 });
 
@@ -187,6 +191,13 @@ app.use((req, res) => {
         '<p style="font-family:sans-serif;padding:40px">Page not found — <a href="/">back to Design &amp; Supply</a></p>'
     );
 });
+
+// A fresh database (new Railway volume) imports the migrated content on boot.
+try {
+  require("./seed").seedIfEmpty();
+} catch (err) {
+  console.error("Content seed skipped:", err.message);
+}
 
 app.listen(PORT, () => {
   console.log(`Design & Supply site running on port ${PORT}`);

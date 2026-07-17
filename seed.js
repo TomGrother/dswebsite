@@ -1,8 +1,9 @@
 /**
- * One-off content import: loads the scraped news / case study JSON into the
- * SQLite store. Idempotent — an existing slug is updated, not duplicated.
+ * Content import: loads the migrated news / case study JSON into the SQLite
+ * store. Idempotent — an existing slug is updated, not duplicated.
  *
- * Usage: node seed.js
+ * Run manually with `npm run seed`, or let server.js call seedIfEmpty() on
+ * boot so a fresh Railway volume populates itself.
  */
 const fs = require("fs");
 const path = require("path");
@@ -89,6 +90,20 @@ function importAll(items, type) {
   console.log(`${type}: ${created} created, ${updated} updated, ${skipped} skipped`);
 }
 
-importAll(load("news-scrape.json"), "news");
-importAll(load("case-studies-scrape.json"), "case-study");
-console.log(`\nTotal posts in database: ${store.count()}`);
+function run() {
+  importAll(load("news-scrape.json"), "news");
+  importAll(load("case-studies-scrape.json"), "case-study");
+  console.log(`Total posts in database: ${store.count()}`);
+}
+
+/** Populate an empty database (e.g. a fresh Railway volume) on first boot. */
+function seedIfEmpty() {
+  if (store.count() > 0) return false;
+  console.log("Content store is empty — importing migrated content...");
+  run();
+  return true;
+}
+
+module.exports = { run, seedIfEmpty };
+
+if (require.main === module) run();

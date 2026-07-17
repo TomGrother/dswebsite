@@ -43,13 +43,17 @@
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
-    // Reveal on scroll
+    // Reveal on scroll.
+    // threshold must stay 0: a percentage threshold can never be met by an
+    // element taller than the viewport (e.g. a long article body), which would
+    // leave it stuck at opacity 0. rootMargin gives the same "reveal slightly
+    // after it enters" feel without that failure mode.
     if ("IntersectionObserver" in window) {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (en) {
           if (en.isIntersecting) { en.target.classList.add("visible"); io.unobserve(en.target); }
         });
-      }, { threshold: 0.12 });
+      }, { threshold: 0, rootMargin: "0px 0px -8% 0px" });
       document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
     } else {
       document.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("visible"); });
