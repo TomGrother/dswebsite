@@ -1,2 +1,7 @@
 node_modules/
 .env
+
+# SQLite content store (runtime data — lives on a Railway volume in production)
+data/*.db
+data/*.db-wal
+data/*.db-shm

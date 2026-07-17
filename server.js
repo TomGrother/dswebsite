@@ -1,6 +1,10 @@
 const express = require("express");
 const compression = require("compression");
+const cookieParser = require("cookie-parser");
 const path = require("path");
+const store = require("./db");
+const content = require("./content");
+const adminRouter = require("./admin");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -54,6 +58,8 @@ const LEGACY_REDIRECTS = {
 
 app.use(compression());
 app.use(express.json());
+app.use(express.urlencoded({ extended: false, limit: "2mb" }));
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   // Basic security headers
@@ -103,13 +109,30 @@ app.get("/robots.txt", (req, res) => {
 
 app.get("/sitemap.xml", (req, res) => {
   const host = `${req.protocol}://${req.get("host")}`;
-  const urls = PAGES.map(
+  const entries = PAGES.map(
     (p) =>
       `  <url><loc>${host}/${p.slug}</loc><changefreq>monthly</changefreq><priority>${p.priority}</priority></url>`
-  ).join("\n");
+  );
+  // Published articles and case studies are part of the sitemap too
+  for (const post of [...store.published("news"), ...store.published("case-study")]) {
+    const slug = (post.type === "news" ? "news/" : "case-studies/") + post.slug;
+    const lastmod = (post.updated_at || post.published_at || "").slice(0, 10);
+    entries.push(
+      `  <url><loc>${host}/${slug}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}<changefreq>yearly</changefreq><priority>0.6</priority></url>`
+    );
+  }
   res.type("application/xml");
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>\n`);
 });
+
+// Admin (password-gated inside the router) and dynamic content pages.
+// These come before express.static so /news and /case-studies render from the DB.
+app.use("/admin", (req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.setHeader("Cache-Control", "no-store");
+  next();
+}, adminRouter);
+app.use(content.router);
 
 // The shop is an internal pricing tool: it stays hosted but is unlinked,
 // never indexed, and password-gated whenever SHOP_PASSWORD is set.

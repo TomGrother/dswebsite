@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} | Design &amp; Supply</title>
+<meta name="description" content="{{EXCERPT}}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="images/favicon.png">
+</head>
+<body data-page="{{NAV}}">
+<div id="header"></div>
+
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb">{{BREADCRUMB}}</div>
+    <span class="kicker">{{CATEGORY}}</span>
+    <h1>{{TITLE}}</h1>
+    <p>{{EXCERPT}}</p>
+    <p class="article-date">{{DATE}}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container article-layout">
+    <article class="article-body reveal">
+      {{FIGURE}}
+      {{BODY}}
+    </article>
+    <aside class="article-aside reveal">
+      <div class="info-panel">
+        <h3>Talk to Our Team</h3>
+        <p style="color:#c3d4cd;font-size:15px">Free, no-obligation quotations, technical advice and site surveys — from a UK manufacturer with 36+ years of experience.</p>
+        <p style="margin-top:18px"><a class="btn btn-primary" href="/contact">Get in Touch</a></p>
+      </div>
+      {{RELATED}}
+    </aside>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="cta-band reveal">
+      <div><h2>{{CTA_HEADING}}</h2><p>{{CTA_TEXT}}</p></div>
+      <a class="btn btn-primary" href="/contact">Contact Us</a>
+    </div>
+  </div>
+</section>
+
+<footer id="footer"></footer>
+<script src="js/main.js"></script>
+</body>
+</html>

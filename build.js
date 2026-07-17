@@ -117,41 +117,57 @@ function addImageDimensions(html) {
   });
 }
 
+const HEADER_BLOCK = `<!--HEADER-->\n${header}\n<!--/HEADER-->`;
+const FOOTER_BLOCK = `<!--FOOTER-->\n${footer}\n<!--/FOOTER-->`;
+
+function bakeShell(html) {
+  if (html.includes("<!--HEADER-->")) {
+    html = html.replace(/<!--HEADER-->[\s\S]*?<!--\/HEADER-->/, HEADER_BLOCK);
+  } else {
+    html = html.replace(/<div id="header"><\/div>/, HEADER_BLOCK);
+  }
+  if (html.includes("<!--FOOTER-->")) {
+    html = html.replace(/<!--FOOTER-->[\s\S]*?<!--\/FOOTER-->/, FOOTER_BLOCK);
+  } else {
+    html = html.replace(/<footer id="footer"><\/footer>/, FOOTER_BLOCK);
+  }
+  return html;
+}
+
+function bustAssets(html) {
+  return html
+    .replace(/\/css\/style\.css(\?v=[a-f0-9]+)?/g, `/css/style.css?v=${CSS_V}`)
+    .replace(/\/js\/main\.js(\?v=[a-f0-9]+)?/g, `/js/main.js?v=${JS_V}`);
+}
+
 const files = fs.readdirSync(PUBLIC).filter((f) => f.endsWith(".html"));
 for (const file of files) {
   const fp = path.join(PUBLIC, file);
   let html = fs.readFileSync(fp, "utf8");
 
-  // 1. Bake header/footer (marker-wrapped so re-runs replace cleanly)
-  const headerBlock = `<!--HEADER-->\n${header}\n<!--/HEADER-->`;
-  const footerBlock = `<!--FOOTER-->\n${footer}\n<!--/FOOTER-->`;
-  if (html.includes("<!--HEADER-->")) {
-    html = html.replace(/<!--HEADER-->[\s\S]*?<!--\/HEADER-->/, headerBlock);
-  } else {
-    html = html.replace(/<div id="header"><\/div>/, headerBlock);
-  }
-  if (html.includes("<!--FOOTER-->")) {
-    html = html.replace(/<!--FOOTER-->[\s\S]*?<!--\/FOOTER-->/, footerBlock);
-  } else {
-    html = html.replace(/<footer id="footer"><\/footer>/, footerBlock);
-  }
-
-  // 2. Clean internal URLs
+  html = bakeShell(html);
   html = rewriteLinks(html);
 
-  // 3. SEO meta (once)
+  // SEO meta (once)
   if (!html.includes('property="og:title"')) {
     html = html.replace("</head>", seoBlock(file, html) + "\n</head>");
   }
 
-  // 4. Image dimensions for CLS
   html = addImageDimensions(html);
-
-  // 5. Cache-busted asset URLs (assets are served with a 7-day cache)
-  html = html.replace(/\/css\/style\.css(\?v=[a-f0-9]+)?/g, `/css/style.css?v=${CSS_V}`);
-  html = html.replace(/\/js\/main\.js(\?v=[a-f0-9]+)?/g, `/js/main.js?v=${JS_V}`);
+  html = bustAssets(html);
 
   fs.writeFileSync(fp, html);
   console.log("built", file);
 }
+
+// Article template: same shell/link/asset treatment, but no per-page SEO block
+// (the server injects canonical/OG per article at request time).
+const TEMPLATES = path.join(__dirname, "templates");
+if (fs.existsSync(path.join(TEMPLATES, "article.html"))) {
+  let tpl = fs.readFileSync(path.join(TEMPLATES, "article.html"), "utf8");
+  tpl = bustAssets(rewriteLinks(bakeShell(tpl)));
+  fs.writeFileSync(path.join(TEMPLATES, "article.built.html"), tpl);
+  console.log("built templates/article.built.html");
+}
+
 console.log(`\n${files.length} pages built.`);

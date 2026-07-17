@@ -4,13 +4,20 @@
   "description": "Design & Supply company website — static site served by Express",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "node build.js",
+    "seed": "node seed.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
     "express": "^4.21.2"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
   }
 }
