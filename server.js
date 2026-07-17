@@ -22,7 +22,6 @@ const PAGES = [
   { slug: "slimline-security", priority: "0.8" },
   { slug: "slimline-fire", priority: "0.8" },
   { slug: "slimline-non-rated", priority: "0.8" },
-  { slug: "shop", priority: "0.9" },
   { slug: "about", priority: "0.7" },
   { slug: "team", priority: "0.5" },
   { slug: "case-studies", priority: "0.7" },
@@ -45,10 +44,12 @@ const LEGACY_REDIRECTS = {
   "/meet-the-team": "/team",
   "/meet-the-sales-team": "/team",
   "/meet-the-technical-team": "/team",
-  "/product/design-and-supply-shop": "/shop",
+  // The shop is now an internal pricing tool, so old public shop URLs go to
+  // the stock doors page instead.
+  "/product/design-and-supply-shop": "/stock-doors",
   "/terms-conditions": "/terms",
-  "/cart": "/shop",
-  "/my-account": "/shop",
+  "/cart": "/stock-doors",
+  "/my-account": "/stock-doors",
 };
 
 app.use(compression());
@@ -94,7 +95,7 @@ app.get("/robots.txt", (req, res) => {
   const isProduction = req.hostname && req.hostname.endsWith(PRODUCTION_HOST);
   res.type("text/plain");
   if (isProduction) {
-    res.send(`User-agent: *\nAllow: /\n\nSitemap: ${host}/sitemap.xml\n`);
+    res.send(`User-agent: *\nAllow: /\nDisallow: /shop\n\nSitemap: ${host}/sitemap.xml\n`);
   } else {
     res.send("User-agent: *\nDisallow: /\n");
   }
@@ -108,6 +109,24 @@ app.get("/sitemap.xml", (req, res) => {
   ).join("\n");
   res.type("application/xml");
   res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+});
+
+// The shop is an internal pricing tool: it stays hosted but is unlinked,
+// never indexed, and password-gated whenever SHOP_PASSWORD is set.
+app.use("/shop", (req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.setHeader("Cache-Control", "no-store");
+  const expected = process.env.SHOP_PASSWORD;
+  if (!expected) return next();
+
+  const [scheme, encoded] = (req.headers.authorization || "").split(" ");
+  if (scheme === "Basic" && encoded) {
+    const decoded = Buffer.from(encoded, "base64").toString("utf8");
+    const supplied = decoded.slice(decoded.indexOf(":") + 1);
+    if (supplied === expected) return next();
+  }
+  res.setHeader("WWW-Authenticate", 'Basic realm="Design & Supply internal", charset="UTF-8"');
+  res.status(401).send("Authentication required.");
 });
 
 app.use(
