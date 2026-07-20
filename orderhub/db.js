@@ -78,8 +78,15 @@ db.exec(`
 `);
 
 // ---- config ----------------------------------------------------------------
+// RECENT_DAYS: how long a PACKED door stays visible after its scheduled date.
+// STALE_DAYS: hard floor — nothing scheduled more than this many days ago is
+// shown, packed or not. This drops ancient un-packed orders (e.g. doors dated
+// years ago that were never packed and never cancelled) while still keeping
+// genuinely active, even mildly-overdue, work visible.
 const RECENT_DAYS = parseInt(process.env.RECENT_DAYS || "30", 10);
-const WINDOW_MODIFIER = `-${RECENT_DAYS} days`;
+const STALE_DAYS = parseInt(process.env.STALE_DAYS || "90", 10);
+const RECENT_MODIFIER = `-${RECENT_DAYS} days`;
+const STALE_MODIFIER = `-${STALE_DAYS} days`;
 
 // Production status_id semantics (confirmed with the business):
 //   1 Active, 2 Query (shown as Active), 3 Complete, 4 Cancelled (hidden),
@@ -93,11 +100,15 @@ const STATUS = {
 };
 const STAGES = ["punch", "bend", "weld", "buff", "paint", "pack"];
 
-// A door is in the hub window when it isn't cancelled/removed AND (it isn't yet
-// packed OR its scheduled completion falls within the recent window).
+// A door is in the hub window when it isn't cancelled/removed AND either:
+//   - it's packed and was scheduled within RECENT_DAYS, or
+//   - it's not yet packed and either has no scheduled date or was scheduled
+//     within STALE_DAYS (so ancient un-packed doors drop out).
 const WINDOW_SQL =
-  `status_id NOT IN (${HIDDEN_STATUSES.join(",")}) ` +
-  `AND (complete_pack = 0 OR (date_completion IS NOT NULL AND date_completion >= date('now', @win)))`;
+  `status_id NOT IN (${HIDDEN_STATUSES.join(",")}) AND (` +
+  `(complete_pack = 1 AND date_completion IS NOT NULL AND date_completion >= date('now', @recent)) ` +
+  `OR (complete_pack = 0 AND (date_completion IS NULL OR date_completion >= date('now', @stale)))` +
+  `)`;
 
 // Free/shared email domains must never scope by domain — two unrelated
 // customers on gmail would otherwise see each other. These are blocked from the
@@ -197,7 +208,8 @@ function rowsToOrders(rows) {
 
 function buildWhere(extra, params) {
   const clauses = [WINDOW_SQL];
-  params.win = WINDOW_MODIFIER;
+  params.recent = RECENT_MODIFIER;
+  params.stale = STALE_MODIFIER;
   if (extra) clauses.push(extra);
   return clauses.join(" AND ");
 }
@@ -303,8 +315,12 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
 // Delete rows that have aged out of the window (belt-and-braces trim).
 function pruneAgedOut() {
   const info = db
-    .prepare(`DELETE FROM door WHERE status_id IN (${HIDDEN_STATUSES.join(",")}) OR (complete_pack = 1 AND (date_completion IS NULL OR date_completion < date('now', @win)))`)
-    .run({ win: WINDOW_MODIFIER });
+    .prepare(
+      `DELETE FROM door WHERE status_id IN (${HIDDEN_STATUSES.join(",")}) ` +
+        `OR (complete_pack = 1 AND (date_completion IS NULL OR date_completion < date('now', @recent))) ` +
+        `OR (complete_pack = 0 AND date_completion IS NOT NULL AND date_completion < date('now', @stale))`
+    )
+    .run({ recent: RECENT_MODIFIER, stale: STALE_MODIFIER });
   return info.changes;
 }
 

@@ -58,6 +58,8 @@ function demo() {
     { id: 20, order_id: "1000", order_number: "10001", order_ref: "OLD-1", door_type_description: "Old Packed Doorset", customer_acc_ref: "ACME01", status_id: 3, complete_punch: 1, complete_bend: 1, complete_weld: 1, complete_buff: 1, complete_paint: 1, complete_pack: 1, date_completion: d(-120) },
     // Cancelled + removed — must be excluded
     { id: 21, order_id: "1003", order_number: "10450", order_ref: "PO-X", door_type_description: "Cancelled Doorset", customer_acc_ref: "ACME01", status_id: 4, complete_punch: 0, complete_bend: 0, complete_weld: 0, complete_buff: 0, complete_paint: 0, complete_pack: 0, date_completion: d(5) },
+    // Ancient un-packed order (like the 2021-dated ones) — must be excluded by STALE_DAYS
+    { id: 22, order_id: "0900", order_number: "3621", order_ref: "West Cambridge", door_type_description: "Double", customer_acc_ref: "ACME01", status_id: 3, complete_punch: 1, complete_bend: 0, complete_weld: 0, complete_buff: 0, complete_paint: 0, complete_pack: 0, date_completion: "2021-11-10" },
   ];
   const { upserted } = store.ingestDoors(doors, { snapshot: true });
   store.pruneAgedOut();

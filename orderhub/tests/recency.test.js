@@ -10,6 +10,7 @@ const fs = require("fs");
 
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "oh-recency-"));
 process.env.RECENT_DAYS = "30";
+process.env.STALE_DAYS = "90";
 
 const store = require("../db");
 const auth = require("../auth");
@@ -29,6 +30,8 @@ test("recency window: keep unpacked + recently-scheduled, drop old-packed/cancel
       { id: 4, order_id: "D2", order_number: "4", customer_acc_ref: "R", status_id: 4, complete_pack: 0, date_completion: d(5) },
       // removed -> DROP
       { id: 5, order_id: "D3", order_number: "5", customer_acc_ref: "R", status_id: 6, complete_pack: 0, date_completion: d(5) },
+      // NOT packed but scheduled long ago (ancient/dead) -> DROP via STALE_DAYS
+      { id: 6, order_id: "D4", order_number: "6", customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(-200) },
     ],
     { snapshot: true }
   );
@@ -36,7 +39,8 @@ test("recency window: keep unpacked + recently-scheduled, drop old-packed/cancel
   const u = await auth.createUser({ email: "u@r.co.uk", password: "Password123", role: "customer" });
 
   const ids = store.ordersForUser(u, {}).flatMap((o) => o.doors.map((x) => x.id)).sort();
-  assert.deepStrictEqual(ids, [1, 2], "only the unpacked and recently-scheduled doors are visible");
+  assert.deepStrictEqual(ids, [1, 2], "keeps unpacked+recent and packed+recent; drops old-packed, cancelled, removed, and ancient un-packed");
+  assert.ok(!ids.includes(6), "ancient un-packed door dropped by the staleness floor");
 });
 
 test("on-hold (status 5) doors are shown and flagged", async () => {

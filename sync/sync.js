@@ -16,7 +16,8 @@
  *   SQLSERVER_PASSWORD, SQLSERVER_ENCRYPT(true/false)
  *   HUB_INGEST_URL   e.g. https://designandsupply.co.uk/api/ingest/doors
  *   INGEST_API_KEY   must match the value set on the hub
- *   RECENT_DAYS      default 30
+ *   RECENT_DAYS      default 30  (how long packed doors stay visible)
+ *   STALE_DAYS       default 90  (drop un-packed doors scheduled longer ago than this)
  *
  * Flags:  --dry-run   read + print counts, push nothing.
  */
@@ -27,6 +28,7 @@ try {
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const RECENT_DAYS = parseInt(process.env.RECENT_DAYS || "30", 10);
+const STALE_DAYS = parseInt(process.env.STALE_DAYS || "90", 10);
 const INGEST_URL = process.env.HUB_INGEST_URL;
 const API_KEY = process.env.INGEST_API_KEY;
 
@@ -54,9 +56,12 @@ const QUERY = `
   WHERE d.status_id NOT IN (4, 6)
     -- Steel doors only — Slimline architectural glazing is excluded from the hub.
     AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
+    -- Packed: keep if scheduled within RECENT_DAYS. Not yet packed: keep unless
+    -- scheduled more than STALE_DAYS ago (drops ancient un-packed orders).
     AND (
-      d.complete_pack = 0
-      OR (d.date_completion IS NOT NULL AND d.date_completion >= DATEADD(day, -@days, CAST(GETDATE() AS date)))
+      (d.complete_pack = 1 AND d.date_completion IS NOT NULL AND d.date_completion >= DATEADD(day, -@recent, CAST(GETDATE() AS date)))
+      OR
+      (d.complete_pack = 0 AND (d.date_completion IS NULL OR d.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date))))
     );
 `;
 
@@ -81,7 +86,8 @@ async function readDoors() {
   try {
     const result = await pool
       .request()
-      .input("days", sql.Int, RECENT_DAYS)
+      .input("recent", sql.Int, RECENT_DAYS)
+      .input("stale", sql.Int, STALE_DAYS)
       .query(QUERY); // parameterised — no string-built SQL
     return result.recordset;
   } finally {
@@ -127,7 +133,7 @@ async function push(doors) {
 
 async function main() {
   const started = Date.now();
-  log(`Sync starting (window ${RECENT_DAYS} days${DRY_RUN ? ", DRY RUN" : ""}).`);
+  log(`Sync starting (recent ${RECENT_DAYS}d / stale ${STALE_DAYS}d${DRY_RUN ? ", DRY RUN" : ""}).`);
   const raw = await readDoors();
   const doors = normalise(raw);
   log(`Read ${doors.length} doors from SQL Server.`);

@@ -83,7 +83,7 @@ function renderDoorRow(door, opts = {}) {
   const refLine = opts.showRef ? ` &nbsp;·&nbsp; Acc: ${esc(door.customer_acc_ref)}` : "";
   return `<div class="door-row">
     <div class="door-row-top">
-      <b>${esc(door.door_type_description || "Doorset")}</b>
+      <b><span class="door-no">Door #${esc(door.id)}</span> ${esc(door.door_type_description || "Doorset")}</b>
       <span class="door-row-meta">Scheduled: ${fmtDate(door.date_completion)}${refLine} &nbsp;·&nbsp; ${doorBadge(door)}</span>
     </div>
     ${renderTracker(door)}
@@ -96,11 +96,16 @@ function renderOrder(o, opts = {}) {
   badges.push(`<span class="badge ${o.allPacked ? "badge-packed" : "badge-active"}">${esc(o.summary)}</span>`);
   const sub = [o.order_ref ? `Ref: ${esc(o.order_ref)}` : "", opts.showRef ? `Acc: ${esc(o.doors[0].customer_acc_ref)}` : ""]
     .filter(Boolean).join(" · ");
-  return `<div class="order-card">
+  // Make on-hold orders unmistakable: amber-flagged card + a notice banner.
+  const holdNote = o.onHold
+    ? `<div class="order-hold-note">On hold — ${o.onHold} door${o.onHold > 1 ? "s are" : " is"} paused and not currently progressing through production. Our team will be in touch; please contact us if you need an update.</div>`
+    : "";
+  return `<div class="order-card${o.onHold ? " has-hold" : ""}">
     <div class="order-head">
       <div><h3>Order ${esc(o.order_number || o.order_id)}</h3><span class="order-sub">${sub}</span></div>
       <div class="order-summary">${badges.join("")}</div>
     </div>
+    ${holdNote}
     ${o.doors.map((d) => renderDoorRow(d, opts)).join("")}
   </div>`;
 }
