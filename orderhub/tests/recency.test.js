@@ -101,6 +101,18 @@ test("'Standard Installation' service lines are excluded from the hub", async ()
   assert.ok(!ids.includes(52), "excluded regardless of case/whitespace");
 });
 
+test("'Standard Installation' already stored in orders.db is hidden at read time", async () => {
+  // Insert directly, bypassing the ingest filter, to simulate a row that was
+  // synced before the exclusion existed. The read-time guard must still hide it.
+  store.db.prepare(
+    `INSERT OR REPLACE INTO door (id, order_id, order_number, customer_acc_ref, status_id, complete_pack, date_completion, door_type_description, updated_at)
+     VALUES (60, 'STORED', 'STORED', 'R', 1, 0, ?, 'Standard Installation', datetime('now'))`
+  ).run(d(3));
+  const u = auth.getUserByEmail("u@r.co.uk");
+  const ids = store.ordersForUser(u, {}).flatMap((o) => o.doors.map((x) => x.id));
+  assert.ok(!ids.includes(60), "pre-existing installation row hidden by the read-time guard");
+});
+
 test("on-hold (status 5) doors are shown and flagged", async () => {
   store.ingestDoors(
     [{ id: 10, order_id: "H1", order_number: "H", customer_acc_ref: "R", status_id: 5, complete_punch: 1, complete_pack: 0, date_completion: d(2) }],
