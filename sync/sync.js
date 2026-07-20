@@ -52,6 +52,8 @@ const QUERY = `
   FROM dbo.door d
   INNER JOIN dbo.door_type dt ON d.door_type_id = dt.id
   WHERE d.status_id NOT IN (4, 6)
+    -- Steel doors only — Slimline architectural glazing is excluded from the hub.
+    AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
     AND (
       d.complete_pack = 0
       OR (d.date_completion IS NOT NULL AND d.date_completion >= DATEADD(day, -@days, CAST(GETDATE() AS date)))
