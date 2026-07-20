@@ -1191,8 +1191,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .empty-state { text-align: center; padding: 60px 20px; color: var(--slate); }
 
 @media (max-width: 640px) {
-  .tracker .label { font-size: 10px; letter-spacing: .3px; }
-  .tracker .dot { width: 26px; height: 26px; font-size: 11px; }
+  /* 7 stages incl. the longer "Programming" label — tighten so it fits phones */
+  .tracker .label { font-size: 9px; letter-spacing: 0; line-height: 1.15; padding: 0 1px; }
+  .tracker .dot { width: 24px; height: 24px; font-size: 11px; }
 }
 
 /* Honeypot: off-screen but not display:none (bots skip display:none) */

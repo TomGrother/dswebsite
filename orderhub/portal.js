@@ -31,7 +31,7 @@ function fmtDate(iso) {
   if (isNaN(d)) return esc(iso);
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
-const STAGE_LABELS = { punch: "Punch", bend: "Bend", weld: "Weld", buff: "Buff", paint: "Paint", pack: "Pack" };
+const STAGE_LABELS = { program: "Programming", punch: "Punch", bend: "Bend", weld: "Weld", buff: "Buff", paint: "Paint", pack: "Pack" };
 
 function page(title, body, opts = {}) {
   const user = opts.user;

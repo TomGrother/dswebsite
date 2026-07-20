@@ -45,6 +45,13 @@ const QUERY = `
     dt.door_type_description   AS door_type_description,
     d.customer_acc_ref         AS customer_acc_ref,
     d.status_id                AS status_id,
+    -- Programming stage: a door is "programmed" once dbo.door_program has a row
+    -- for it with programed_by_id set. EXISTS avoids row fan-out if a door has
+    -- more than one door_program row.
+    CASE WHEN EXISTS (
+      SELECT 1 FROM dbo.door_program dp
+      WHERE dp.door_id = d.id AND dp.programed_by_id IS NOT NULL
+    ) THEN 1 ELSE 0 END        AS complete_program,
     d.complete_punch           AS complete_punch,
     d.complete_bend            AS complete_bend,
     d.complete_weld            AS complete_weld,
@@ -121,6 +128,7 @@ function normalise(rows) {
     door_type_description: r.door_type_description || null,
     customer_acc_ref: String(r.customer_acc_ref),
     status_id: r.status_id == null ? null : Number(r.status_id),
+    complete_program: toBool(r.complete_program),
     complete_punch: toBool(r.complete_punch),
     complete_bend: toBool(r.complete_bend),
     complete_weld: toBool(r.complete_weld),

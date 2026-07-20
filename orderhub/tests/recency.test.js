@@ -70,8 +70,29 @@ test("stage dates: only stages with a date are shown; door_ref surfaces", async 
   const u = auth.getUserByEmail("u@r.co.uk");
   const door = store.ordersForUser(u, {}).find((o) => o.order_id === "SD").doors[0];
   assert.strictEqual(door.door_ref, "DOOR-XYZ", "door_ref surfaced to the UI");
-  assert.deepStrictEqual(door.stages.map((s) => s.key), ["punch", "bend", "weld"],
-    "stages without a stage-date are left out");
+  assert.deepStrictEqual(door.stages.map((s) => s.key), ["program", "punch", "bend", "weld"],
+    "programming always leads; manufacturing stages without a stage-date are left out");
+});
+
+test("programming stage: shown first; complete_program drives done; monotonic on later stages", async () => {
+  store.ingestDoors(
+    [
+      // programmed, nothing punched yet -> program done, punch is the current step
+      { id: 70, order_id: "PG", order_number: "PG", customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(3), complete_program: 1, complete_punch: 0, date_punch: d(1) },
+      // not programmed, nothing started -> programming is the current (not-done) step
+      { id: 71, order_id: "PG2", order_number: "PG2", customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(3), complete_program: 0, complete_punch: 0, date_punch: d(1) },
+      // not flagged programmed but punch is done -> monotonic marks program done
+      { id: 72, order_id: "PG3", order_number: "PG3", customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(3), complete_program: 0, complete_punch: 1, date_punch: d(-1) },
+    ],
+    { snapshot: false }
+  );
+  const u = auth.getUserByEmail("u@r.co.uk");
+  const orders = store.ordersForUser(u, {});
+  const g = (oid) => orders.find((o) => o.order_id === oid).doors[0];
+  assert.strictEqual(g("PG").stages[0].key, "program", "programming is the first stage");
+  assert.strictEqual(g("PG").stages[0].done, true, "complete_program=1 -> done");
+  assert.strictEqual(g("PG2").stages[0].done, false, "not programmed, nothing started -> not done");
+  assert.strictEqual(g("PG3").stages[0].done, true, "punch done implies programming done (monotonic)");
 });
 
 test("stage dates: a door with no stage dates falls back to the full route", async () => {
@@ -82,7 +103,7 @@ test("stage dates: a door with no stage dates falls back to the full route", asy
   );
   const u = auth.getUserByEmail("u@r.co.uk");
   const door = store.ordersForUser(u, {}).find((o) => o.order_id === "SD2").doors[0];
-  assert.strictEqual(door.stages.length, 6, "no stage dates -> show all six stages");
+  assert.strictEqual(door.stages.length, 7, "no stage dates -> programming + all six manufacturing stages");
 });
 
 test("'Standard Installation' service lines are excluded from the hub", async () => {

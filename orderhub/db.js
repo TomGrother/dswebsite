@@ -26,6 +26,7 @@ db.exec(`
     door_type_description  TEXT,
     customer_acc_ref       TEXT NOT NULL,
     status_id              INTEGER,
+    complete_program       INTEGER NOT NULL DEFAULT 0,
     complete_punch         INTEGER NOT NULL DEFAULT 0,
     complete_bend          INTEGER NOT NULL DEFAULT 0,
     complete_weld          INTEGER NOT NULL DEFAULT 0,
@@ -91,6 +92,7 @@ db.exec(`
   const have = new Set(db.prepare("PRAGMA table_info(door)").all().map((r) => r.name));
   const add = [
     ["door_ref", "TEXT"],
+    ["complete_program", "INTEGER NOT NULL DEFAULT 0"],
     ["date_punch", "TEXT"], ["date_bend", "TEXT"], ["date_weld", "TEXT"],
     ["date_buff", "TEXT"], ["date_paint", "TEXT"], ["date_pack", "TEXT"],
   ];
@@ -118,7 +120,9 @@ const STATUS = {
   3: { label: "Complete", tone: "complete" },
   5: { label: "On Hold", tone: "hold" },
 };
-const STAGES = ["punch", "bend", "weld", "buff", "paint", "pack"];
+// Programming (CNC/punch programming) is the first production step — every door
+// is programmed before it's punched.
+const STAGES = ["program", "punch", "bend", "weld", "buff", "paint", "pack"];
 
 // A door is in the hub window when it isn't cancelled/removed AND either:
 //   - it's packed and was scheduled within RECENT_DAYS, or
@@ -192,11 +196,19 @@ function mapDoor(row) {
     done: !!row["complete_" + s],
     date: row["date_" + s] || null,
   }));
-  // A stage with a blank stage-date isn't part of this door's route — leave it
-  // out. If a door has NO stage dates at all, fall back to the full route so we
+  // Programming (no stage date) is the universal first step — always shown. A
+  // door can't be manufactured without being programmed first, so treat it as
+  // done whenever any later stage has started (keeps the tracker monotonic and
+  // avoids a "punched but not programmed" gap on legacy rows).
+  const program = all.find((s) => s.key === "program");
+  if (program && !program.done) program.done = all.some((s) => s.key !== "program" && s.done);
+  // Manufacturing stages appear only when they're part of this door's route
+  // (they have a stage date); if none do, fall back to the full route so we
   // never render an empty tracker.
-  let stages = all.filter((s) => s.date);
-  if (stages.length === 0) stages = all;
+  const mfg = all.filter((s) => s.key !== "program");
+  let mfgStages = mfg.filter((s) => s.date);
+  if (mfgStages.length === 0) mfgStages = mfg;
+  const stages = [...(program ? [program] : []), ...mfgStages];
   const packedCount = stages.filter((s) => s.done).length;
   const status = STATUS[row.status_id] || { label: "Active", tone: "active" };
   return {
@@ -305,12 +317,12 @@ function orderForUser(user, orderId) {
 // ---- ingest (called by the secured API from the internal sync script) ------
 const upsertStmt = db.prepare(`
   INSERT INTO door (id, order_id, order_number, order_ref, door_ref, door_type_description,
-                    customer_acc_ref, status_id, complete_punch, complete_bend,
+                    customer_acc_ref, status_id, complete_program, complete_punch, complete_bend,
                     complete_weld, complete_buff, complete_paint, complete_pack,
                     date_punch, date_bend, date_weld, date_buff, date_paint, date_pack,
                     date_completion, updated_at)
   VALUES (@id, @order_id, @order_number, @order_ref, @door_ref, @door_type_description,
-          @customer_acc_ref, @status_id, @complete_punch, @complete_bend,
+          @customer_acc_ref, @status_id, @complete_program, @complete_punch, @complete_bend,
           @complete_weld, @complete_buff, @complete_paint, @complete_pack,
           @date_punch, @date_bend, @date_weld, @date_buff, @date_paint, @date_pack,
           @date_completion, datetime('now'))
@@ -319,6 +331,7 @@ const upsertStmt = db.prepare(`
     order_ref=excluded.order_ref, door_ref=excluded.door_ref,
     door_type_description=excluded.door_type_description,
     customer_acc_ref=excluded.customer_acc_ref, status_id=excluded.status_id,
+    complete_program=excluded.complete_program,
     complete_punch=excluded.complete_punch, complete_bend=excluded.complete_bend,
     complete_weld=excluded.complete_weld, complete_buff=excluded.complete_buff,
     complete_paint=excluded.complete_paint, complete_pack=excluded.complete_pack,
@@ -350,6 +363,7 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
       door_type_description: d.door_type_description || null,
       customer_acc_ref: String(d.customer_acc_ref),
       status_id: d.status_id == null ? null : Number(d.status_id),
+      complete_program: b(d.complete_program),
       complete_punch: b(d.complete_punch), complete_bend: b(d.complete_bend),
       complete_weld: b(d.complete_weld), complete_buff: b(d.complete_buff),
       complete_paint: b(d.complete_paint), complete_pack: b(d.complete_pack),
