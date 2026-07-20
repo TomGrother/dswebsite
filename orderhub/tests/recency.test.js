@@ -43,6 +43,48 @@ test("recency window: keep unpacked + recently-scheduled, drop old-packed/cancel
   assert.ok(!ids.includes(6), "ancient un-packed door dropped by the staleness floor");
 });
 
+test("Complete (status 3) but un-packed ages out via RECENT_DAYS, not STALE_DAYS", async () => {
+  store.ingestDoors(
+    [
+      // Complete, not packed, scheduled 60d ago: inside STALE(90) but past RECENT(30) -> DROP
+      { id: 30, order_id: "C1", order_number: "C1", customer_acc_ref: "R", status_id: 3, complete_pack: 0, date_completion: d(-60) },
+      // Complete, not packed, scheduled 10d ago: within RECENT -> KEEP
+      { id: 31, order_id: "C2", order_number: "C2", customer_acc_ref: "R", status_id: 3, complete_pack: 0, date_completion: d(-10) },
+    ],
+    { snapshot: false }
+  );
+  const u = auth.getUserByEmail("u@r.co.uk");
+  const ids = store.ordersForUser(u, {}).flatMap((o) => o.doors.map((x) => x.id));
+  assert.ok(!ids.includes(30), "old Complete-but-unpacked door aged out (the staleness fix)");
+  assert.ok(ids.includes(31), "recent Complete-but-unpacked door kept");
+});
+
+test("stage dates: only stages with a date are shown; door_ref surfaces", async () => {
+  store.ingestDoors(
+    [{ id: 40, order_id: "SD", order_number: "SD", order_ref: "PO-40", door_ref: "DOOR-XYZ",
+       customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(5),
+       complete_punch: 1, complete_bend: 1,
+       date_punch: d(-3), date_bend: d(-1), date_weld: d(2) }],
+    { snapshot: false }
+  );
+  const u = auth.getUserByEmail("u@r.co.uk");
+  const door = store.ordersForUser(u, {}).find((o) => o.order_id === "SD").doors[0];
+  assert.strictEqual(door.door_ref, "DOOR-XYZ", "door_ref surfaced to the UI");
+  assert.deepStrictEqual(door.stages.map((s) => s.key), ["punch", "bend", "weld"],
+    "stages without a stage-date are left out");
+});
+
+test("stage dates: a door with no stage dates falls back to the full route", async () => {
+  store.ingestDoors(
+    [{ id: 41, order_id: "SD2", order_number: "SD2", customer_acc_ref: "R", status_id: 1,
+       complete_pack: 0, date_completion: d(5) }],
+    { snapshot: false }
+  );
+  const u = auth.getUserByEmail("u@r.co.uk");
+  const door = store.ordersForUser(u, {}).find((o) => o.order_id === "SD2").doors[0];
+  assert.strictEqual(door.stages.length, 6, "no stage dates -> show all six stages");
+});
+
 test("on-hold (status 5) doors are shown and flagged", async () => {
   store.ingestDoors(
     [{ id: 10, order_id: "H1", order_number: "H", customer_acc_ref: "R", status_id: 5, complete_punch: 1, complete_pack: 0, date_completion: d(2) }],

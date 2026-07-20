@@ -22,6 +22,7 @@ db.exec(`
     order_id               TEXT NOT NULL,
     order_number           TEXT,
     order_ref              TEXT,
+    door_ref               TEXT,
     door_type_description  TEXT,
     customer_acc_ref       TEXT NOT NULL,
     status_id              INTEGER,
@@ -31,6 +32,12 @@ db.exec(`
     complete_buff          INTEGER NOT NULL DEFAULT 0,
     complete_paint         INTEGER NOT NULL DEFAULT 0,
     complete_pack          INTEGER NOT NULL DEFAULT 0,
+    date_punch             TEXT,
+    date_bend              TEXT,
+    date_weld              TEXT,
+    date_buff              TEXT,
+    date_paint             TEXT,
+    date_pack              TEXT,
     date_completion        TEXT,
     updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -77,6 +84,19 @@ db.exec(`
   );
 `);
 
+// Migration: add columns to an existing door table (deployed DBs on the volume
+// were created before door_ref / stage dates existed). SQLite has no
+// ADD COLUMN IF NOT EXISTS, so check first.
+(function migrate() {
+  const have = new Set(db.prepare("PRAGMA table_info(door)").all().map((r) => r.name));
+  const add = [
+    ["door_ref", "TEXT"],
+    ["date_punch", "TEXT"], ["date_bend", "TEXT"], ["date_weld", "TEXT"],
+    ["date_buff", "TEXT"], ["date_paint", "TEXT"], ["date_pack", "TEXT"],
+  ];
+  for (const [name, decl] of add) if (!have.has(name)) db.exec(`ALTER TABLE door ADD COLUMN ${name} ${decl}`);
+})();
+
 // ---- config ----------------------------------------------------------------
 // RECENT_DAYS: how long a PACKED door stays visible after its scheduled date.
 // STALE_DAYS: hard floor — nothing scheduled more than this many days ago is
@@ -104,10 +124,14 @@ const STAGES = ["punch", "bend", "weld", "buff", "paint", "pack"];
 //   - it's packed and was scheduled within RECENT_DAYS, or
 //   - it's not yet packed and either has no scheduled date or was scheduled
 //     within STALE_DAYS (so ancient un-packed doors drop out).
+// A door counts as "done" when it's packed OR its status is Complete (3).
+// Old Complete-but-unpacked doors (a common stale case) then age out via
+// RECENT_DAYS rather than lingering forever on the un-packed branch.
+const DONE_SQL = "(complete_pack = 1 OR IFNULL(status_id, 1) = 3)";
 const WINDOW_SQL =
-  `status_id NOT IN (${HIDDEN_STATUSES.join(",")}) AND (` +
-  `(complete_pack = 1 AND date_completion IS NOT NULL AND date_completion >= date('now', @recent)) ` +
-  `OR (complete_pack = 0 AND (date_completion IS NULL OR date_completion >= date('now', @stale)))` +
+  `IFNULL(status_id, 1) NOT IN (${HIDDEN_STATUSES.join(",")}) AND (` +
+  `(${DONE_SQL} AND date_completion IS NOT NULL AND date_completion >= date('now', @recent)) ` +
+  `OR (NOT ${DONE_SQL} AND (date_completion IS NULL OR date_completion >= date('now', @stale)))` +
   `)`;
 
 // Free/shared email domains must never scope by domain — two unrelated
@@ -151,7 +175,16 @@ function allowedRefsForUser(user) {
 
 // ---- reads -----------------------------------------------------------------
 function mapDoor(row) {
-  const stages = STAGES.map((s) => ({ key: s, done: !!row["complete_" + s] }));
+  const all = STAGES.map((s) => ({
+    key: s,
+    done: !!row["complete_" + s],
+    date: row["date_" + s] || null,
+  }));
+  // A stage with a blank stage-date isn't part of this door's route — leave it
+  // out. If a door has NO stage dates at all, fall back to the full route so we
+  // never render an empty tracker.
+  let stages = all.filter((s) => s.date);
+  if (stages.length === 0) stages = all;
   const packedCount = stages.filter((s) => s.done).length;
   const status = STATUS[row.status_id] || { label: "Active", tone: "active" };
   return {
@@ -161,7 +194,7 @@ function mapDoor(row) {
     statusTone: status.tone,
     stages,
     packed: !!row.complete_pack,
-    progress: packedCount, // 0..6
+    progress: packedCount,
   };
 }
 
@@ -259,21 +292,27 @@ function orderForUser(user, orderId) {
 
 // ---- ingest (called by the secured API from the internal sync script) ------
 const upsertStmt = db.prepare(`
-  INSERT INTO door (id, order_id, order_number, order_ref, door_type_description,
+  INSERT INTO door (id, order_id, order_number, order_ref, door_ref, door_type_description,
                     customer_acc_ref, status_id, complete_punch, complete_bend,
                     complete_weld, complete_buff, complete_paint, complete_pack,
+                    date_punch, date_bend, date_weld, date_buff, date_paint, date_pack,
                     date_completion, updated_at)
-  VALUES (@id, @order_id, @order_number, @order_ref, @door_type_description,
+  VALUES (@id, @order_id, @order_number, @order_ref, @door_ref, @door_type_description,
           @customer_acc_ref, @status_id, @complete_punch, @complete_bend,
           @complete_weld, @complete_buff, @complete_paint, @complete_pack,
+          @date_punch, @date_bend, @date_weld, @date_buff, @date_paint, @date_pack,
           @date_completion, datetime('now'))
   ON CONFLICT(id) DO UPDATE SET
     order_id=excluded.order_id, order_number=excluded.order_number,
-    order_ref=excluded.order_ref, door_type_description=excluded.door_type_description,
+    order_ref=excluded.order_ref, door_ref=excluded.door_ref,
+    door_type_description=excluded.door_type_description,
     customer_acc_ref=excluded.customer_acc_ref, status_id=excluded.status_id,
     complete_punch=excluded.complete_punch, complete_bend=excluded.complete_bend,
     complete_weld=excluded.complete_weld, complete_buff=excluded.complete_buff,
     complete_paint=excluded.complete_paint, complete_pack=excluded.complete_pack,
+    date_punch=excluded.date_punch, date_bend=excluded.date_bend,
+    date_weld=excluded.date_weld, date_buff=excluded.date_buff,
+    date_paint=excluded.date_paint, date_pack=excluded.date_pack,
     date_completion=excluded.date_completion, updated_at=datetime('now')
 `);
 
@@ -292,12 +331,16 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
       order_id: String(d.order_id),
       order_number: d.order_number == null ? null : String(d.order_number),
       order_ref: d.order_ref == null ? null : String(d.order_ref),
+      door_ref: d.door_ref == null ? null : String(d.door_ref),
       door_type_description: d.door_type_description || null,
       customer_acc_ref: String(d.customer_acc_ref),
       status_id: d.status_id == null ? null : Number(d.status_id),
       complete_punch: b(d.complete_punch), complete_bend: b(d.complete_bend),
       complete_weld: b(d.complete_weld), complete_buff: b(d.complete_buff),
       complete_paint: b(d.complete_paint), complete_pack: b(d.complete_pack),
+      date_punch: d.date_punch || null, date_bend: d.date_bend || null,
+      date_weld: d.date_weld || null, date_buff: d.date_buff || null,
+      date_paint: d.date_paint || null, date_pack: d.date_pack || null,
       date_completion: d.date_completion || null,
     });
     upserted++;
@@ -316,9 +359,9 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
 function pruneAgedOut() {
   const info = db
     .prepare(
-      `DELETE FROM door WHERE status_id IN (${HIDDEN_STATUSES.join(",")}) ` +
-        `OR (complete_pack = 1 AND (date_completion IS NULL OR date_completion < date('now', @recent))) ` +
-        `OR (complete_pack = 0 AND date_completion IS NOT NULL AND date_completion < date('now', @stale))`
+      `DELETE FROM door WHERE IFNULL(status_id, 1) IN (${HIDDEN_STATUSES.join(",")}) ` +
+        `OR (${DONE_SQL} AND (date_completion IS NULL OR date_completion < date('now', @recent))) ` +
+        `OR (NOT ${DONE_SQL} AND date_completion IS NOT NULL AND date_completion < date('now', @stale))`
     )
     .run({ recent: RECENT_MODIFIER, stale: STALE_MODIFIER });
   return info.changes;

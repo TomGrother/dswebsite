@@ -41,6 +41,7 @@ const QUERY = `
     d.order_id                 AS order_id,
     d.order_number             AS order_number,
     d.order_ref                AS order_ref,
+    d.door_ref                 AS door_ref,
     dt.door_type_description   AS door_type_description,
     d.customer_acc_ref         AS customer_acc_ref,
     d.status_id                AS status_id,
@@ -50,18 +51,25 @@ const QUERY = `
     d.complete_buff            AS complete_buff,
     d.complete_paint           AS complete_paint,
     d.complete_pack            AS complete_pack,
+    d.date_punch               AS date_punch,
+    d.date_bend                AS date_bend,
+    d.date_weld                AS date_weld,
+    d.date_buff                AS date_buff,
+    d.date_paint               AS date_paint,
+    d.date_pack                AS date_pack,
     d.date_completion          AS date_completion
   FROM dbo.door d
   INNER JOIN dbo.door_type dt ON d.door_type_id = dt.id
   WHERE d.status_id NOT IN (4, 6)
     -- Steel doors only — Slimline architectural glazing is excluded from the hub.
     AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
-    -- Packed: keep if scheduled within RECENT_DAYS. Not yet packed: keep unless
-    -- scheduled more than STALE_DAYS ago (drops ancient un-packed orders).
+    -- "Done" = packed OR status Complete (3). Done rows drop once scheduled more
+    -- than RECENT_DAYS ago; still-in-production rows drop once scheduled more
+    -- than STALE_DAYS ago (this also sheds ancient Complete-but-unpacked doors).
     AND (
-      (d.complete_pack = 1 AND d.date_completion IS NOT NULL AND d.date_completion >= DATEADD(day, -@recent, CAST(GETDATE() AS date)))
+      ((d.complete_pack = 1 OR d.status_id = 3) AND d.date_completion IS NOT NULL AND d.date_completion >= DATEADD(day, -@recent, CAST(GETDATE() AS date)))
       OR
-      (d.complete_pack = 0 AND (d.date_completion IS NULL OR d.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date))))
+      (NOT (d.complete_pack = 1 OR d.status_id = 3) AND (d.date_completion IS NULL OR d.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date))))
     );
 `;
 
@@ -107,6 +115,7 @@ function normalise(rows) {
     order_id: String(r.order_id),
     order_number: r.order_number == null ? null : String(r.order_number),
     order_ref: r.order_ref == null ? null : String(r.order_ref),
+    door_ref: r.door_ref == null ? null : String(r.door_ref),
     door_type_description: r.door_type_description || null,
     customer_acc_ref: String(r.customer_acc_ref),
     status_id: r.status_id == null ? null : Number(r.status_id),
@@ -116,8 +125,37 @@ function normalise(rows) {
     complete_buff: toBool(r.complete_buff),
     complete_paint: toBool(r.complete_paint),
     complete_pack: toBool(r.complete_pack),
+    date_punch: toDate(r.date_punch),
+    date_bend: toDate(r.date_bend),
+    date_weld: toDate(r.date_weld),
+    date_buff: toDate(r.date_buff),
+    date_paint: toDate(r.date_paint),
+    date_pack: toDate(r.date_pack),
     date_completion: toDate(r.date_completion),
   }));
+}
+
+/** Print a composition breakdown so we can see WHAT is coming through and tune
+ *  RECENT_DAYS / STALE_DAYS. Helps diagnose "still stale" reports. */
+function diagnose(doors) {
+  const byStatus = {};
+  let nullDate = 0, packed = 0, complete3 = 0;
+  let min = null, max = null;
+  for (const d of doors) {
+    byStatus[d.status_id] = (byStatus[d.status_id] || 0) + 1;
+    if (!d.date_completion) nullDate++;
+    if (d.complete_pack) packed++;
+    if (d.status_id === 3) complete3++;
+    if (d.date_completion) {
+      if (min === null || d.date_completion < min) min = d.date_completion;
+      if (max === null || d.date_completion > max) max = d.date_completion;
+    }
+  }
+  const labels = { 1: "Active", 2: "Query", 3: "Complete", 5: "On Hold" };
+  log("  by status:", Object.entries(byStatus)
+    .map(([s, n]) => `${labels[s] || "status " + s}=${n}`).join(", ") || "(none)");
+  log(`  packed=${packed}, status-Complete=${complete3}, blank scheduled-date=${nullDate}`);
+  log(`  scheduled-date range: ${min || "n/a"} … ${max || "n/a"}`);
 }
 
 async function push(doors) {
@@ -137,6 +175,7 @@ async function main() {
   const raw = await readDoors();
   const doors = normalise(raw);
   log(`Read ${doors.length} doors from SQL Server.`);
+  diagnose(doors);
 
   if (DRY_RUN) {
     log("Dry run — not pushing. Sample:", JSON.stringify(doors.slice(0, 2), null, 2));

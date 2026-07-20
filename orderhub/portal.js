@@ -80,11 +80,17 @@ function doorBadge(door) {
 }
 
 function renderDoorRow(door, opts = {}) {
-  const refLine = opts.showRef ? ` &nbsp;·&nbsp; Acc: ${esc(door.customer_acc_ref)}` : "";
+  // door_ref is how the customer recognises their door — show it prominently.
+  const doorRef = door.door_ref ? `<span class="door-ref">${esc(door.door_ref)}</span>` : "";
+  const parts = [];
+  // On-hold doors have no meaningful scheduled completion — don't show one.
+  if (!door.onHold) parts.push(`Scheduled: ${fmtDate(door.date_completion)}`);
+  if (opts.showRef) parts.push(`Acc: ${esc(door.customer_acc_ref)}`);
+  const metaText = parts.length ? parts.join(" &nbsp;·&nbsp; ") + " &nbsp;·&nbsp; " : "";
   return `<div class="door-row">
     <div class="door-row-top">
-      <b><span class="door-no">Door #${esc(door.id)}</span> ${esc(door.door_type_description || "Doorset")}</b>
-      <span class="door-row-meta">Scheduled: ${fmtDate(door.date_completion)}${refLine} &nbsp;·&nbsp; ${doorBadge(door)}</span>
+      <b><span class="door-no">Door #${esc(door.id)}</span>${doorRef ? " " + doorRef : ""} ${esc(door.door_type_description || "Doorset")}</b>
+      <span class="door-row-meta">${metaText}${doorBadge(door)}</span>
     </div>
     ${renderTracker(door)}
   </div>`;
