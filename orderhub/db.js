@@ -318,12 +318,19 @@ const upsertStmt = db.prepare(`
 
 const b = (v) => (v ? 1 : 0);
 
+// Door types that aren't manufactured doors (service lines) — never store these.
+const EXCLUDED_TYPES = new Set(["standard installation"]);
+const isExcludedType = (t) => t != null && EXCLUDED_TYPES.has(String(t).trim().toLowerCase());
+
 /**
  * Idempotent ingest. `snapshot: true` means the payload is the full current
  * in-window set, so any door.id not present is deleted (keeps the hub trimmed).
  * Returns counts for the sync log.
  */
 const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
+  // Drop excluded service lines up front so they're never upserted, and (in
+  // snapshot mode) so any already-stored ones fall out of the keep-set below.
+  doors = doors.filter((d) => !isExcludedType(d.door_type_description));
   let upserted = 0;
   for (const d of doors) {
     upsertStmt.run({

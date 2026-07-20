@@ -63,6 +63,8 @@ const QUERY = `
   WHERE d.status_id NOT IN (4, 6)
     -- Steel doors only — Slimline architectural glazing is excluded from the hub.
     AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
+    -- Exclude non-door service lines (e.g. installation) — not a manufactured door.
+    AND (dt.door_type_description IS NULL OR LTRIM(RTRIM(dt.door_type_description)) <> 'Standard Installation')
     -- "Done" = packed OR status Complete (3). Done rows drop once scheduled more
     -- than RECENT_DAYS ago; still-in-production rows drop once scheduled more
     -- than STALE_DAYS ago (this also sheds ancient Complete-but-unpacked doors).

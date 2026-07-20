@@ -85,6 +85,22 @@ test("stage dates: a door with no stage dates falls back to the full route", asy
   assert.strictEqual(door.stages.length, 6, "no stage dates -> show all six stages");
 });
 
+test("'Standard Installation' service lines are excluded from the hub", async () => {
+  store.ingestDoors(
+    [
+      { id: 50, order_id: "INST", order_number: "INST", customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(3), door_type_description: "SR3 Security Doorset" },
+      { id: 51, order_id: "INST", order_number: "INST", customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(3), door_type_description: "Standard Installation" },
+      { id: 52, order_id: "INST", order_number: "INST", customer_acc_ref: "R", status_id: 1, complete_pack: 0, date_completion: d(3), door_type_description: "  standard installation  " },
+    ],
+    { snapshot: false }
+  );
+  const u = auth.getUserByEmail("u@r.co.uk");
+  const ids = store.ordersForUser(u, {}).flatMap((o) => o.doors.map((x) => x.id));
+  assert.ok(ids.includes(50), "the real door is kept");
+  assert.ok(!ids.includes(51), "'Standard Installation' excluded");
+  assert.ok(!ids.includes(52), "excluded regardless of case/whitespace");
+});
+
 test("on-hold (status 5) doors are shown and flagged", async () => {
   store.ingestDoors(
     [{ id: 10, order_id: "H1", order_number: "H", customer_acc_ref: "R", status_id: 5, complete_punch: 1, complete_pack: 0, date_completion: d(2) }],
