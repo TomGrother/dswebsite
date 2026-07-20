@@ -33,6 +33,44 @@ function fmtDate(iso) {
 }
 const STAGE_LABELS = { program: "Programming", punch: "Punch", bend: "Bend", weld: "Weld", buff: "Buff", paint: "Paint", pack: "Pack" };
 
+// If the last successful sync is older than this, flag the freshness amber — a
+// stalled sync pipeline should be visible to staff and customers alike.
+const STALE_SYNC_MINS = 120;
+
+// Format a sync_log.ran_at (UTC "YYYY-MM-DD HH:MM:SS") as friendly relative +
+// absolute UK time, plus how many minutes ago it was.
+function fmtSyncStamp(ranAt) {
+  const d = new Date(String(ranAt).replace(" ", "T") + "Z");
+  if (isNaN(d)) return { rel: esc(ranAt), abs: "", mins: Infinity };
+  const abs = d.toLocaleString("en-GB", {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", timeZone: "Europe/London",
+  });
+  const mins = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+  let rel;
+  if (mins < 1) rel = "just now";
+  else if (mins < 60) rel = `${mins} minute${mins === 1 ? "" : "s"} ago`;
+  else if (mins < 1440) { const h = Math.round(mins / 60); rel = `${h} hour${h === 1 ? "" : "s"} ago`; }
+  else { const days = Math.round(mins / 1440); rel = `${days} day${days === 1 ? "" : "s"} ago`; }
+  return { rel, abs, mins };
+}
+
+// The "Production data last updated …" strip shown in the header for every
+// logged-in user (customer and staff).
+function syncStrip() {
+  const last = store.lastSuccessfulSync();
+  if (!last) {
+    return `<div class="sync-strip"><div class="container"><span class="sync-dot stale"></span>Awaiting first data sync</div></div>`;
+  }
+  const { rel, abs, mins } = fmtSyncStamp(last.ran_at);
+  const stale = mins >= STALE_SYNC_MINS;
+  return `<div class="sync-strip${stale ? " stale" : ""}"><div class="container">` +
+    `<span class="sync-dot${stale ? " stale" : ""}"></span>` +
+    `Production data last updated <b>${esc(rel)}</b>` +
+    `${abs ? ` <span class="sync-abs">${esc(abs)}</span>` : ""}` +
+    `</div></div>`;
+}
+
 function page(title, body, opts = {}) {
   const user = opts.user;
   const staff = user && user.role === "staff";
@@ -57,6 +95,7 @@ function page(title, body, opts = {}) {
   </div>
   ${right}
 </div></div>
+${user ? syncStrip() : ""}
 <section class="section" style="padding:40px 0"><div class="container">${body}</div></section>
 </body></html>`;
 }

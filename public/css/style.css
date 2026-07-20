@@ -1181,6 +1181,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .portal-bar a { color: #fff; font-weight: 600; }
 .portal-bar a:hover { color: var(--cyan); }
 .portal-bar .portal-tabs a { margin-right: 20px; }
+
+/* Data-freshness strip under the header — visible to customers and staff */
+.sync-strip { background: var(--accent-soft); border-bottom: 1px solid var(--line); color: var(--ink); font-size: 13px; padding: 8px 0; }
+.sync-strip .container { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.sync-strip b { font-weight: 700; }
+.sync-strip .sync-abs { color: var(--slate); }
+.sync-strip.stale { background: #fdf3e2; border-bottom-color: #ebc98a; }
+.sync-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 7px; flex: none; }
+.sync-dot.stale { background: #b7791f; }
 .auth-wrap { max-width: 430px; margin: 0 auto; }
 .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 26px; }
 .toolbar input, .toolbar select {

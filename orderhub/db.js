@@ -424,6 +424,9 @@ module.exports = {
   pruneAgedOut,
   logSync,
   lastSync: () => db.prepare("SELECT * FROM sync_log ORDER BY id DESC LIMIT 1").get(),
+  // Most recent SUCCESSFUL sync — this is what "data last updated" means to a
+  // customer (a failed attempt doesn't refresh anything).
+  lastSuccessfulSync: () => db.prepare("SELECT * FROM sync_log WHERE status = 'ok' ORDER BY id DESC LIMIT 1").get(),
   recentSyncs: (n = 10) => db.prepare("SELECT * FROM sync_log ORDER BY id DESC LIMIT ?").all(n),
   doorCount: () => db.prepare("SELECT COUNT(*) AS n FROM door").get().n,
   stats: () => ({

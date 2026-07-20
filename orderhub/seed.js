@@ -65,6 +65,9 @@ function demo() {
   ];
   const { upserted } = store.ingestDoors(doors, { snapshot: true });
   store.pruneAgedOut();
+  // Record a successful sync so the "data last updated" header strip is populated
+  // in local demos (production populates this from real syncs via the API).
+  store.logSync({ rows_received: doors.length, rows_upserted: upserted, rows_removed: 0, status: "ok", source: "demo" });
   console.log(`Seeded ${upserted} demo doors (after prune: ${store.doorCount()} in hub).`);
   try { auth.addMapping("acme.co.uk", "ACME01"); auth.addMapping("acme.co.uk", "ACME02"); auth.addMapping("other.co.uk", "OTHER01"); console.log("Mapped acme.co.uk -> ACME01, ACME02 ; other.co.uk -> OTHER01"); } catch (e) { console.log("map:", e.message); }
   console.log("Now create a customer:  node orderhub/seed.js create-customer buyer@acme.co.uk Password123");
