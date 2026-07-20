@@ -106,6 +106,51 @@ function seoBlock(file, html) {
   ].join("\n");
 }
 
+// apple-touch-icon + web manifest for every page. Added right after the
+// existing favicon <link>, once (idempotent).
+const HEAD_ICONS = [
+  `<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">`,
+  `<link rel="manifest" href="/site.webmanifest">`,
+].join("\n");
+
+function addHeadIcons(html) {
+  if (html.includes('rel="manifest"')) return html;
+  return html.replace(/(<link rel="icon"[^>]*>)/, `$1\n${HEAD_ICONS}`);
+}
+
+function decodeEntities(s) {
+  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
+// Build BreadcrumbList JSON-LD from the visible .breadcrumb trail, so search
+// engines can show the breadcrumb path in results.
+function breadcrumbSchema(html) {
+  const m = html.match(/<div class="breadcrumb">([\s\S]*?)<\/div>/);
+  if (!m) return "";
+  const inner = m[1];
+  const items = [];
+  // Each <a href="x">Label</a> becomes a linked crumb; the trailing plain
+  // text after the last "/" becomes the current (unlinked) page.
+  const anchorRe = /<a href="([^"]+)">([\s\S]*?)<\/a>/g;
+  let am;
+  while ((am = anchorRe.exec(inner)) !== null) {
+    items.push({ name: decodeEntities(am[2].replace(/<[^>]+>/g, "").trim()), item: am[1] });
+  }
+  const tail = inner.replace(/<a href="[^"]+">[\s\S]*?<\/a>/g, "").replace(/\//g, " ").replace(/<[^>]+>/g, "").trim();
+  if (tail) items.push({ name: decodeEntities(tail), item: null });
+  if (items.length < 2) return "";
+  const list = items.map((it, i) => {
+    const entry = { "@type": "ListItem", position: i + 1, name: it.name };
+    if (it.item) entry.item = it.item.startsWith("http") ? it.item : BASE + it.item;
+    return entry;
+  });
+  return `<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: list,
+  })}</script>`;
+}
+
 function addImageDimensions(html) {
   return html.replace(/<img\b[^>]*>/g, (tag) => {
     if (/\bwidth=/.test(tag)) return tag;
@@ -153,6 +198,14 @@ for (const file of files) {
     html = html.replace("</head>", seoBlock(file, html) + "\n</head>");
   }
 
+  html = addHeadIcons(html);
+
+  // BreadcrumbList schema (once), just before </body>
+  if (!html.includes('"BreadcrumbList"')) {
+    const crumbs = breadcrumbSchema(html);
+    if (crumbs) html = html.replace("</body>", crumbs + "\n</body>");
+  }
+
   html = addImageDimensions(html);
   html = bustAssets(html);
 
@@ -165,7 +218,7 @@ for (const file of files) {
 const TEMPLATES = path.join(__dirname, "templates");
 if (fs.existsSync(path.join(TEMPLATES, "article.html"))) {
   let tpl = fs.readFileSync(path.join(TEMPLATES, "article.html"), "utf8");
-  tpl = bustAssets(rewriteLinks(bakeShell(tpl)));
+  tpl = addHeadIcons(bustAssets(rewriteLinks(bakeShell(tpl))));
   fs.writeFileSync(path.join(TEMPLATES, "article.built.html"), tpl);
   console.log("built templates/article.built.html");
 }

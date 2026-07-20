@@ -135,6 +135,15 @@ function renderArticle(key, post) {
       },
       mainEntityOfPage: canonical,
     })}</script>`,
+    `<script type="application/ld+json">${JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: BASE + "/" },
+        { "@type": "ListItem", position: 2, name: cfg.label, item: `${BASE}/${key}` },
+        { "@type": "ListItem", position: 3, name: post.title },
+      ],
+    })}</script>`,
   ].join("\n");
 
   const breadcrumb = `<a href="/">Home</a> / <a href="/${key}">${esc(cfg.label)}</a> / ${esc(post.title)}`;

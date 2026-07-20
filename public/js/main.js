@@ -77,7 +77,8 @@
             email: field("email"),
             phone: field("phone"),
             subject: field("subject"),
-            message: field("message")
+            message: field("message"),
+            company: field("company")
           })
         }).then(function (r) {
           if (!r.ok) throw new Error("bad status");

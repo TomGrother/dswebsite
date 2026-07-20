@@ -1,14 +1,23 @@
 const express = require("express");
 const compression = require("compression");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const fs = require("fs");
 const path = require("path");
 const store = require("./db");
 const content = require("./content");
 const adminRouter = require("./admin");
 
 const app = express();
+app.set("trust proxy", 1); // Railway sits behind a proxy; needed for correct client IPs and req.protocol
+app.disable("x-powered-by");
 const PORT = process.env.PORT || 3000;
 const PRODUCTION_HOST = "designandsupply.co.uk";
+
+// Throttle abuse-prone endpoints (brute force on login, contact-form spam).
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: "Too many attempts. Please wait a few minutes and try again." });
+const contactLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: "Too many enquiries from this device. Please try again shortly." } });
 
 // All indexable pages ("" = homepage) — used for the sitemap
 const PAGES = [
@@ -61,12 +70,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false, limit: "2mb" }));
 app.use(cookieParser());
 
-app.use((req, res, next) => {
-  // Basic security headers
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "SAMEORIGIN");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+// Security headers via helmet. CSP is intentionally left off here — the site
+// uses some inline styles/scripts, so a Content-Security-Policy needs its own
+// dedicated pass. Everything else (HSTS, nosniff, frameguard, etc.) is on.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    // Allow images/assets to be embedded cross-origin (social cards, search).
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+    hsts: { maxAge: 15552000, includeSubDomains: true }, // 180 days
+  })
+);
 
+app.use((req, res, next) => {
   // Keep staging/preview domains out of search results; only the production
   // domain is indexable.
   if (!req.hostname || !req.hostname.endsWith(PRODUCTION_HOST)) {
@@ -131,6 +149,7 @@ app.get("/sitemap.xml", (req, res) => {
 
 // Admin (password-gated inside the router) and dynamic content pages.
 // These come before express.static so /news and /case-studies render from the DB.
+app.post("/admin/login", loginLimiter);
 app.use("/admin", (req, res, next) => {
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
   res.setHeader("Cache-Control", "no-store");
@@ -171,8 +190,12 @@ app.use(
 
 // Contact form endpoint — enquiries show up in the Railway deploy logs.
 // Swap the console.log for an email service or database when ready.
-app.post("/api/contact", (req, res) => {
-  const { name, email, phone, subject, message } = req.body || {};
+app.post("/api/contact", contactLimiter, (req, res) => {
+  const { name, email, phone, subject, message, company } = req.body || {};
+  // Honeypot: "company" is an invisible field. Bots fill it; humans never do.
+  if (company) {
+    return res.json({ ok: true }); // silently accept and drop
+  }
   if (!name || !email || !message) {
     return res.status(400).json({ ok: false, error: "Name, email and message are required." });
   }
@@ -183,13 +206,16 @@ app.post("/api/contact", (req, res) => {
   res.json({ ok: true });
 });
 
+// Branded 404
+const notFoundPage = (() => {
+  try {
+    return fs.readFileSync(path.join(__dirname, "public", "404.html"), "utf8");
+  } catch {
+    return '<!doctype html><meta charset="utf-8"><title>Page not found</title><p style="font-family:sans-serif;padding:40px">Page not found — <a href="/">back to Design &amp; Supply</a></p>';
+  }
+})();
 app.use((req, res) => {
-  res
-    .status(404)
-    .send(
-      '<!doctype html><meta charset="utf-8"><title>Page not found</title>' +
-        '<p style="font-family:sans-serif;padding:40px">Page not found — <a href="/">back to Design &amp; Supply</a></p>'
-    );
+  res.status(404).type("html").send(notFoundPage);
 });
 
 // A fresh database (new Railway volume) imports the migrated content on boot.

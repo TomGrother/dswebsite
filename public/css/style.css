@@ -1084,6 +1084,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .table-scroll { overflow-x: auto; }
 
+/* Honeypot: off-screen but not display:none (bots skip display:none) */
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
 /* ---------- Article (news / case study) ---------- */
 .article-date {
   font-size: 13px !important;
