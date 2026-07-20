@@ -27,6 +27,8 @@ See `.env.example`. The important ones:
 | `INGEST_API_KEY` | Shared secret for the internal sync → `/api/ingest/doors`. |
 | `RECENT_DAYS` | Recency window (default 30). Must match `sync/.env`. |
 | `PORTAL_ADMIN_EMAIL` / `PORTAL_ADMIN_PASSWORD` | First staff admin, auto-created on boot if absent. |
+| `RESEND_API_KEY` | Enables the daily customer digest (unset = disabled). Sending domain must be verified in Resend. |
+| `NOTIFY_FROM` / `DIGEST_HOUR` / `PORTAL_URL` | Digest sender, earliest UK send hour (default 7), and the portal link in the email. |
 | `ADMIN_PASSWORD` | Password for the marketing CMS at `/admin`. |
 | `SHOP_PASSWORD` | Optional gate for the internal `/shop` pricing tool. |
 
@@ -82,6 +84,10 @@ npm start                     # read + push
 ```
 
 Schedule `node sync/sync.js` every ~15 min via **Windows Task Scheduler** (or cron). It's idempotent: a `snapshot: true` push upserts on `door.id` and deletes anything no longer in the window, keeping the hub trimmed. Each run is recorded and shown at `/portal/admin/sync`.
+
+## Daily customer digest
+
+Each sync captures status **changes** (packed / on hold / new door) as `door_event` rows. Once a day (after `DIGEST_HOUR`, UK time) the app emails every customer a single branded summary of what changed on their orders, scoped exactly like the portal — via **Resend**, from `notifications@designandsupply.co.uk`. It only sends when there's something to report, and the once-a-day guard is restart-safe. Set `RESEND_API_KEY` to enable; staff can trigger a run from the admin dashboard ("Send daily summary now").
 
 ## Tests
 

@@ -243,6 +243,13 @@ require("./orderhub/seed")
   .ensureAdminFromEnv()
   .catch((err) => console.error("Order Hub admin bootstrap skipped:", err.message));
 
+// Start the once-a-day customer digest scheduler (no-op if RESEND_API_KEY unset).
+try {
+  require("./orderhub/notify").startDigestScheduler();
+} catch (err) {
+  console.error("Order Hub digest scheduler skipped:", err.message);
+}
+
 app.listen(PORT, () => {
   console.log(`Design & Supply site running on port ${PORT}`);
 });

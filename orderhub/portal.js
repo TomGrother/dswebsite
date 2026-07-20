@@ -8,6 +8,7 @@ const path = require("path");
 const crypto = require("crypto");
 const store = require("./db");
 const auth = require("./auth");
+const notify = require("./notify");
 
 const router = express.Router();
 
@@ -243,10 +244,25 @@ admin.get("/", (req, res) => {
   const syncLine = last
     ? `${last.status === "ok" ? "✓" : "⚠"} ${esc(last.ran_at)} — received ${last.rows_received ?? "?"}, upserted ${last.rows_upserted ?? "?"}, removed ${last.rows_removed ?? "?"}${last.message ? " — " + esc(last.message) : ""}`
     : "No sync has run yet.";
+  const lastDigest = store.lastDigest();
+  const digestLine = !notify.isEnabled()
+    ? "Disabled — set RESEND_API_KEY to enable the daily customer summary."
+    : lastDigest
+      ? `Last summary: ${esc(lastDigest.digest_date)} — ${lastDigest.recipients ?? 0} email(s), ${lastDigest.events ?? 0} change(s).`
+      : "Enabled — no summary has been sent yet.";
+  const msg = req.query.msg
+    ? `<p style="background:var(--accent-soft);color:var(--accent-dark);padding:10px 16px;border-radius:8px">${esc(req.query.msg)}</p>`
+    : "";
+  const sendBtn = notify.isEnabled()
+    ? `<form method="post" action="/portal/admin/digest/run" style="margin-top:10px" onsubmit="return confirm('Send the summary email now to every customer with pending updates?')">
+        <button type="submit" class="btn btn-primary">Send daily summary now</button>
+      </form>`
+    : "";
   res.send(
     page(
       "Admin",
       `<span class="kicker">Order Hub Admin</span><h1>Staff <em style="font-style:normal;color:var(--accent)">Dashboard</em></h1>
+      ${msg}
       <div class="spec-strip" style="margin:24px 0 30px">
         <div><b>${s.orders}</b><span>Live orders</span></div>
         <div><b>${s.doors}</b><span>Doors in hub</span></div>
@@ -257,10 +273,27 @@ admin.get("/", (req, res) => {
         <a class="card" href="/portal/admin/accounts"><h3>Accounts</h3><p>Create customer/staff logins, set passwords, manage ref overrides.</p><span class="card-link">Open</span></a>
         <a class="card" href="/portal/admin/mappings"><h3>Domain Mappings</h3><p>Link email domains to customer_acc_ref values.</p><span class="card-link">Open</span></a>
       </div>
-      <div class="card" style="margin-top:22px"><h3>Sync Health</h3><p style="color:var(--slate)">${syncLine}</p><a class="card-link" href="/portal/admin/sync">View sync log</a></div>`,
+      <div class="grid grid-2" style="margin-top:22px">
+        <div class="card"><h3>Sync Health</h3><p style="color:var(--slate)">${syncLine}</p><a class="card-link" href="/portal/admin/sync">View sync log</a></div>
+        <div class="card"><h3>Customer Notifications</h3><p style="color:var(--slate)">${digestLine}</p><p style="color:var(--slate);font-size:13px">A once-a-day summary of packed, on-hold and new-door updates is emailed to each customer automatically.</p>${sendBtn}</div>
+      </div>`,
       { user: req.portalUser }
     )
   );
+});
+
+// Manual trigger for the daily digest (staff only). force:true bypasses the
+// once-a-day guard; it still only sends where there are un-notified events.
+admin.post("/digest/run", async (req, res) => {
+  try {
+    const r = await notify.runDigest({ force: true });
+    const summary = r.skipped
+      ? `Digest skipped (${r.skipped}).`
+      : `Summary sent: ${r.emails} email(s) covering ${r.events} change(s).`;
+    res.redirect("/portal/admin?msg=" + encodeURIComponent(summary));
+  } catch (e) {
+    res.redirect("/portal/admin?msg=" + encodeURIComponent("Digest failed: " + e.message));
+  }
 });
 
 admin.get("/orders", (req, res) => {

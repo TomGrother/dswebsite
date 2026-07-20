@@ -83,6 +83,28 @@ db.exec(`
     message       TEXT,
     source        TEXT
   );
+
+  -- Status-change events, captured on ingest, for the daily customer digest.
+  CREATE TABLE IF NOT EXISTS door_event (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    door_id               INTEGER,
+    customer_acc_ref      TEXT,
+    order_number          TEXT,
+    door_ref              TEXT,
+    door_type_description TEXT,
+    event_type            TEXT NOT NULL,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    notified_at           TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_event_unnotified ON door_event (notified_at, customer_acc_ref);
+
+  -- One row per day the digest ran (guards against double-send across restarts).
+  CREATE TABLE IF NOT EXISTS digest_log (
+    digest_date TEXT PRIMARY KEY,
+    sent_at     TEXT NOT NULL DEFAULT (datetime('now')),
+    recipients  INTEGER,
+    events      INTEGER
+  );
 `);
 
 // Migration: add columns to an existing door table (deployed DBs on the volume
@@ -343,6 +365,25 @@ const upsertStmt = db.prepare(`
 
 const b = (v) => (v ? 1 : 0);
 
+// Event capture: statements for detecting notable status changes on ingest.
+const prevStmt = db.prepare("SELECT complete_pack, status_id FROM door WHERE id = ?");
+const insertEventStmt = db.prepare(
+  `INSERT INTO door_event (door_id, customer_acc_ref, order_number, door_ref, door_type_description, event_type)
+   VALUES (@door_id, @customer_acc_ref, @order_number, @door_ref, @door_type_description, @event_type)`
+);
+const HOLD = 5;
+// Given a door's previous stored row (or undefined) and its incoming values,
+// return the notable event type, or null. baselineExisted suppresses "added"
+// spam on the very first population of an empty hub.
+function detectEvent(prev, packNow, statusNow, baselineExisted) {
+  if (!prev) return baselineExisted ? "added" : null;
+  if (!prev.complete_pack && packNow) return "packed";
+  const wasHold = prev.status_id === HOLD, isHold = statusNow === HOLD;
+  if (!wasHold && isHold) return "on_hold";
+  if (wasHold && !isHold && !HIDDEN_STATUSES.includes(statusNow)) return "resumed";
+  return null;
+}
+
 /**
  * Idempotent ingest. `snapshot: true` means the payload is the full current
  * in-window set, so any door.id not present is deleted (keeps the hub trimmed).
@@ -352,8 +393,23 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
   // Drop excluded service lines up front so they're never upserted, and (in
   // snapshot mode) so any already-stored ones fall out of the keep-set below.
   doors = doors.filter((d) => !isExcludedType(d.door_type_description));
+  const baselineExisted = db.prepare("SELECT COUNT(*) AS n FROM door").get().n > 0;
   let upserted = 0;
   for (const d of doors) {
+    // Capture the pre-image before upserting so we can detect transitions.
+    const prev = prevStmt.get(Number(d.id));
+    const statusNow = d.status_id == null ? null : Number(d.status_id);
+    const evt = detectEvent(prev, !!b(d.complete_pack), statusNow, baselineExisted);
+    if (evt) {
+      insertEventStmt.run({
+        door_id: Number(d.id),
+        customer_acc_ref: String(d.customer_acc_ref),
+        order_number: d.order_number == null ? null : String(d.order_number),
+        door_ref: d.door_ref == null ? null : String(d.door_ref),
+        door_type_description: d.door_type_description || null,
+        event_type: evt,
+      });
+    }
     upsertStmt.run({
       id: d.id,
       order_id: String(d.order_id),
@@ -434,4 +490,22 @@ module.exports = {
     orders: db.prepare("SELECT COUNT(DISTINCT order_id) AS n FROM door").get().n,
     onHold: db.prepare("SELECT COUNT(*) AS n FROM door WHERE status_id = 5").get().n,
   }),
+
+  // ---- daily digest: change events + run bookkeeping ----------------------
+  // Highest un-notified event id (snapshot the window so events created mid-run
+  // aren't marked sent without being included).
+  maxUnnotifiedEventId: () =>
+    db.prepare("SELECT MAX(id) AS m FROM door_event WHERE notified_at IS NULL").get().m || null,
+  unnotifiedEventsUpTo: (maxId) =>
+    db.prepare("SELECT * FROM door_event WHERE notified_at IS NULL AND id <= ? ORDER BY order_number, id").all(maxId),
+  markEventsNotifiedUpTo: (maxId) =>
+    db.prepare("UPDATE door_event SET notified_at = datetime('now') WHERE notified_at IS NULL AND id <= ?").run(maxId).changes,
+  pruneOldEvents: (days = 30) =>
+    db.prepare("DELETE FROM door_event WHERE created_at < datetime('now', ?)").run(`-${days} days`).changes,
+  wasDigestSentOn: (date) => !!db.prepare("SELECT 1 FROM digest_log WHERE digest_date = ?").get(date),
+  recordDigestRun: ({ date, recipients = 0, events = 0 }) =>
+    db.prepare(
+      "INSERT OR REPLACE INTO digest_log (digest_date, sent_at, recipients, events) VALUES (?, datetime('now'), ?, ?)"
+    ).run(date, recipients, events),
+  lastDigest: () => db.prepare("SELECT * FROM digest_log ORDER BY digest_date DESC LIMIT 1").get(),
 };
