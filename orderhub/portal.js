@@ -258,6 +258,14 @@ admin.get("/", (req, res) => {
         <button type="submit" class="btn btn-primary">Send daily summary now</button>
       </form>`
     : "";
+  const broadcastBtn = notify.isEnabled()
+    ? `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+        <p style="color:var(--slate);font-size:13px;margin-bottom:6px">Or email every customer a full snapshot of their current orders &amp; production stages now:</p>
+        <form method="post" action="/portal/admin/orders-email/run" onsubmit="return confirm('Email EVERY customer with live orders a snapshot of their current orders and production stages now?')">
+          <button type="submit" style="display:inline-block;background:#fff;border:1px solid var(--accent);color:var(--accent);font-weight:600;font-size:14px;padding:10px 20px;border-radius:8px;cursor:pointer">Email all customers their orders</button>
+        </form>
+      </div>`
+    : "";
   res.send(
     page(
       "Admin",
@@ -275,7 +283,7 @@ admin.get("/", (req, res) => {
       </div>
       <div class="grid grid-2" style="margin-top:22px">
         <div class="card"><h3>Sync Health</h3><p style="color:var(--slate)">${syncLine}</p><a class="card-link" href="/portal/admin/sync">View sync log</a></div>
-        <div class="card"><h3>Customer Notifications</h3><p style="color:var(--slate)">${digestLine}</p><p style="color:var(--slate);font-size:13px">A once-a-day summary of packed, on-hold and new-door updates is emailed to each customer automatically.</p>${sendBtn}</div>
+        <div class="card"><h3>Customer Notifications</h3><p style="color:var(--slate)">${digestLine}</p><p style="color:var(--slate);font-size:13px">A once-a-day summary of packed, on-hold and new-door updates is emailed to each customer automatically.</p>${sendBtn}${broadcastBtn}</div>
       </div>`,
       { user: req.portalUser }
     )
@@ -293,6 +301,18 @@ admin.post("/digest/run", async (req, res) => {
     res.redirect("/portal/admin?msg=" + encodeURIComponent(summary));
   } catch (e) {
     res.redirect("/portal/admin?msg=" + encodeURIComponent("Digest failed: " + e.message));
+  }
+});
+
+// Email every customer a snapshot of their current orders + production stages.
+admin.post("/orders-email/run", async (req, res) => {
+  try {
+    const r = await notify.runOrdersBroadcast({});
+    res.redirect("/portal/admin?msg=" + encodeURIComponent(
+      `Order snapshot emailed to ${r.emails} customer(s); ${r.skipped} had no live orders.`
+    ));
+  } catch (e) {
+    res.redirect("/portal/admin?msg=" + encodeURIComponent("Broadcast failed: " + e.message));
   }
 });
 

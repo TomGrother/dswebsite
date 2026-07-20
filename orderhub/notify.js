@@ -98,6 +98,109 @@ function renderDigestEmail(user, events) {
   return { subject, html };
 }
 
+// ---- "current orders" broadcast (portal snapshot as an email) --------------
+// An on-demand email showing each customer their live orders and the production
+// stage of every door — the portal view, rendered as email-safe inline HTML.
+const STAGE_LABELS = { program: "Programming", punch: "Punch", bend: "Bend", weld: "Weld", buff: "Buff", paint: "Paint", pack: "Pack" };
+
+function fmtDateEmail(iso) {
+  if (!iso) return "—";
+  const dt = new Date(String(iso).length === 10 ? iso + "T00:00:00Z" : iso);
+  if (isNaN(dt)) return esc(iso);
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(dt);
+}
+function pill(text, color, bg) {
+  return `<span style="display:inline-block;font-size:11px;font-weight:700;color:${color};background:${bg};border-radius:5px;padding:2px 8px">${esc(text)}</span>`;
+}
+function doorBadgeEmail(door) {
+  if (door.onHold) return pill("On Hold", "#8a5a12", "#fdf3e2");
+  if (door.packed) return pill("Packed", "#0E6551", "#e7f3ef");
+  return pill(door.statusLabel || "Active", "#0E6551", "#e7f3ef");
+}
+// A row of stage dots + labels, mirroring the portal tracker (done = green tick,
+// current = outlined, upcoming = grey; amber when the door is on hold).
+function trackerEmail(door) {
+  const firstIdx = door.stages.findIndex((s) => !s.done);
+  const hold = door.onHold;
+  const cells = door.stages.map((s, i) => {
+    let bg = "#ffffff", fg = "#9aa8a3", border = "#d9e2df", inner = String(i + 1);
+    if (s.done) { bg = hold ? "#b7791f" : "#0E6551"; fg = "#ffffff"; border = bg; inner = "&#10003;"; }
+    else if (i === firstIdx) { fg = hold ? "#b7791f" : "#0E6551"; border = fg; }
+    return `<td style="text-align:center;vertical-align:top;padding:0 3px">
+      <div style="width:26px;height:26px;line-height:26px;border-radius:50%;background:${bg};color:${fg};border:2px solid ${border};font-size:12px;font-weight:700;margin:0 auto">${inner}</div>
+      <div style="font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#5a6b66;margin-top:5px">${esc(STAGE_LABELS[s.key] || s.key)}</div>
+    </td>`;
+  }).join("");
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:10px 0 4px"><tr>${cells}</tr></table>`;
+}
+function doorEmail(door) {
+  const ref = door.door_ref ? `${pill(door.door_ref, "#0a4a5c", "#dff2f7")} ` : "";
+  const type = esc(door.door_type_description || "Doorset");
+  const scheduled = door.onHold ? "" : `<span style="color:#5a6b66">Scheduled: ${fmtDateEmail(door.date_completion)}</span> &nbsp;`;
+  return `<div style="padding:12px 0;border-top:1px solid #eef1f0">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%"><tr>
+      <td style="font-size:14px;color:#1a2b26"><b>Door #${esc(door.id)}</b> ${ref}${type}</td>
+      <td style="text-align:right;font-size:12px;white-space:nowrap">${scheduled}${doorBadgeEmail(door)}</td>
+    </tr></table>
+    ${trackerEmail(door)}
+  </div>`;
+}
+function orderEmail(o) {
+  const holdNote = o.onHold
+    ? `<div style="background:#fdf3e2;border:1px solid #ebc98a;border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px;color:#8a5a12">On hold — ${o.onHold} door${o.onHold > 1 ? "s are" : " is"} paused and not currently progressing through production. Please contact us if you need an update.</div>`
+    : "";
+  return `<div style="border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;margin:0 0 18px">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%"><tr>
+      <td style="font-family:'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:17px;color:#0E6551;font-weight:700">Order ${esc(o.order_number || o.order_id)}</td>
+      <td style="text-align:right">${pill(o.summary, o.allPacked ? "#0E6551" : "#0a4a5c", o.allPacked ? "#e7f3ef" : "#eef4f6")}</td>
+    </tr></table>
+    ${o.order_ref ? `<div style="font-size:12px;color:#5a6b66;margin-top:2px">Ref: ${esc(o.order_ref)}</div>` : ""}
+    ${holdNote}
+    ${o.doors.map(doorEmail).join("")}
+  </div>`;
+}
+function renderOrdersEmail(user, orders) {
+  const dateLabel = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+  const name = user.display_name ? esc(user.display_name.split(" ")[0]) : "there";
+  const portalUrl = process.env.PORTAL_URL || PORTAL_URL_DEFAULT;
+  const subject = "Your Design & Supply orders — production status";
+  const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
+    <div style="background:#0E6551;padding:20px 26px"><div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply · Order Hub</div></div>
+    <div style="padding:24px 26px">
+      <p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
+      <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">Here's where your orders stand in production as of ${esc(dateLabel)}.</p>
+      ${orders.map(orderEmail).join("")}
+      <a href="${esc(portalUrl)}" style="display:inline-block;background:#0E6551;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 22px;border-radius:8px">View your orders</a>
+      <p style="margin:22px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Questions? Call <a href="tel:01685350114" style="color:#0E6551">01685 350 114</a> or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>.</p>
+    </div>
+  </div>
+</div>`;
+  return { subject, html };
+}
+
+/**
+ * Email every active customer a snapshot of their current orders and production
+ * stages (skips customers with no live orders). Unlike the digest, this is a
+ * full picture, not just changes — sent on demand from the admin dashboard.
+ */
+async function runOrdersBroadcast({ send = sendViaResend } = {}) {
+  const users = auth.listUsers().filter((u) => u.is_active && u.role === "customer");
+  let emails = 0, skipped = 0;
+  for (const u of users) {
+    const orders = store.ordersForUser(u, {});
+    if (!orders.length) { skipped++; continue; }
+    const { subject, html } = renderOrdersEmail(u, orders);
+    try {
+      await send(u.email, subject, html);
+      emails++;
+    } catch (err) {
+      console.error("[orders-email] send failed for", u.email, "-", err.message);
+    }
+  }
+  return { emails, skipped };
+}
+
 // ---- transport -------------------------------------------------------------
 async function sendViaResend(to, subject, html) {
   const key = process.env.RESEND_API_KEY;
@@ -185,4 +288,4 @@ function startDigestScheduler() {
   console.log(`[digest] daily summaries enabled (from ${londonHour() >= startHour ? "today" : startHour + ":00"} UK).`);
 }
 
-module.exports = { runDigest, startDigestScheduler, renderDigestEmail, isEnabled, EVENT_LABELS };
+module.exports = { runDigest, runOrdersBroadcast, startDigestScheduler, renderDigestEmail, renderOrdersEmail, isEnabled, EVENT_LABELS };

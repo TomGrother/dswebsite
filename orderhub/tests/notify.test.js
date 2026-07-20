@@ -81,3 +81,22 @@ test("digest: once-a-day guard skips a non-forced run after one has sent", async
   const result = await notify.runDigest({ send: async () => {}, force: false });
   assert.strictEqual(result.skipped, "already-sent-today", "guarded against double-send");
 });
+
+test("orders broadcast: emails each customer a full snapshot of their live orders, scoped", async () => {
+  // Reuses the users/doors from the first test (same DATA_DIR, sequential file).
+  const sent = [];
+  const r = await notify.runOrdersBroadcast({ send: async (to, subject, html) => sent.push({ to, subject, html }) });
+  assert.strictEqual(r.emails, 2, "both customers with live orders emailed");
+
+  const rita = sent.find((m) => m.to === "u@r.co.uk");
+  assert.ok(rita, "Rita emailed");
+  assert.ok(rita.html.includes("Order 100"), "shows her order number");
+  assert.ok(rita.html.includes("D-1"), "shows door reference");
+  assert.ok(rita.html.includes("Programming") && rita.html.includes("Punch") && rita.html.includes("Pack"),
+    "renders the production-stage tracker");
+  assert.ok(!rita.html.includes("D-9"), "scoped — no other customer's door in her email");
+  assert.ok(rita.subject.includes("production status"), "snapshot subject, not a change summary");
+
+  const other = sent.find((m) => m.to === "o@other.co.uk");
+  assert.ok(other.html.includes("Order 900") && !other.html.includes("Order 100"), "OTHER isolated to their order");
+});
