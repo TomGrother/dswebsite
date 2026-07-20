@@ -6,12 +6,15 @@
   "scripts": {
     "start": "node server.js",
     "build": "node build.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "test": "node --test \"orderhub/tests/**/*.test.js\"",
+    "orderhub": "node orderhub/seed.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
     "better-sqlite3": "^12.11.1",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",

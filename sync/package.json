@@ -1,0 +1,16 @@
+{
+  "name": "ds-order-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Internal SQL Server -> Design & Supply Order Hub sync (runs on the internal network)",
+  "main": "sync.js",
+  "scripts": {
+    "start": "node sync.js",
+    "dry-run": "node sync.js --dry-run"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "mssql": "^11.0.1",
+    "dotenv": "^16.4.5"
+  }
+}

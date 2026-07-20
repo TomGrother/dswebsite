@@ -8,6 +8,8 @@ const path = require("path");
 const store = require("./db");
 const content = require("./content");
 const adminRouter = require("./admin");
+const portalRouter = require("./orderhub/portal");
+const ingestRouter = require("./orderhub/ingest");
 
 const app = express();
 app.set("trust proxy", 1); // Railway sits behind a proxy; needed for correct client IPs and req.protocol
@@ -66,7 +68,7 @@ const LEGACY_REDIRECTS = {
 };
 
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: "4mb" })); // 4mb headroom for the ingest snapshot payload
 app.use(express.urlencoded({ extended: false, limit: "2mb" }));
 app.use(cookieParser());
 
@@ -157,6 +159,17 @@ app.use("/admin", (req, res, next) => {
 }, adminRouter);
 app.use(content.router);
 
+// Order Hub — private customer/staff portal (noindex, no-store) + secured
+// ingest endpoint for the internal SQL Server sync.
+app.use(["/portal", "/api/ingest"], (req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+app.post("/portal/login", loginLimiter);
+app.use("/portal", portalRouter);
+app.use("/api/ingest", ingestRouter);
+
 // The shop is an internal pricing tool: it stays hosted but is unlinked,
 // never indexed, and password-gated whenever SHOP_PASSWORD is set.
 app.use("/shop", (req, res, next) => {
@@ -224,6 +237,11 @@ try {
 } catch (err) {
   console.error("Content seed skipped:", err.message);
 }
+
+// Create the initial Order Hub staff admin from env, if configured and absent.
+require("./orderhub/seed")
+  .ensureAdminFromEnv()
+  .catch((err) => console.error("Order Hub admin bootstrap skipped:", err.message));
 
 app.listen(PORT, () => {
   console.log(`Design & Supply site running on port ${PORT}`);
