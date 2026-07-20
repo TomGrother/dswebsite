@@ -92,8 +92,9 @@ test("orders broadcast: emails each customer a full snapshot of their live order
   assert.ok(rita, "Rita emailed");
   assert.ok(rita.html.includes("Order 100"), "shows her order number");
   assert.ok(rita.html.includes("D-1"), "shows door reference");
-  assert.ok(rita.html.includes("Programming") && rita.html.includes("Punch") && rita.html.includes("Pack"),
+  assert.ok(rita.html.includes("Program") && rita.html.includes("Punch") && rita.html.includes("Pack"),
     "renders the production-stage tracker");
+  assert.ok(rita.html.includes("coming soon"), "includes the Customer Hub coming-soon banner");
   assert.ok(!rita.html.includes("D-9"), "scoped — no other customer's door in her email");
   assert.ok(rita.subject.includes("production status"), "snapshot subject, not a change summary");
 

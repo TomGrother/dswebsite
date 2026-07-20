@@ -42,6 +42,14 @@ function esc(s) {
 }
 
 // ---- email rendering -------------------------------------------------------
+// A teaser shown in customer emails while the live portal is being rolled out.
+function comingSoonBanner() {
+  return `<div style="background:#e8f7fb;border:1px solid #b8e2ec;border-radius:10px;padding:14px 16px;margin:0 0 20px">
+    <div style="font-family:'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:15px;color:#0a4a5c;font-weight:700;margin-bottom:3px">Customer Hub &mdash; coming soon</div>
+    <div style="font-size:13px;color:#31606c;line-height:1.5">Soon you'll be able to log in to the Design &amp; Supply Customer Hub and watch your orders progress through production live. We'll send your login details shortly.</div>
+  </div>`;
+}
+
 function renderDigestEmail(user, events) {
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London", day: "numeric", month: "long", year: "numeric",
@@ -76,7 +84,6 @@ function renderDigestEmail(user, events) {
   }).join("");
 
   const name = user.display_name ? esc(user.display_name.split(" ")[0]) : "there";
-  const portalUrl = process.env.PORTAL_URL || PORTAL_URL_DEFAULT;
   const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
     <div style="background:#0E6551;padding:20px 26px">
@@ -84,11 +91,10 @@ function renderDigestEmail(user, events) {
     </div>
     <div style="padding:26px">
       <p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
-      <p style="margin:0 0 22px;font-size:14px;color:#5a6b66">Here's what changed on your orders as of ${esc(dateLabel)}.</p>
+      <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">Here's what changed on your orders as of ${esc(dateLabel)}.</p>
+      ${comingSoonBanner()}
       ${orderBlocks}
-      <a href="${esc(portalUrl)}" style="display:inline-block;background:#0E6551;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 22px;border-radius:8px;margin-top:4px">View your orders</a>
       <p style="margin:24px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:16px">
-        You're receiving this because you have an account on the Design &amp; Supply Order Hub.
         Questions? Call <a href="tel:01685350114" style="color:#0E6551">01685 350 114</a> or email
         <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>.
       </p>
@@ -101,7 +107,8 @@ function renderDigestEmail(user, events) {
 // ---- "current orders" broadcast (portal snapshot as an email) --------------
 // An on-demand email showing each customer their live orders and the production
 // stage of every door — the portal view, rendered as email-safe inline HTML.
-const STAGE_LABELS = { program: "Programming", punch: "Punch", bend: "Bend", weld: "Weld", buff: "Buff", paint: "Paint", pack: "Pack" };
+// Short labels keep the 7-stage tracker from congesting on narrow mobile screens.
+const STAGE_LABELS = { program: "Program", punch: "Punch", bend: "Bend", weld: "Weld", buff: "Buff", paint: "Paint", pack: "Pack" };
 
 function fmtDateEmail(iso) {
   if (!iso) return "—";
@@ -122,16 +129,19 @@ function doorBadgeEmail(door) {
 function trackerEmail(door) {
   const firstIdx = door.stages.findIndex((s) => !s.done);
   const hold = door.onHold;
+  const w = (100 / door.stages.length).toFixed(2);
   const cells = door.stages.map((s, i) => {
     let bg = "#ffffff", fg = "#9aa8a3", border = "#d9e2df", inner = String(i + 1);
     if (s.done) { bg = hold ? "#b7791f" : "#0E6551"; fg = "#ffffff"; border = bg; inner = "&#10003;"; }
     else if (i === firstIdx) { fg = hold ? "#b7791f" : "#0E6551"; border = fg; }
-    return `<td style="text-align:center;vertical-align:top;padding:0 3px">
-      <div style="width:26px;height:26px;line-height:26px;border-radius:50%;background:${bg};color:${fg};border:2px solid ${border};font-size:12px;font-weight:700;margin:0 auto">${inner}</div>
-      <div style="font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#5a6b66;margin-top:5px">${esc(STAGE_LABELS[s.key] || s.key)}</div>
+    // Fixed-width columns (table-layout:fixed) so cells never overflow into each
+    // other on mobile; short labels + tight sizing keep it readable.
+    return `<td class="stg" width="${w}%" style="width:${w}%;text-align:center;vertical-align:top;padding:0 1px">
+      <div class="stgdot" style="width:22px;height:22px;line-height:22px;border-radius:50%;background:${bg};color:${fg};border:2px solid ${border};font-size:11px;font-weight:700;margin:0 auto">${inner}</div>
+      <div class="stglbl" style="font-size:8px;letter-spacing:0;text-transform:uppercase;color:#5a6b66;margin-top:4px;line-height:1.1">${esc(STAGE_LABELS[s.key] || s.key)}</div>
     </td>`;
   }).join("");
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:10px 0 4px"><tr>${cells}</tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;margin:10px 0 4px"><tr>${cells}</tr></table>`;
 }
 function doorEmail(door) {
   const ref = door.door_ref ? `${pill(door.door_ref, "#0a4a5c", "#dff2f7")} ` : "";
@@ -149,7 +159,7 @@ function orderEmail(o) {
   const holdNote = o.onHold
     ? `<div style="background:#fdf3e2;border:1px solid #ebc98a;border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px;color:#8a5a12">On hold — ${o.onHold} door${o.onHold > 1 ? "s are" : " is"} paused and not currently progressing through production. Please contact us if you need an update.</div>`
     : "";
-  return `<div style="border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;margin:0 0 18px">
+  return `<div class="ocard" style="border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;margin:0 0 18px">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%"><tr>
       <td style="font-family:'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:17px;color:#0E6551;font-weight:700">Order ${esc(o.order_number || o.order_id)}</td>
       <td style="text-align:right">${pill(o.summary, o.allPacked ? "#0E6551" : "#0a4a5c", o.allPacked ? "#e7f3ef" : "#eef4f6")}</td>
@@ -162,16 +172,23 @@ function orderEmail(o) {
 function renderOrdersEmail(user, orders) {
   const dateLabel = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   const name = user.display_name ? esc(user.display_name.split(" ")[0]) : "there";
-  const portalUrl = process.env.PORTAL_URL || PORTAL_URL_DEFAULT;
   const subject = "Your Design & Supply orders — production status";
-  const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
+  // Progressive enhancement: clients that honour <style>/media queries (Apple
+  // Mail, iOS Mail) shrink the tracker further on small screens.
+  const responsive = `<style>@media only screen and (max-width:480px){
+    .ecard{padding:16px 14px !important}
+    .stgdot{width:20px !important;height:20px !important;line-height:20px !important;font-size:10px !important}
+    .stglbl{font-size:7px !important}
+    .ocard{padding:13px 12px !important}
+  }</style>`;
+  const html = `${responsive}<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
   <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
     <div style="background:#0E6551;padding:20px 26px"><div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply · Order Hub</div></div>
-    <div style="padding:24px 26px">
+    <div class="ecard" style="padding:24px 26px">
       <p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
       <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">Here's where your orders stand in production as of ${esc(dateLabel)}.</p>
+      ${comingSoonBanner()}
       ${orders.map(orderEmail).join("")}
-      <a href="${esc(portalUrl)}" style="display:inline-block;background:#0E6551;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 22px;border-radius:8px">View your orders</a>
       <p style="margin:22px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Questions? Call <a href="tel:01685350114" style="color:#0E6551">01685 350 114</a> or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>.</p>
     </div>
   </div>
