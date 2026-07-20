@@ -25,7 +25,18 @@ async function ensureAdminFromEnv() {
   const email = process.env.PORTAL_ADMIN_EMAIL;
   const password = process.env.PORTAL_ADMIN_PASSWORD;
   if (!email || !password) return false;
-  if (auth.getUserByEmail(email)) return false;
+  const existing = auth.getUserByEmail(email);
+  if (existing) {
+    // Self-heal: the env-designated admin must always be active staff. If the
+    // account already existed as a customer (or got disabled), promote it.
+    if (existing.role !== "staff" || !existing.is_active) {
+      auth.setRole(existing.id, "staff");
+      auth.setActive(existing.id, true);
+      console.log(`[orderhub] Promoted ${email.toLowerCase()} to active staff admin from env.`);
+      return true;
+    }
+    return false;
+  }
   await auth.createUser({ email, password, role: "staff", display_name: "Admin" });
   console.log(`[orderhub] Created initial staff admin ${email.toLowerCase()} from env.`);
   return true;
@@ -60,6 +71,14 @@ async function main() {
   switch (cmd) {
     case "create-admin": await createUser("staff", a, b, c); break;
     case "create-customer": await createUser("customer", a, b, c); break;
+    case "set-role": {
+      const u = auth.getUserByEmail(a);
+      if (!u) throw new Error("No such user: " + a);
+      const role = b === "staff" ? "staff" : "customer";
+      auth.setRole(u.id, role);
+      console.log(`Set ${u.email} role -> ${role}`);
+      break;
+    }
     case "map": auth.addMapping(a, b); console.log(`Mapped ${a} -> ${b}`); break;
     case "override": {
       const u = auth.getUserByEmail(a);
@@ -72,7 +91,7 @@ async function main() {
       console.log(`Doors in hub: ${store.doorCount()}`); break;
     case "demo": demo(); break;
     default:
-      console.log("Commands: create-admin, create-customer, map, override, list, demo");
+      console.log("Commands: create-admin, create-customer, set-role <email> <staff|customer>, map, override, list, demo");
   }
 }
 
