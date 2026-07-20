@@ -3,10 +3,22 @@
  * Server-rendered HTML reusing the marketing site's design system (style.css).
  */
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 const store = require("./db");
 const auth = require("./auth");
 
 const router = express.Router();
+
+// Content-hash the stylesheet so the portal always fetches the current CSS
+// (the marketing pages do this via build.js; portal pages are rendered live,
+// so without it a 7-day-cached copy can go stale after a deploy).
+let CSS_V = "";
+try {
+  CSS_V = crypto.createHash("md5").update(fs.readFileSync(path.join(__dirname, "..", "public", "css", "style.css"))).digest("hex").slice(0, 10);
+} catch { /* leave unversioned if unreadable */ }
+const CSS_HREF = "/css/style.css" + (CSS_V ? "?v=" + CSS_V : "");
 
 // ---- helpers ---------------------------------------------------------------
 function esc(s) {
@@ -35,7 +47,7 @@ function page(title, body, opts = {}) {
 <meta name="robots" content="noindex, nofollow">
 <title>${esc(title)} | Design &amp; Supply Order Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="${CSS_HREF}">
 <link rel="icon" href="/images/favicon.png">
 </head><body>
 <div class="portal-bar"><div class="container">

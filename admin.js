@@ -6,10 +6,19 @@
  * single-editor CMS.
  */
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const store = require("./db");
 
 const router = express.Router();
+
+// Cache-bust the stylesheet (these pages render live, not via build.js).
+let CSS_V = "";
+try {
+  CSS_V = crypto.createHash("md5").update(fs.readFileSync(path.join(__dirname, "public", "css", "style.css"))).digest("hex").slice(0, 10);
+} catch { /* leave unversioned if unreadable */ }
+const CSS_HREF = "/css/style.css" + (CSS_V ? "?v=" + CSS_V : "");
 const sessions = new Set();
 const COOKIE = "ds_admin";
 
@@ -27,7 +36,7 @@ function page(title, body) {
 <meta name="robots" content="noindex, nofollow">
 <title>${esc(title)} | Design &amp; Supply Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="${CSS_HREF}">
 <link rel="icon" href="/images/favicon.png">
 </head><body>
 <div class="admin-bar"><div class="container">
