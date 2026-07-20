@@ -1084,6 +1084,96 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .table-scroll { overflow-x: auto; }
 
+/* ============================================================
+   Order Hub — progress tracker, order cards, portal
+   ============================================================ */
+.tracker { display: flex; align-items: flex-start; gap: 0; width: 100%; }
+.tracker .step { flex: 1 1 0; text-align: center; position: relative; min-width: 0; }
+.tracker .dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; border: 2px solid var(--line); color: var(--slate);
+  font-size: 13px; font-weight: 700; position: relative; z-index: 1;
+  transition: all .2s ease;
+}
+/* connector line between steps */
+.tracker .step::before {
+  content: ""; position: absolute; top: 15px; left: -50%; width: 100%; height: 2px;
+  background: var(--line); z-index: 0;
+}
+.tracker .step:first-child::before { display: none; }
+.tracker .label {
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 600;
+  letter-spacing: .8px; text-transform: uppercase; color: var(--slate);
+}
+/* done stages */
+.tracker .step.done .dot { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tracker .step.done::before { background: var(--accent); }
+.tracker .step.done .label { color: var(--ink); }
+/* the current (first not-done) stage */
+.tracker .step.current .dot { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.tracker .step.current .label { color: var(--accent); }
+/* on-hold recolours done + current to a warning amber */
+.tracker.hold .step.done .dot { background: #b7791f; border-color: #b7791f; }
+.tracker.hold .step.done::before { background: #b7791f; }
+.tracker.hold .step.current .dot { border-color: #b7791f; color: #b7791f; box-shadow: 0 0 0 4px #fdf3e2; }
+.tracker.hold .step.current .label { color: #b7791f; }
+
+.tracker-mini { display: flex; gap: 5px; align-items: center; }
+.tracker-mini span { width: 26px; height: 6px; border-radius: 3px; background: var(--line); }
+.tracker-mini span.done { background: var(--accent); }
+.tracker-mini.hold span.done { background: #b7791f; }
+
+/* Order card */
+.order-card {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 22px; overflow: hidden;
+}
+.order-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  flex-wrap: wrap; padding: 20px 26px; background: var(--mist); border-bottom: 1px solid var(--line);
+}
+.order-head h3 { font-size: 23px; }
+.order-head .order-sub { color: var(--slate); font-size: 14px; }
+.order-summary { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.door-row { padding: 20px 26px; border-bottom: 1px solid var(--line); }
+.door-row:last-child { border-bottom: 0; }
+.door-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.door-row-top b { font-size: 16px; }
+.door-row-meta { color: var(--slate); font-size: 13.5px; }
+
+/* Status / on-hold badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 40px;
+}
+.badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.badge-active { background: var(--accent-soft); color: var(--accent); }
+.badge-complete { background: var(--cyan-soft); color: var(--cyan-dark); }
+.badge-hold { background: #fdf3e2; color: #b7791f; }
+.badge-packed { background: #eef6ee; color: #2f7d32; }
+
+/* Portal shell + login */
+.portal-bar { background: var(--ink); color: #fff; padding: 12px 0; font-size: 14px; }
+.portal-bar .container { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.portal-bar a { color: #fff; font-weight: 600; }
+.portal-bar a:hover { color: var(--cyan); }
+.portal-bar .portal-tabs a { margin-right: 20px; }
+.auth-wrap { max-width: 430px; margin: 0 auto; }
+.toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 26px; }
+.toolbar input, .toolbar select {
+  font-family: var(--font-body); font-size: 15px; padding: 11px 14px;
+  border: 1.5px solid var(--line); border-radius: 8px; background: #fff;
+}
+.toolbar input:focus, .toolbar select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--slate); }
+
+@media (max-width: 640px) {
+  .tracker .label { font-size: 10px; letter-spacing: .3px; }
+  .tracker .dot { width: 26px; height: 26px; font-size: 11px; }
+}
+
 /* Honeypot: off-screen but not display:none (bots skip display:none) */
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
