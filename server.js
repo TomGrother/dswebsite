@@ -93,6 +93,12 @@ app.use((req, res, next) => {
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
   }
 
+  // Canonical host: send www -> the bare apex (matches our canonical tags),
+  // preserving the path and query string and upgrading to https.
+  if (req.hostname === "www." + PRODUCTION_HOST) {
+    return res.redirect(301, "https://" + PRODUCTION_HOST + req.originalUrl);
+  }
+
   // Canonicalise URLs: strip trailing slashes and .html extensions
   const p = req.path;
   if (p.length > 1 && p.endsWith("/")) {
