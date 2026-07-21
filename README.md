@@ -89,6 +89,10 @@ Schedule `node sync/sync.js` every ~15 min via **Windows Task Scheduler** (or cr
 
 Each sync captures status **changes** (packed / on hold / new door) as `door_event` rows. Once a day (after `DIGEST_HOUR`, UK time) the app emails every customer a single branded summary of what changed on their orders, scoped exactly like the portal — via **Resend**, from `notifications@designandsupply.co.uk`. It only sends when there's something to report, and the once-a-day guard is restart-safe. Set `RESEND_API_KEY` to enable; staff can trigger a run from the admin dashboard ("Send daily summary now").
 
+## Password reset (self-service)
+
+Customers reset their own passwords from the portal login (**Forgot your password?**); sign-up stays in-house (no public registration). The flow uses single-use, SHA-256-hashed tokens with a 60-minute expiry, is enumeration-safe (identical response for unknown emails), and invalidates any other active sessions on success. Reset links are emailed via Resend; if `RESEND_API_KEY` is unset they're logged to the server console instead.
+
 ## Tests
 
 ```bash

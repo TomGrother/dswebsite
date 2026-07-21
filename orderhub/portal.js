@@ -160,6 +160,9 @@ function renderOrder(o, opts = {}) {
 router.get("/login", (req, res) => {
   if (auth.currentUser(req)) return res.redirect("/portal");
   const bad = req.query.bad ? '<p style="color:#b00;margin-bottom:14px">Incorrect email or password.</p>' : "";
+  const okNote = req.query.reset
+    ? '<p style="color:var(--accent-dark);background:var(--accent-soft);padding:10px 14px;border-radius:8px;margin-bottom:14px">Your password has been reset — please sign in with your new password.</p>'
+    : "";
   const disabled = !auth.hasSecret()
     ? '<p style="color:#b00">Login is unavailable until SESSION_SECRET is configured.</p>'
     : "";
@@ -171,17 +174,113 @@ router.get("/login", (req, res) => {
         <span class="kicker">Order Hub</span>
         <h1>Track Your <em style="font-style:normal;color:var(--accent)">Order</em></h1>
         <p style="color:var(--slate);margin:8px 0 22px">Sign in to follow your doors through production.</p>
-        ${bad}${disabled}
+        ${okNote}${bad}${disabled}
         <form method="post" action="/portal/login" class="form">
           <input type="hidden" name="next" value="${next}">
           <div><label for="email">Email</label><input type="email" id="email" name="email" required autofocus autocomplete="username"></div>
           <div><label for="password">Password</label><input type="password" id="password" name="password" required autocomplete="current-password"></div>
+          <div style="text-align:right;margin-top:-6px"><a href="/portal/forgot" style="font-size:13px;color:var(--slate)">Forgot your password?</a></div>
           <div><button class="btn btn-primary" type="submit">Sign in</button></div>
         </form>
         <p style="color:var(--slate);font-size:14px;margin-top:22px">No account? Contact us on <a href="tel:01685350114">01685 350 114</a> or <a href="mailto:sales@designandsupply.co.uk">sales@designandsupply.co.uk</a>.</p>
       </div>`
     )
   );
+});
+
+// ---- password reset (self-service; sign-up stays in-house) ------------------
+router.get("/forgot", (req, res) => {
+  if (auth.currentUser(req)) return res.redirect("/portal");
+  const sent = req.query.sent
+    ? '<p style="color:var(--accent-dark);background:var(--accent-soft);padding:12px 14px;border-radius:8px;margin-bottom:14px">If an account exists for that email, we\'ve sent a link to reset your password. It expires in 60 minutes — please check your inbox (and spam).</p>'
+    : "";
+  const form = req.query.sent
+    ? ""
+    : `<form method="post" action="/portal/forgot" class="form">
+        <div><label for="email">Email</label><input type="email" id="email" name="email" required autofocus autocomplete="username"></div>
+        <div><button class="btn btn-primary" type="submit">Email me a reset link</button></div>
+      </form>`;
+  res.send(
+    page(
+      "Reset password",
+      `<div class="auth-wrap">
+        <span class="kicker">Order Hub</span>
+        <h1>Reset Your <em style="font-style:normal;color:var(--accent)">Password</em></h1>
+        <p style="color:var(--slate);margin:8px 0 22px">Enter the email address for your account and we'll send you a link to set a new password.</p>
+        ${sent}${form}
+        <p style="color:var(--slate);font-size:14px;margin-top:22px"><a href="/portal/login">&larr; Back to sign in</a></p>
+      </div>`
+    )
+  );
+});
+
+router.post("/forgot", async (req, res) => {
+  // Always respond the same way (no account enumeration).
+  const done = () => res.redirect("/portal/forgot?sent=1");
+  try {
+    const user = auth.getUserByEmail(req.body.email);
+    if (user && user.is_active) {
+      const token = auth.createResetToken(user.id);
+      const resetUrl = `${req.protocol}://${req.get("host")}/portal/reset?token=${encodeURIComponent(token)}`;
+      if (notify.isEnabled()) {
+        await notify.sendPasswordReset(user.email, resetUrl).catch((e) => console.error("[reset] send failed:", e.message));
+      } else {
+        console.warn("[reset] RESEND_API_KEY not set — reset link for", user.email, ":", resetUrl);
+      }
+    }
+  } catch (e) {
+    console.error("[reset] error:", e.message);
+  }
+  done();
+});
+
+router.get("/reset", (req, res) => {
+  const user = auth.resetTokenUser(req.query.token);
+  if (!user) {
+    return res.send(
+      page(
+        "Reset password",
+        `<div class="auth-wrap">
+          <span class="kicker">Order Hub</span>
+          <h1>Link <em style="font-style:normal;color:var(--accent)">Expired</em></h1>
+          <p style="color:var(--slate);margin:8px 0 22px">This password reset link is invalid or has expired. Reset links can be used once and last 60 minutes.</p>
+          <a class="btn btn-primary" href="/portal/forgot">Request a new link</a>
+        </div>`
+      )
+    );
+  }
+  const bad = req.query.bad ? `<p style="color:#b00;margin-bottom:14px">${esc(req.query.bad)}</p>` : "";
+  res.send(
+    page(
+      "Reset password",
+      `<div class="auth-wrap">
+        <span class="kicker">Order Hub</span>
+        <h1>Choose a New <em style="font-style:normal;color:var(--accent)">Password</em></h1>
+        <p style="color:var(--slate);margin:8px 0 22px">Setting a new password for <b>${esc(user.email)}</b>.</p>
+        ${bad}
+        <form method="post" action="/portal/reset" class="form">
+          <input type="hidden" name="token" value="${esc(req.query.token)}">
+          <div><label for="password">New password</label><input type="password" id="password" name="password" required minlength="8" autofocus autocomplete="new-password"></div>
+          <div><label for="confirm">Confirm new password</label><input type="password" id="confirm" name="confirm" required minlength="8" autocomplete="new-password"></div>
+          <div><button class="btn btn-primary" type="submit">Set new password</button></div>
+        </form>
+        <p style="color:var(--slate);font-size:13px;margin-top:16px">Use at least 8 characters.</p>
+      </div>`
+    )
+  );
+});
+
+router.post("/reset", async (req, res) => {
+  const token = req.body.token || "";
+  const back = (msg) => res.redirect("/portal/reset?token=" + encodeURIComponent(token) + "&bad=" + encodeURIComponent(msg));
+  if ((req.body.password || "") !== (req.body.confirm || "")) return back("Passwords don't match.");
+  const result = await auth.resetPasswordWithToken(token, req.body.password || "");
+  if (!result.ok) {
+    // If the token itself is dead, send them to request a fresh one.
+    if (/invalid|expired|used/i.test(result.error)) return res.redirect("/portal/forgot");
+    return back(result.error);
+  }
+  res.redirect("/portal/login?reset=1");
 });
 
 router.post("/login", async (req, res) => {

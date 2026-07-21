@@ -218,6 +218,29 @@ async function runOrdersBroadcast({ send = sendViaResend } = {}) {
   return { emails, skipped };
 }
 
+// ---- password reset email --------------------------------------------------
+function renderResetEmail(resetUrl) {
+  const subject = "Reset your Design & Supply Order Hub password";
+  const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
+    <div style="background:#0E6551;padding:20px 26px"><div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply · Order Hub</div></div>
+    <div style="padding:26px">
+      <p style="margin:0 0 14px;font-size:16px;color:#1a2b26">Password reset requested</p>
+      <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">We received a request to reset the password for your Order Hub account. Click below to choose a new one. This link expires in 60 minutes and can be used once.</p>
+      <a href="${esc(resetUrl)}" style="display:inline-block;background:#0E6551;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 24px;border-radius:8px">Reset your password</a>
+      <p style="margin:22px 0 0;font-size:13px;color:#8a9994">If you didn't request this, you can safely ignore this email — your password won't change.</p>
+      <p style="margin:14px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Trouble with the button? Paste this link into your browser:<br><span style="color:#0a4a5c;word-break:break-all">${esc(resetUrl)}</span></p>
+    </div>
+  </div>
+</div>`;
+  return { subject, html };
+}
+
+async function sendPasswordReset(to, resetUrl, { send = sendViaResend } = {}) {
+  const { subject, html } = renderResetEmail(resetUrl);
+  return send(to, subject, html);
+}
+
 // ---- transport -------------------------------------------------------------
 async function sendViaResend(to, subject, html) {
   const key = process.env.RESEND_API_KEY;
@@ -305,4 +328,4 @@ function startDigestScheduler() {
   console.log(`[digest] daily summaries enabled (from ${londonHour() >= startHour ? "today" : startHour + ":00"} UK).`);
 }
 
-module.exports = { runDigest, runOrdersBroadcast, startDigestScheduler, renderDigestEmail, renderOrdersEmail, isEnabled, EVENT_LABELS };
+module.exports = { runDigest, runOrdersBroadcast, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, isEnabled, EVENT_LABELS };

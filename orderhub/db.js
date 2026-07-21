@@ -105,6 +105,18 @@ db.exec(`
     recipients  INTEGER,
     events      INTEGER
   );
+
+  -- Self-service password resets. Only the SHA-256 of the token is stored, so a
+  -- DB leak can't be used to reset anyone's password. Single-use + short expiry.
+  CREATE TABLE IF NOT EXISTS password_reset (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at    TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_reset_token ON password_reset (token_hash);
 `);
 
 // Migration: add columns to an existing door table (deployed DBs on the volume
@@ -119,6 +131,10 @@ db.exec(`
     ["date_buff", "TEXT"], ["date_paint", "TEXT"], ["date_pack", "TEXT"],
   ];
   for (const [name, decl] of add) if (!have.has(name)) db.exec(`ALTER TABLE door ADD COLUMN ${name} ${decl}`);
+
+  // app_user: track when the password last changed, to invalidate older sessions.
+  const userCols = new Set(db.prepare("PRAGMA table_info(app_user)").all().map((r) => r.name));
+  if (!userCols.has("password_changed_at")) db.exec("ALTER TABLE app_user ADD COLUMN password_changed_at TEXT");
 })();
 
 // ---- config ----------------------------------------------------------------

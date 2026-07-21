@@ -59,7 +59,7 @@ function verifyToken(token) {
 }
 
 function issueSession(res, req, user) {
-  const token = sign({ uid: user.id, role: user.role, exp: Date.now() + SESSION_HOURS * 3600 * 1000 });
+  const token = sign({ uid: user.id, role: user.role, iat: Date.now(), exp: Date.now() + SESSION_HOURS * 3600 * 1000 });
   res.cookie(COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -93,7 +93,11 @@ async function createUser({ email, password, role = "customer", display_name = n
 async function setPassword(userId, password) {
   if (!password || password.length < 8) throw new Error("Password must be at least 8 characters.");
   const hash = await hashPassword(password);
-  db.prepare("UPDATE app_user SET password_hash = ?, updated_at = datetime('now') WHERE id = ?").run(hash, userId);
+  // Millisecond precision so a session issued moments before the change is still
+  // (correctly) invalidated by the iat comparison in currentUser().
+  db.prepare(
+    "UPDATE app_user SET password_hash = ?, password_changed_at = strftime('%Y-%m-%d %H:%M:%f','now'), updated_at = datetime('now') WHERE id = ?"
+  ).run(hash, userId);
 }
 function setActive(userId, active) {
   db.prepare("UPDATE app_user SET is_active = ?, updated_at = datetime('now') WHERE id = ?").run(active ? 1 : 0, userId);
@@ -115,6 +119,51 @@ async function authenticate(email, password) {
   }
   const ok = await verifyPassword(user.password_hash, password || "");
   return ok ? user : null;
+}
+
+// ---- password reset (self-service) -----------------------------------------
+const RESET_TTL_MIN = 60;
+const sha256 = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
+
+/** Create a single-use reset token for a user; returns the RAW token (emailed).
+ *  Only its SHA-256 is stored. Any earlier outstanding tokens are invalidated. */
+function createResetToken(userId) {
+  const raw = crypto.randomBytes(32).toString("base64url");
+  db.prepare("DELETE FROM password_reset WHERE user_id = ? AND used_at IS NULL").run(userId);
+  db.prepare(
+    "INSERT INTO password_reset (user_id, token_hash, expires_at) VALUES (?, ?, datetime('now', ?))"
+  ).run(userId, sha256(raw), `+${RESET_TTL_MIN} minutes`);
+  return raw;
+}
+
+const findResetRow = (rawToken) =>
+  rawToken
+    ? db.prepare(
+        "SELECT * FROM password_reset WHERE token_hash = ? AND used_at IS NULL AND expires_at > datetime('now')"
+      ).get(sha256(rawToken))
+    : null;
+
+/** The active user for a valid reset token (for showing the reset form), else null. */
+function resetTokenUser(rawToken) {
+  const row = findResetRow(rawToken);
+  if (!row) return null;
+  const user = getUserById(row.user_id);
+  return user && user.is_active ? user : null;
+}
+
+/** Consume a reset token and set the new password. Returns {ok, user} / {ok:false, error}. */
+async function resetPasswordWithToken(rawToken, newPassword) {
+  if (!newPassword || newPassword.length < 8) return { ok: false, error: "Password must be at least 8 characters." };
+  const row = findResetRow(rawToken);
+  if (!row) return { ok: false, error: "This reset link is invalid or has expired — please request a new one." };
+  const user = getUserById(row.user_id);
+  if (!user || !user.is_active) return { ok: false, error: "This account isn't available. Please contact us." };
+  // Claim the token (single-use); if it was used between the lookup and now, stop.
+  const claimed = db.prepare("UPDATE password_reset SET used_at = datetime('now') WHERE id = ? AND used_at IS NULL").run(row.id);
+  if (claimed.changes !== 1) return { ok: false, error: "This reset link has already been used." };
+  await setPassword(user.id, newPassword); // stamps password_changed_at -> invalidates older sessions
+  db.prepare("DELETE FROM password_reset WHERE user_id = ? AND used_at IS NULL").run(user.id);
+  return { ok: true, user };
 }
 
 // ---- domain map & per-user overrides --------------------------------------
@@ -147,6 +196,12 @@ function currentUser(req) {
   if (!payload) return null;
   const user = getUserById(payload.uid);
   if (!user || !user.is_active) return null;
+  // Sessions issued before the password was last changed are invalidated (so a
+  // password reset logs out any other active sessions).
+  if (user.password_changed_at) {
+    const changedMs = Date.parse(user.password_changed_at.replace(" ", "T") + "Z");
+    if (!isNaN(changedMs) && (payload.iat || 0) < changedMs) return null;
+  }
   return user;
 }
 function requireUser(req, res, next) {
@@ -182,6 +237,10 @@ module.exports = {
   setPassword,
   setActive,
   setRole,
+  // password reset
+  createResetToken,
+  resetTokenUser,
+  resetPasswordWithToken,
   // mappings & overrides
   listMappings,
   addMapping,

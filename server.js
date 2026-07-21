@@ -167,6 +167,7 @@ app.use(["/portal", "/api/ingest"], (req, res, next) => {
   next();
 });
 app.post("/portal/login", loginLimiter);
+app.post("/portal/forgot", loginLimiter); // throttle reset requests (anti email-bomb)
 app.use("/portal", portalRouter);
 app.use("/api/ingest", ingestRouter);
 
