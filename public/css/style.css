@@ -203,24 +203,55 @@ h1, h2, h3, h4 {
 .hero {
   position: relative;
   background:
-    radial-gradient(1100px 500px at 85% -10%, rgba(65, 189, 214, .25), transparent 60%),
+    radial-gradient(1100px 500px at 85% -10%, rgba(65, 189, 214, .28), transparent 60%),
+    radial-gradient(900px 420px at 6% 112%, rgba(14, 101, 81, .5), transparent 62%),
     linear-gradient(160deg, #0f1d19 0%, #14332b 55%, #1b4437 100%);
   color: #fff;
   overflow: hidden;
 }
+/* Layered "powder-coated steel" texture: one broad diagonal light sheen, fine
+   steel hairlines, and sparse cyan accent lines. */
 .hero::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 2px, transparent 2px 90px);
+  background-image:
+    linear-gradient(115deg, transparent 0%, rgba(255,255,255,.035) 28%, transparent 44%, rgba(255,255,255,.02) 66%, transparent 82%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.04) 0 1.5px, transparent 1.5px 84px),
+    repeating-linear-gradient(115deg, rgba(65,189,214,.07) 0 1px, transparent 1px 168px);
   pointer-events: none;
 }
+.hero > .container { position: relative; }
 .hero-inner {
   position: relative;
   z-index: 1;
-  padding: 110px 0 120px;
+  padding: 64px 0 76px;
   max-width: 760px;
 }
+/* Steel door cutout standing on the stats strip, filling the right-hand gap */
+.hero-door {
+  position: absolute;
+  right: -6px;
+  bottom: 0;
+  width: min(400px, 34vw);
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.hero-door::before {
+  content: "";
+  position: absolute;
+  left: -14%; right: -14%; top: 4%; bottom: -8%;
+  background: radial-gradient(58% 52% at 50% 58%, rgba(65,189,214,.16), transparent 72%);
+}
+.hero-door img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(-20px 28px 34px rgba(0, 0, 0, .5));
+}
+@media (max-width: 1259px) { .hero-door { display: none; } }
 .hero-kicker, .kicker {
   display: inline-block;
   font-family: var(--font-display);
@@ -232,7 +263,7 @@ h1, h2, h3, h4 {
   margin-bottom: 18px;
 }
 .hero h1 {
-  font-size: clamp(44px, 6.5vw, 82px);
+  font-size: clamp(40px, 5.2vw, 64px);
   margin-bottom: 22px;
 }
 .hero h1 em { font-style: normal; color: var(--cyan); }
@@ -241,12 +272,12 @@ h1, h2, h3, h4 {
   font-size: 19px;
   color: #c3c9d4;
   max-width: 620px;
-  margin-bottom: 36px;
+  margin-bottom: 26px;
 }
 .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
 
 /* Live "doors manufactured" ticker pill in the hero */
-.doors-ticker-wrap { margin: 26px 0 2px; }
+.doors-ticker-wrap { margin: 20px 0 2px; }
 .doors-ticker {
   display: inline-flex; align-items: center; gap: 9px;
   background: rgba(65, 189, 214, .12);
@@ -272,7 +303,7 @@ h1, h2, h3, h4 {
 @media (prefers-reduced-motion: reduce) { .doors-ticker-dot { animation: none; } }
 
 .hero-trust {
-  margin-top: 34px;
+  margin-top: 26px;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1.8px;
@@ -1030,7 +1061,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  margin-top: 44px;
+  margin-top: 30px;
 }
 .path-panel {
   display: block;
@@ -1452,7 +1483,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 @media (max-width: 640px) {
   .section { padding: 64px 0; }
-  .hero-inner { padding: 80px 0 90px; }
+  .hero-inner { padding: 52px 0 60px; }
   .hero-strip .container { grid-template-columns: repeat(2, 1fr); }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
