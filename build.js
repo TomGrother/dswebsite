@@ -13,6 +13,17 @@ const crypto = require("crypto");
 const PUBLIC = path.join(__dirname, "public");
 const BASE = "https://designandsupply.co.uk";
 
+// Company age, recomputed on every build so "N years" never goes stale. Every
+// "NN years / NN+ years / NN Years" on the site is this founding-age claim.
+const FOUNDED = 1986;
+const YEARS = new Date().getFullYear() - FOUNDED;
+function updateYears(html) {
+  return html
+    .replace(/\b\d{1,3}(\+)? (years|Years)\b/g, (m, plus, word) => `${YEARS}${plus || ""} ${word}`)
+    // Home hero stat: <b>40+</b><span>Years of UK manufacturing</span>
+    .replace(/<b>\d{1,3}\+<\/b>(<span>Years of UK manufacturing)/g, `<b>${YEARS}+</b>$1`);
+}
+
 function assetHash(rel) {
   return crypto.createHash("md5").update(fs.readFileSync(path.join(PUBLIC, rel))).digest("hex").slice(0, 10);
 }
@@ -208,6 +219,7 @@ for (const file of files) {
 
   html = addImageDimensions(html);
   html = bustAssets(html);
+  html = updateYears(html); // after bakeShell so the injected footer updates too
 
   fs.writeFileSync(fp, html);
   console.log("built", file);
@@ -218,9 +230,9 @@ for (const file of files) {
 const TEMPLATES = path.join(__dirname, "templates");
 if (fs.existsSync(path.join(TEMPLATES, "article.html"))) {
   let tpl = fs.readFileSync(path.join(TEMPLATES, "article.html"), "utf8");
-  tpl = addHeadIcons(bustAssets(rewriteLinks(bakeShell(tpl))));
+  tpl = updateYears(addHeadIcons(bustAssets(rewriteLinks(bakeShell(tpl)))));
   fs.writeFileSync(path.join(TEMPLATES, "article.built.html"), tpl);
   console.log("built templates/article.built.html");
 }
 
-console.log(`\n${files.length} pages built.`);
+console.log(`\n${files.length} pages built. (Company age: ${YEARS} years since ${FOUNDED}.)`);
