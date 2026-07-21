@@ -21,6 +21,20 @@ try {
 } catch { /* leave unversioned if unreadable */ }
 const CSS_HREF = "/css/style.css" + (CSS_V ? "?v=" + CSS_V : "");
 
+// Site chrome: reuse the marketing site's baked header (logo + main nav) so the
+// portal looks and navigates exactly like the rest of the site. Extracted from
+// the built home page at boot — links, cache-busted main.js and the Customer
+// Portal nav item are already processed there by build.js.
+let SITE_HEADER = "";
+let JS_HREF = "/js/main.js";
+try {
+  const built = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+  const m = built.match(/<!--HEADER-->([\s\S]*?)<!--\/HEADER-->/);
+  if (m) SITE_HEADER = m[1];
+  const j = built.match(/\/js\/main\.js\?v=[a-f0-9]+/);
+  if (j) JS_HREF = j[0];
+} catch { /* fall back to the portal-only bar */ }
+
 // ---- helpers ---------------------------------------------------------------
 function esc(s) {
   return String(s == null ? "" : s)
@@ -84,20 +98,22 @@ function page(title, body, opts = {}) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>${esc(title)} | Design &amp; Supply Order Hub</title>
+<title>${esc(title)} | Design &amp; Supply Customer Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${CSS_HREF}">
 <link rel="icon" href="/images/favicon.png">
-</head><body>
+</head><body data-page="portal">
+${SITE_HEADER}
 <div class="portal-bar"><div class="container">
   <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
-    <a href="/portal" style="font-family:var(--font-display);font-size:19px;letter-spacing:1px;text-transform:uppercase">Design &amp; Supply · Order Hub</a>
+    <a href="/portal" style="font-family:var(--font-display);font-size:17px;letter-spacing:1px;text-transform:uppercase">Customer Portal</a>
     ${tabs}
   </div>
   ${right}
 </div></div>
 ${user ? syncStrip() : ""}
 <section class="section" style="padding:40px 0"><div class="container">${body}</div></section>
+<script src="${JS_HREF}" defer></script>
 </body></html>`;
 }
 
