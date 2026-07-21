@@ -6,6 +6,34 @@
     var yr = document.getElementById("year");
     if (yr) yr.textContent = new Date().getFullYear();
 
+    // Doors-manufactured ticker (home page). Baseline figure that grows by 100
+    // each week, computed from a fixed anchor date so every visitor sees the
+    // same, ever-increasing number. Animates a short count-up on load.
+    var doors = document.getElementById("doors-made");
+    if (doors) {
+      var BASE = 150124;
+      var ANCHOR = Date.UTC(2026, 6, 21); // 21 Jul 2026 baseline
+      var WEEK = 604800000; // 7 days in ms
+      var weeks = Math.floor((Date.now() - ANCHOR) / WEEK);
+      if (weeks < 0) weeks = 0;
+      var target = BASE + weeks * 100;
+      var fmt = function (n) { return n.toLocaleString("en-GB"); };
+      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce || !window.requestAnimationFrame) {
+        doors.textContent = fmt(target);
+      } else {
+        var from = Math.max(BASE - 100, target - 240), t0 = null, dur = 1400;
+        var step = function (ts) {
+          if (t0 === null) t0 = ts;
+          var p = Math.min((ts - t0) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          doors.textContent = fmt(Math.round(from + (target - from) * eased));
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+    }
+
     // Active nav item
     var page = document.body.getAttribute("data-page");
     if (page) {
