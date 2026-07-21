@@ -228,28 +228,31 @@ h1, h2, h3, h4 {
   padding: 64px 0 76px;
   max-width: 760px;
 }
-/* Steel door cutout standing on the stats strip, filling the right-hand gap */
+/* Steel door product shot emerging from the brand panel on the right. Its left
+   edge is feathered into transparency in the asset, so it dissolves into the
+   gradient rather than sitting in the panel like a fitted door. */
 .hero-door {
   position: absolute;
-  right: -6px;
+  right: -10px;
   bottom: 0;
-  width: min(400px, 34vw);
+  width: min(420px, 36vw);
   z-index: 0;
   pointer-events: none;
   user-select: none;
 }
+/* Soft light behind the door so it reads as a lit product, not architecture */
 .hero-door::before {
   content: "";
   position: absolute;
-  left: -14%; right: -14%; top: 4%; bottom: -8%;
-  background: radial-gradient(58% 52% at 50% 58%, rgba(65,189,214,.16), transparent 72%);
+  left: 6%; right: -18%; top: 8%; bottom: 2%;
+  background: radial-gradient(62% 54% at 62% 46%, rgba(120, 220, 235, .14), transparent 70%);
 }
 .hero-door img {
   position: relative;
   display: block;
   width: 100%;
   height: auto;
-  filter: drop-shadow(-20px 28px 34px rgba(0, 0, 0, .5));
+  filter: drop-shadow(6px 20px 26px rgba(0, 0, 0, .42));
 }
 @media (max-width: 1259px) { .hero-door { display: none; } }
 .hero-kicker, .kicker {
