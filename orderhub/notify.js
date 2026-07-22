@@ -255,77 +255,107 @@ async function sendViaResend(to, subject, html) {
   return text ? JSON.parse(text) : {};
 }
 
-// ---- digest run ------------------------------------------------------------
+// ---- per-customer digest / snapshot sends ----------------------------------
 /**
- * Gather un-notified events, email each affected customer a summary, mark the
- * events sent, and record the run. `send` is injectable for tests. `force`
- * bypasses the once-a-day guard (used by the admin "send now" button).
- * Returns { emails, events, date } or { skipped }.
+ * Send the daily updates digest to ONE customer: their door_events newer than
+ * their watermark. Advances the watermark and stamps last-sent for `date` (UK)
+ * whether or not there was anything to send, so it runs at most once a day.
+ * `send` is injectable for tests. Returns { sent, events }.
  */
-async function runDigest({ send = sendViaResend, force = false } = {}) {
+async function sendDigestToUser(user, date, { send = sendViaResend } = {}) {
+  const refs = store.allowedRefsForUser(user); // [] if unmapped, null for staff
+  const maxId = store.maxEventId();
+  let sent = false, count = 0;
+  if (refs && refs.length) {
+    const events = store.eventsForRefsSince(refs, user.digest_watermark || 0, maxId);
+    count = events.length;
+    if (count) {
+      const { subject, html } = renderDigestEmail(user, events);
+      await send(user.email, subject, html);
+      sent = true;
+    }
+  }
+  store.markDigestSent(user.id, date, maxId);
+  return { sent, events: count };
+}
+
+/**
+ * Send the full orders snapshot to ONE customer. Stamps last-sent for `date`.
+ * Returns { sent, orders }.
+ */
+async function sendSnapshotToUser(user, date, { send = sendViaResend } = {}) {
+  const orders = store.ordersForUser(user, {});
+  let sent = false;
+  if (orders.length) {
+    const { subject, html } = renderOrdersEmail(user, orders);
+    await send(user.email, subject, html);
+    sent = true;
+  }
+  store.markSnapshotSent(user.id, date);
+  return { sent, orders: orders.length };
+}
+
+// ---- digest run (admin "send now") -----------------------------------------
+// Force-send the updates digest to every customer who currently wants it,
+// regardless of their chosen hour. Per-user watermarks prevent duplicate
+// changes, so a customer already caught up today simply gets nothing new.
+async function runDigest({ send = sendViaResend } = {}) {
   const date = londonDate();
-  if (!force && store.wasDigestSentOn(date)) return { skipped: "already-sent-today", date };
-
-  const maxId = store.maxUnnotifiedEventId();
-  if (!maxId) {
-    store.recordDigestRun({ date, recipients: 0, events: 0 });
-    return { emails: 0, events: 0, date };
-  }
-  const events = store.unnotifiedEventsUpTo(maxId);
-  const byRef = new Map();
-  for (const e of events) {
-    if (!byRef.has(e.customer_acc_ref)) byRef.set(e.customer_acc_ref, []);
-    byRef.get(e.customer_acc_ref).push(e);
-  }
-
-  const users = auth.listUsers().filter((u) => u.is_active && u.role === "customer");
-  let emails = 0;
-  for (const u of users) {
-    const refs = store.allowedRefsForUser(u); // null for staff (excluded above); [] if unmapped
-    if (!refs || refs.length === 0) continue;
-    const mine = [];
-    for (const r of refs) if (byRef.has(r)) mine.push(...byRef.get(r));
-    if (!mine.length) continue;
-    const { subject, html } = renderDigestEmail(u, mine);
+  let emails = 0, events = 0;
+  for (const u of store.customersWithDigest()) {
     try {
-      await send(u.email, subject, html);
-      emails++;
+      const r = await sendDigestToUser(u, date, { send });
+      if (r.sent) emails++;
+      events += r.events;
     } catch (err) {
       console.error("[digest] send failed for", u.email, "-", err.message);
     }
   }
-
-  // Mark the whole snapshot window sent (even refs with no user yet) so events
-  // never accumulate unbounded; then trim old rows.
-  store.markEventsNotifiedUpTo(maxId);
   store.pruneOldEvents(30);
-  store.recordDigestRun({ date, recipients: emails, events: events.length });
-  return { emails, events: events.length, date };
+  store.recordDigestRun({ date, recipients: emails, events });
+  return { emails, events, date };
 }
 
 // ---- scheduler -------------------------------------------------------------
-// In-process, restart-safe: check periodically and send once per UK day after
-// DIGEST_HOUR. If the app was down at the target hour it sends on next boot.
+// In-process, restart-safe. Every tick, send the digest and the orders snapshot
+// to any customer whose chosen UK hour has arrived and who hasn't been sent
+// today. Per-user last-sent stamps make it at-most-once-a-day and survive
+// restarts (a customer whose hour passed while the app was down is caught on the
+// next tick after boot).
 function startDigestScheduler() {
   if (!isEnabled()) {
-    console.log("[digest] RESEND_API_KEY not set — daily summaries disabled.");
+    console.log("[digest] RESEND_API_KEY not set — customer emails disabled.");
     return;
   }
-  const startHour = parseInt(process.env.DIGEST_HOUR || "7", 10);
-  const CHECK_MS = 30 * 60 * 1000;
+  const CHECK_MS = 20 * 60 * 1000;
   const tick = async () => {
     try {
-      if (londonHour() >= startHour && !store.wasDigestSentOn(londonDate())) {
-        const r = await runDigest({});
-        console.log("[digest] ", JSON.stringify(r));
+      const date = londonDate();
+      const hour = londonHour();
+      for (const u of store.customersDueForDigest(date, hour)) {
+        try {
+          const r = await sendDigestToUser(u, date, {});
+          if (r.sent) console.log(`[digest] sent to ${u.email} — ${r.events} change(s)`);
+        } catch (err) {
+          console.error("[digest] send failed for", u.email, "-", err.message);
+        }
       }
+      for (const u of store.customersDueForSnapshot(date, hour)) {
+        try {
+          const r = await sendSnapshotToUser(u, date, {});
+          if (r.sent) console.log(`[snapshot] sent to ${u.email} — ${r.orders} order(s)`);
+        } catch (err) {
+          console.error("[snapshot] send failed for", u.email, "-", err.message);
+        }
+      }
+      store.pruneOldEvents(30); // keep the events table bounded
     } catch (err) {
       console.error("[digest] scheduler error:", err.message);
     }
   };
   setInterval(tick, CHECK_MS);
   setTimeout(tick, 15000); // first check shortly after boot
-  console.log(`[digest] daily summaries enabled (from ${londonHour() >= startHour ? "today" : startHour + ":00"} UK).`);
+  console.log("[digest] per-customer email scheduler enabled.");
 }
 
-module.exports = { runDigest, runOrdersBroadcast, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, isEnabled, EVENT_LABELS };
+module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, isEnabled, EVENT_LABELS };

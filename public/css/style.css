@@ -1289,6 +1289,16 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .finish-tag b { color: #24312c; font-weight: 600; }
 
+/* Customer email-preference cards */
+.pref-card {
+  border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  padding: 18px 20px; margin-bottom: 16px;
+}
+.pref-toggle { display: flex; align-items: center; gap: 10px; font-size: 16px; cursor: pointer; }
+.pref-toggle input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.pref-note { color: var(--slate); font-size: 13.5px; margin: 8px 0 12px; line-height: 1.5; }
+.pref-time { font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
 /* On-hold order: amber-flagged card + notice banner so the client can't miss it */
 .order-card.has-hold { border: 1px solid #f2c4a3; border-left: 5px solid #c2410c; }
 .order-hold-note {

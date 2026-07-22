@@ -139,6 +139,25 @@ db.exec(`
   // app_user: track when the password last changed, to invalidate older sessions.
   const userCols = new Set(db.prepare("PRAGMA table_info(app_user)").all().map((r) => r.name));
   if (!userCols.has("password_changed_at")) db.exec("ALTER TABLE app_user ADD COLUMN password_changed_at TEXT");
+
+  // Per-customer email preferences: opt-in/out + preferred UK send hour for the
+  // daily updates digest and the orders snapshot. digest_watermark = highest
+  // door_event id already sent to this user, so each customer gets their own
+  // once-a-day digest of only what's new since their last one.
+  const prefCols = [
+    ["digest_enabled", "INTEGER NOT NULL DEFAULT 1"],
+    ["digest_hour", "INTEGER NOT NULL DEFAULT 7"],
+    ["digest_last_sent", "TEXT"],
+    ["digest_watermark", "INTEGER NOT NULL DEFAULT 0"],
+    ["snapshot_enabled", "INTEGER NOT NULL DEFAULT 0"],
+    ["snapshot_hour", "INTEGER NOT NULL DEFAULT 8"],
+    ["snapshot_last_sent", "TEXT"],
+  ];
+  const seedWatermark = !userCols.has("digest_watermark");
+  for (const [name, decl] of prefCols) if (!userCols.has(name)) db.exec(`ALTER TABLE app_user ADD COLUMN ${name} ${decl}`);
+  // First time the watermark is added, start existing customers at the current
+  // max event id so the first per-user digest doesn't dump a historical backlog.
+  if (seedWatermark) db.exec("UPDATE app_user SET digest_watermark = (SELECT IFNULL(MAX(id), 0) FROM door_event)");
 })();
 
 // ---- config ----------------------------------------------------------------
@@ -534,4 +553,40 @@ module.exports = {
       "INSERT OR REPLACE INTO digest_log (digest_date, sent_at, recipients, events) VALUES (?, datetime('now'), ?, ?)"
     ).run(date, recipients, events),
   lastDigest: () => db.prepare("SELECT * FROM digest_log ORDER BY digest_date DESC LIMIT 1").get(),
+
+  // ---- per-customer email preferences -------------------------------------
+  getPrefs: (userId) =>
+    db.prepare(
+      "SELECT digest_enabled, digest_hour, digest_last_sent, digest_watermark, snapshot_enabled, snapshot_hour, snapshot_last_sent FROM app_user WHERE id = ?"
+    ).get(userId),
+  setPrefs: (userId, p) =>
+    db.prepare(
+      "UPDATE app_user SET digest_enabled=?, digest_hour=?, snapshot_enabled=?, snapshot_hour=?, updated_at=datetime('now') WHERE id = ?"
+    ).run(p.digest_enabled ? 1 : 0, p.digest_hour, p.snapshot_enabled ? 1 : 0, p.snapshot_hour, userId).changes,
+  maxEventId: () => db.prepare("SELECT IFNULL(MAX(id), 0) AS m FROM door_event").get().m,
+  // Events for a user's refs that are newer than their watermark (and within the
+  // current snapshot window, so events created mid-run aren't skipped).
+  eventsForRefsSince: (refs, watermark, maxId) => {
+    if (!refs || !refs.length) return [];
+    const ph = refs.map(() => "?").join(",");
+    return db
+      .prepare(`SELECT * FROM door_event WHERE customer_acc_ref IN (${ph}) AND id > ? AND id <= ? ORDER BY order_number, id`)
+      .all(...refs, watermark, maxId);
+  },
+  markDigestSent: (userId, date, watermark) =>
+    db.prepare("UPDATE app_user SET digest_last_sent = ?, digest_watermark = ? WHERE id = ?").run(date, watermark, userId),
+  markSnapshotSent: (userId, date) =>
+    db.prepare("UPDATE app_user SET snapshot_last_sent = ? WHERE id = ?").run(date, userId),
+  // Active customers whose chosen hour has arrived and who haven't been sent today.
+  customersDueForDigest: (date, hour) =>
+    db.prepare(
+      "SELECT * FROM app_user WHERE role='customer' AND is_active=1 AND digest_enabled=1 AND digest_hour <= ? AND (digest_last_sent IS NULL OR digest_last_sent <> ?)"
+    ).all(hour, date),
+  customersDueForSnapshot: (date, hour) =>
+    db.prepare(
+      "SELECT * FROM app_user WHERE role='customer' AND is_active=1 AND snapshot_enabled=1 AND snapshot_hour <= ? AND (snapshot_last_sent IS NULL OR snapshot_last_sent <> ?)"
+    ).all(hour, date),
+  // All customers who currently want the digest (for the admin "send now" button).
+  customersWithDigest: () =>
+    db.prepare("SELECT * FROM app_user WHERE role='customer' AND is_active=1 AND digest_enabled=1").all(),
 };

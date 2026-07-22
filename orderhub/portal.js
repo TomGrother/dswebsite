@@ -91,7 +91,7 @@ function page(title, body, opts = {}) {
   const user = opts.user;
   const staff = user && user.role === "staff";
   const tabs = user
-    ? `<div class="portal-tabs"><a href="/portal">My Orders</a>${staff ? '<a href="/portal/admin">Admin</a>' : ""}</div>`
+    ? `<div class="portal-tabs"><a href="/portal">My Orders</a>${staff ? '<a href="/portal/admin">Admin</a>' : '<a href="/portal/preferences">Email preferences</a>'}</div>`
     : "";
   const right = user
     ? `<div><span style="color:#9ab0a8">${esc(user.display_name || user.email)}</span> &nbsp;&nbsp; <a href="/portal/logout">Log out</a></div>`
@@ -369,6 +369,58 @@ router.get("/orders/:orderId", auth.requireUser, (req, res) => {
       { user: req.portalUser }
     )
   );
+});
+
+// ---- email preferences (customer) ------------------------------------------
+function hourLabel(h) {
+  const ap = h < 12 ? "am" : "pm";
+  const hr = h % 12 === 0 ? 12 : h % 12;
+  return `${hr}:00 ${ap}`;
+}
+function hourSelect(name, selected) {
+  let opts = "";
+  for (let h = 6; h <= 20; h++) {
+    opts += `<option value="${h}"${h === Number(selected) ? " selected" : ""}>${hourLabel(h)}</option>`;
+  }
+  return `<select name="${name}" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">${opts}</select>`;
+}
+
+function prefsBody(user, msg) {
+  const p = store.getPrefs(user.id) || {};
+  const off = !notify.isEnabled()
+    ? `<p style="background:#fff3ec;color:#9a3412;border:1px solid #f2c4a3;padding:10px 16px;border-radius:8px">Email sending is not switched on yet — your choices are saved, but no emails go out until it's enabled on the server.</p>`
+    : "";
+  return `<span class="kicker">Order Hub</span><h1>Email <em style="font-style:normal;color:var(--accent)">Preferences</em></h1>
+    <p style="color:var(--slate);margin:6px 0 22px">Choose which emails you'd like and when they arrive. Changes take effect from the next day's send.</p>
+    ${msg ? `<p style="background:var(--accent-soft);color:var(--accent-dark);padding:10px 16px;border-radius:8px">${esc(msg)}</p>` : ""}
+    ${off}
+    <form method="post" action="/portal/preferences" style="max-width:640px">
+      <div class="pref-card">
+        <label class="pref-toggle"><input type="checkbox" name="digest_enabled" value="1"${p.digest_enabled ? " checked" : ""}> <b>Daily updates summary</b></label>
+        <p class="pref-note">A short email listing what changed on your doors that day — packed, put on hold, or newly added. Only sent on days something actually changes.</p>
+        <div class="pref-time">Send at ${hourSelect("digest_hour", p.digest_hour)} <span style="color:var(--slate)">UK time</span></div>
+      </div>
+      <div class="pref-card">
+        <label class="pref-toggle"><input type="checkbox" name="snapshot_enabled" value="1"${p.snapshot_enabled ? " checked" : ""}> <b>Daily orders snapshot</b></label>
+        <p class="pref-note">A full daily overview of all your live orders and each door's current production stage.</p>
+        <div class="pref-time">Send at ${hourSelect("snapshot_hour", p.snapshot_hour)} <span style="color:var(--slate)">UK time</span></div>
+      </div>
+      <button class="btn btn-primary" type="submit" style="margin-top:8px">Save preferences</button>
+    </form>`;
+}
+
+router.get("/preferences", auth.requireUser, (req, res) => {
+  res.send(page("Email preferences", prefsBody(req.portalUser, req.query.msg), { user: req.portalUser }));
+});
+router.post("/preferences", auth.requireUser, (req, res) => {
+  const clampHour = (v, d) => { const n = parseInt(v, 10); return Number.isInteger(n) && n >= 0 && n <= 23 ? n : d; };
+  store.setPrefs(req.portalUser.id, {
+    digest_enabled: req.body.digest_enabled === "1",
+    digest_hour: clampHour(req.body.digest_hour, 7),
+    snapshot_enabled: req.body.snapshot_enabled === "1",
+    snapshot_hour: clampHour(req.body.snapshot_hour, 8),
+  });
+  res.redirect("/portal/preferences?msg=" + encodeURIComponent("Preferences saved."));
 });
 
 // ---- admin (staff only) ----------------------------------------------------

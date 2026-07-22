@@ -88,6 +88,9 @@ async function createUser({ email, password, role = "customer", display_name = n
   const info = db
     .prepare("INSERT INTO app_user (email, password_hash, role, display_name) VALUES (?,?,?,?)")
     .run(clean, hash, role === "staff" ? "staff" : "customer", display_name || null);
+  // Start a new customer's digest at the current max event id so their first
+  // daily summary covers only changes from here on, not a historical backlog.
+  db.prepare("UPDATE app_user SET digest_watermark = (SELECT IFNULL(MAX(id), 0) FROM door_event) WHERE id = ?").run(info.lastInsertRowid);
   return getUserById(info.lastInsertRowid);
 }
 async function setPassword(userId, password) {
