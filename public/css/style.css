@@ -1073,8 +1073,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
    backgrounds), greyscale by default and full colour on hover. */
 .accred-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-wrap: nowrap;
+  gap: 14px;
   align-items: center;
   justify-content: center;
 }
@@ -1082,17 +1082,19 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 158px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 172px;
   height: 96px;
-  padding: 14px 20px;
+  padding: 14px 16px;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 12px;
   transition: box-shadow .25s ease, transform .25s ease;
 }
 .accred-tile img {
-  max-width: 118px;
-  max-height: 56px;
+  max-width: 100%;
+  max-height: 54px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1102,10 +1104,19 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .accred-tile:hover { box-shadow: 0 10px 24px rgba(0, 0, 0, .10); transform: translateY(-3px); }
 .accred-tile:hover img { filter: grayscale(0); opacity: 1; }
-@media (max-width: 560px) {
-  .accred-row { gap: 12px; }
-  .accred-tile { width: 132px; height: 84px; padding: 12px 14px; }
-  .accred-tile img { max-width: 104px; max-height: 48px; }
+/* On small screens the logos would be too small squeezed onto one line, so keep
+   them one line but let the row scroll horizontally at a legible size. */
+@media (max-width: 640px) {
+  .accred-row {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+  .accred-row::-webkit-scrollbar { display: none; }
+  .accred-tile { flex: 0 0 auto; width: 138px; max-width: none; height: 84px; padding: 12px 14px; }
+  .accred-tile img { max-height: 48px; }
 }
 
 /* Hero dual-path panels (home) */
