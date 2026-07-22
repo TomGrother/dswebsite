@@ -462,7 +462,7 @@ function accountsBody(msg) {
     .map((u) => {
       const overrides = auth.listOverrides(u.id);
       const ovHtml = overrides.length
-        ? overrides.map((o) => `<span class="pill pill-live">${esc(o.customer_acc_ref)} <a href="/portal/admin/overrides/${o.id}/delete" onclick="return confirm('Remove override?')" style="color:#b00">×</a></span>`).join(" ")
+        ? overrides.map((o) => `<span class="pill pill-live">${esc(o.customer_acc_ref)} <form method="post" action="/portal/admin/overrides/${o.id}/delete" style="display:inline" onsubmit="return confirm('Remove override?')"><button type="submit" title="Remove override" style="background:none;border:0;color:#b00;cursor:pointer;padding:0;font:inherit">×</button></form></span>`).join(" ")
         : (u.role === "staff" ? '<span style="color:var(--slate)">all (staff)</span>' : '<span style="color:var(--slate)">by domain</span>');
       return `<tr>
         <td><b>${esc(u.email)}</b>${u.display_name ? "<br><span style='color:var(--slate);font-size:13px'>" + esc(u.display_name) + "</span>" : ""}</td>
