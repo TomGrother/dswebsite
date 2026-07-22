@@ -1069,6 +1069,45 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .section-dark .logo-strip span, .hero .logo-strip span { color: #8da39a; }
 .section-dark .logo-strip-label, .hero .logo-strip-label { color: #8da39a; }
 
+/* Accreditation logos — presented on uniform white tiles (the marks have mixed
+   backgrounds), greyscale by default and full colour on hover. */
+.accred-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+.accred-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 158px;
+  height: 96px;
+  padding: 14px 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: box-shadow .25s ease, transform .25s ease;
+}
+.accred-tile img {
+  max-width: 118px;
+  max-height: 56px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: .72;
+  transition: filter .3s ease, opacity .3s ease;
+}
+.accred-tile:hover { box-shadow: 0 10px 24px rgba(0, 0, 0, .10); transform: translateY(-3px); }
+.accred-tile:hover img { filter: grayscale(0); opacity: 1; }
+@media (max-width: 560px) {
+  .accred-row { gap: 12px; }
+  .accred-tile { width: 132px; height: 84px; padding: 12px 14px; }
+  .accred-tile img { max-width: 104px; max-height: 48px; }
+}
+
 /* Hero dual-path panels (home) */
 .path-panels {
   display: grid;
