@@ -228,33 +228,43 @@ h1, h2, h3, h4 {
   padding: 64px 0 76px;
   max-width: 760px;
 }
-/* Steel door product shot emerging from the brand panel on the right. Its left
-   edge is feathered into transparency in the asset, so it dissolves into the
-   gradient rather than sitting in the panel like a fitted door. */
+/* Steel door product shot: clean-alpha cutout, vertically centred beside the
+   copy, grounded by a soft contact shadow so it reads as a placed product. */
 .hero-door {
   position: absolute;
-  right: -10px;
-  bottom: 0;
-  width: min(420px, 36vw);
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(225px, 17.5vw);
   z-index: 0;
   pointer-events: none;
   user-select: none;
 }
-/* Soft light behind the door so it reads as a lit product, not architecture */
+/* Soft light behind the door so it sits in the scene */
 .hero-door::before {
   content: "";
   position: absolute;
-  left: 6%; right: -18%; top: 8%; bottom: 2%;
-  background: radial-gradient(62% 54% at 62% 46%, rgba(120, 220, 235, .14), transparent 70%);
+  left: -30%; right: -30%; top: -6%; bottom: -4%;
+  background: radial-gradient(55% 48% at 50% 46%, rgba(120, 220, 235, .13), transparent 70%);
+}
+/* Elliptical contact shadow under the door — grounds it without a baked edge */
+.hero-door::after {
+  content: "";
+  position: absolute;
+  left: 4%; right: -6%;
+  bottom: -13px;
+  height: 30px;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(0, 0, 0, .45), transparent 72%);
 }
 .hero-door img {
   position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: auto;
-  filter: drop-shadow(6px 20px 26px rgba(0, 0, 0, .42));
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .35));
 }
-@media (max-width: 1259px) { .hero-door { display: none; } }
+@media (max-width: 1079px) { .hero-door { display: none; } }
 .hero-kicker, .kicker {
   display: inline-block;
   font-family: var(--font-display);
