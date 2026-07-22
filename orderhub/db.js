@@ -40,6 +40,9 @@ db.exec(`
     date_paint             TEXT,
     date_pack              TEXT,
     date_completion        TEXT,
+    finish_description     TEXT,
+    paint_colour_1         TEXT,
+    paint_colour_2         TEXT,
     updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_door_ref     ON door (customer_acc_ref);
@@ -129,6 +132,7 @@ db.exec(`
     ["complete_program", "INTEGER NOT NULL DEFAULT 0"],
     ["date_punch", "TEXT"], ["date_bend", "TEXT"], ["date_weld", "TEXT"],
     ["date_buff", "TEXT"], ["date_paint", "TEXT"], ["date_pack", "TEXT"],
+    ["finish_description", "TEXT"], ["paint_colour_1", "TEXT"], ["paint_colour_2", "TEXT"],
   ];
   for (const [name, decl] of add) if (!have.has(name)) db.exec(`ALTER TABLE door ADD COLUMN ${name} ${decl}`);
 
@@ -358,12 +362,12 @@ const upsertStmt = db.prepare(`
                     customer_acc_ref, status_id, complete_program, complete_punch, complete_bend,
                     complete_weld, complete_buff, complete_paint, complete_pack,
                     date_punch, date_bend, date_weld, date_buff, date_paint, date_pack,
-                    date_completion, updated_at)
+                    date_completion, finish_description, paint_colour_1, paint_colour_2, updated_at)
   VALUES (@id, @order_id, @order_number, @order_ref, @door_ref, @door_type_description,
           @customer_acc_ref, @status_id, @complete_program, @complete_punch, @complete_bend,
           @complete_weld, @complete_buff, @complete_paint, @complete_pack,
           @date_punch, @date_bend, @date_weld, @date_buff, @date_paint, @date_pack,
-          @date_completion, datetime('now'))
+          @date_completion, @finish_description, @paint_colour_1, @paint_colour_2, datetime('now'))
   ON CONFLICT(id) DO UPDATE SET
     order_id=excluded.order_id, order_number=excluded.order_number,
     order_ref=excluded.order_ref, door_ref=excluded.door_ref,
@@ -376,7 +380,10 @@ const upsertStmt = db.prepare(`
     date_punch=excluded.date_punch, date_bend=excluded.date_bend,
     date_weld=excluded.date_weld, date_buff=excluded.date_buff,
     date_paint=excluded.date_paint, date_pack=excluded.date_pack,
-    date_completion=excluded.date_completion, updated_at=datetime('now')
+    date_completion=excluded.date_completion,
+    finish_description=excluded.finish_description,
+    paint_colour_1=excluded.paint_colour_1, paint_colour_2=excluded.paint_colour_2,
+    updated_at=datetime('now')
 `);
 
 const b = (v) => (v ? 1 : 0);
@@ -443,6 +450,9 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
       date_weld: d.date_weld || null, date_buff: d.date_buff || null,
       date_paint: d.date_paint || null, date_pack: d.date_pack || null,
       date_completion: d.date_completion || null,
+      finish_description: d.finish_description || null,
+      paint_colour_1: d.paint_colour_1 || null,
+      paint_colour_2: d.paint_colour_2 || null,
     });
     upserted++;
   }

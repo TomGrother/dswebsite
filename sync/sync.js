@@ -64,9 +64,12 @@ const QUERY = `
     d.date_buff                AS date_buff,
     d.date_paint               AS date_paint,
     d.date_pack                AS date_pack,
-    d.date_completion          AS date_completion
+    d.date_completion          AS date_completion,
+    -- Finish is 1:1 via dbo.door.finish_id -> dbo.finish.id
+    f.finish_description       AS finish_description
   FROM dbo.door d
   INNER JOIN dbo.door_type dt ON d.door_type_id = dt.id
+  LEFT JOIN dbo.finish f ON f.id = d.finish_id
   WHERE d.status_id NOT IN (4, 6)
     -- Steel doors only — Slimline architectural glazing is excluded from the hub.
     AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
@@ -106,9 +109,42 @@ async function readDoors() {
       .input("recent", sql.Int, RECENT_DAYS)
       .input("stale", sql.Int, STALE_DAYS)
       .query(QUERY); // parameterised — no string-built SQL
-    return result.recordset;
+    const rows = result.recordset;
+    await attachPaint(pool, rows);
+    return rows;
   } finally {
     await pool.close();
+  }
+}
+
+// Attach up to two DISTINCT paint colours per door from dbo.paint_to_door.
+// A doorset can carry two colours (e.g. two-tone: frame one, leaf another).
+// Done as a separate keyed query so the main door query doesn't fan out. Door
+// ids come from our own query (integers), so inlining them in the IN list is
+// injection-safe; chunked to keep each statement small.
+async function attachPaint(pool, rows) {
+  for (const r of rows) { r.paint_colour_1 = null; r.paint_colour_2 = null; }
+  const ids = [...new Set(rows.map((r) => Number(r.id)).filter((n) => Number.isInteger(n)))];
+  if (!ids.length) return;
+  const byDoor = new Map();
+  const CHUNK = 900;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = ids.slice(i, i + CHUNK);
+    const res = await pool.request().query(
+      `SELECT door_id, description FROM dbo.paint_to_door WHERE door_id IN (${slice.join(",")})`
+    );
+    for (const p of res.recordset) {
+      const did = Number(p.door_id);
+      const desc = p.description == null ? null : String(p.description).trim();
+      if (!desc) continue;
+      let list = byDoor.get(did);
+      if (!list) { list = []; byDoor.set(did, list); }
+      if (list.length < 2 && !list.includes(desc)) list.push(desc);
+    }
+  }
+  for (const r of rows) {
+    const list = byDoor.get(Number(r.id));
+    if (list) { r.paint_colour_1 = list[0] || null; r.paint_colour_2 = list[1] || null; }
   }
 }
 
@@ -142,6 +178,9 @@ function normalise(rows) {
     date_paint: toDate(r.date_paint),
     date_pack: toDate(r.date_pack),
     date_completion: toDate(r.date_completion),
+    finish_description: r.finish_description == null ? null : String(r.finish_description).trim() || null,
+    paint_colour_1: r.paint_colour_1 == null ? null : String(r.paint_colour_1),
+    paint_colour_2: r.paint_colour_2 == null ? null : String(r.paint_colour_2),
   }));
 }
 
@@ -166,6 +205,9 @@ function diagnose(doors) {
     .map(([s, n]) => `${labels[s] || "status " + s}=${n}`).join(", ") || "(none)");
   log(`  packed=${packed}, status-Complete=${complete3}, blank scheduled-date=${nullDate}`);
   log(`  scheduled-date range: ${min || "n/a"} … ${max || "n/a"}`);
+  let withPaint = 0, withFinish = 0;
+  for (const d of doors) { if (d.paint_colour_1) withPaint++; if (d.finish_description) withFinish++; }
+  log(`  with paint colour: ${withPaint}, with finish: ${withFinish}`);
 }
 
 async function push(doors) {

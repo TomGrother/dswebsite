@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const store = require("./db");
 const auth = require("./auth");
 const notify = require("./notify");
+const { resolvePaint } = require("./paint");
 
 const router = express.Router();
 
@@ -135,6 +136,26 @@ function doorBadge(door) {
   return `<span class="badge badge-${door.statusTone}">${esc(door.statusLabel)}</span>`;
 }
 
+// A small colour swatch + label for a paint description (RAL/BS). Unknown
+// colours get a neutral hatched swatch rather than a guessed colour.
+function paintChip(desc) {
+  const r = resolvePaint(desc);
+  if (!r) return "";
+  const sw = r.hex
+    ? `<span class="paint-sw" style="background:${r.hex}"></span>`
+    : `<span class="paint-sw unknown" title="Colour reference"></span>`;
+  return `<span class="paint-chip">${sw}<span>${esc(r.label)}</span></span>`;
+}
+
+// Finish + paint colour(s) line for a door.
+function renderDoorSpec(door) {
+  const bits = [door.paint_colour_1, door.paint_colour_2].filter(Boolean).map(paintChip).filter(Boolean);
+  if (door.finish_description && !/^\s*no finish\s*$/i.test(door.finish_description)) {
+    bits.push(`<span class="finish-tag">Finish: <b>${esc(door.finish_description)}</b></span>`);
+  }
+  return bits.length ? `<div class="door-spec">${bits.join("")}</div>` : "";
+}
+
 function renderDoorRow(door, opts = {}) {
   // door_ref is how the customer recognises their door — show it prominently.
   const doorRef = door.door_ref ? `<span class="door-ref">${esc(door.door_ref)}</span>` : "";
@@ -148,6 +169,7 @@ function renderDoorRow(door, opts = {}) {
       <b><span class="door-no">Door #${esc(door.id)}</span>${doorRef ? " " + doorRef : ""} ${esc(door.door_type_description || "Doorset")}</b>
       <span class="door-row-meta">${metaText}${doorBadge(door)}</span>
     </div>
+    ${renderDoorSpec(door)}
     ${renderTracker(door)}
   </div>`;
 }
