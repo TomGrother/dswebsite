@@ -68,6 +68,8 @@ const LEGACY_REDIRECTS = {
   // the stock doors page instead.
   "/product/design-and-supply-shop": "/stock-doors",
   "/terms-conditions": "/terms",
+  // Old WordPress permalink for the T&Cs (nested slug) -> new /terms page.
+  "/general-payment-terms-conditions/general-payment-terms-conditions": "/terms",
   "/cart": "/stock-doors",
   "/my-account": "/stock-doors",
 };
