@@ -140,7 +140,7 @@ function renderDoorRow(door, opts = {}) {
   const doorRef = door.door_ref ? `<span class="door-ref">${esc(door.door_ref)}</span>` : "";
   const parts = [];
   // On-hold doors have no meaningful scheduled completion — don't show one.
-  if (!door.onHold) parts.push(`Scheduled: ${fmtDate(door.date_completion)}`);
+  if (!door.onHold) parts.push(`Scheduled Completion: ${fmtDate(door.date_completion)}`);
   if (opts.showRef) parts.push(`Acc: ${esc(door.customer_acc_ref)}`);
   const metaText = parts.length ? parts.join(" &nbsp;·&nbsp; ") + " &nbsp;·&nbsp; " : "";
   return `<div class="door-row">
