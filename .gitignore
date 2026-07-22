@@ -1,6 +1,9 @@
 node_modules/
 .env
 
+# Sync run logs (written on the internal box by run-sync.ps1)
+sync/logs/
+
 # SQLite content store (runtime data — lives on a Railway volume in production)
 data/*.db
 data/*.db-wal
