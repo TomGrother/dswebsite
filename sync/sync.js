@@ -16,7 +16,9 @@
  *   SQLSERVER_PASSWORD, SQLSERVER_ENCRYPT(true/false)
  *   HUB_INGEST_URL   e.g. https://designandsupply.co.uk/api/ingest/doors
  *   INGEST_API_KEY   must match the value set on the hub
- *   RECENT_DAYS      default 30  (how long packed doors stay visible)
+ *   RECENT_DAYS      default 14  (how long a FULLY COMPLETED order stays visible
+ *                                after its last door was packed — per order,
+ *                                keyed on dbo.door.date_pack_complete)
  *   STALE_DAYS       default 90  (drop un-packed doors scheduled longer ago than this)
  *
  * Flags:  --dry-run   read + print counts, push nothing.
@@ -27,7 +29,7 @@ try {
 } catch { /* dotenv optional */ }
 
 const DRY_RUN = process.argv.includes("--dry-run");
-const RECENT_DAYS = parseInt(process.env.RECENT_DAYS || "30", 10);
+const RECENT_DAYS = parseInt(process.env.RECENT_DAYS || "14", 10);
 const STALE_DAYS = parseInt(process.env.STALE_DAYS || "90", 10);
 const INGEST_URL = process.env.HUB_INGEST_URL;
 const API_KEY = process.env.INGEST_API_KEY;
@@ -65,23 +67,76 @@ const QUERY = `
     d.date_paint               AS date_paint,
     d.date_pack                AS date_pack,
     d.date_completion          AS date_completion,
+    -- The date the door was ACTUALLY packed — drives per-order retention.
+    d.date_pack_complete       AS date_pack_complete,
     -- Finish is 1:1 via dbo.door.finish_id -> dbo.finish.id
     f.finish_description       AS finish_description
   FROM dbo.door d
   INNER JOIN dbo.door_type dt ON d.door_type_id = dt.id
   LEFT JOIN dbo.finish f ON f.id = d.finish_id
-  WHERE d.status_id NOT IN (4, 6)
+  WHERE COALESCE(d.status_id, 1) NOT IN (4, 6)
     -- Steel doors only — Slimline architectural glazing is excluded from the hub.
     AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
     -- Exclude non-door service lines (e.g. installation) — not a manufactured door.
     AND (dt.door_type_description IS NULL OR LTRIM(RTRIM(dt.door_type_description)) <> 'Standard Installation')
-    -- "Done" = packed OR status Complete (3). Done rows drop once scheduled more
-    -- than RECENT_DAYS ago; still-in-production rows drop once scheduled more
-    -- than STALE_DAYS ago (this also sheds ancient Complete-but-unpacked doors).
+    -- "Done" = packed OR status Complete (3). Retention is per ORDER: a door
+    -- still in production stays until it's ancient (STALE_DAYS); a done door
+    -- stays while its order still has live work, or for RECENT_DAYS after the
+    -- LAST door on that order was actually packed (date_pack_complete, falling
+    -- back to the scheduled date for legacy rows). So a finished order drops as
+    -- a whole, two weeks after its final door completed.
+    -- Every nullable flag is COALESCEd: under SQL Server three-valued logic a
+    -- NULL makes BOTH branches UNKNOWN, silently dropping the row — and since we
+    -- push snapshot:true, a dropped row is DELETED from the customer's portal.
+    -- NULL status is treated as Active(1), matching the hub's IFNULL(status,1).
     AND (
-      ((d.complete_pack = 1 OR d.status_id = 3) AND d.date_completion IS NOT NULL AND d.date_completion >= DATEADD(day, -@recent, CAST(GETDATE() AS date)))
+      (
+        NOT (COALESCE(d.complete_pack, 0) = 1 OR COALESCE(d.status_id, 1) = 3)
+        AND (d.date_completion IS NULL OR d.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date)))
+      )
       OR
-      (NOT (d.complete_pack = 1 OR d.status_id = 3) AND (d.date_completion IS NULL OR d.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date))))
+      (
+        (COALESCE(d.complete_pack, 0) = 1 OR COALESCE(d.status_id, 1) = 3)
+        AND (
+          -- The order still has live (not done, not ancient) work.
+          EXISTS (
+            SELECT 1
+            FROM dbo.door d2
+            INNER JOIN dbo.door_type dt2 ON d2.door_type_id = dt2.id
+            WHERE d2.order_id = d.order_id
+              AND COALESCE(d2.status_id, 1) NOT IN (4, 6)
+              AND (dt2.slimline_y_n = 0 OR dt2.slimline_y_n IS NULL)
+              AND (dt2.door_type_description IS NULL OR LTRIM(RTRIM(dt2.door_type_description)) <> 'Standard Installation')
+              AND NOT (COALESCE(d2.complete_pack, 0) = 1 OR COALESCE(d2.status_id, 1) = 3)
+              AND (d2.date_completion IS NULL OR d2.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date)))
+          )
+          -- ...or the order's last ACTUAL completion is inside the window. Only
+          -- FINISHED doors count, so an un-packed door's scheduled date can't
+          -- inflate it. An order with no completion date at all is kept — we
+          -- can't age out what we can't date.
+          OR EXISTS (
+            SELECT 1 FROM (
+              SELECT MAX(COALESCE(d3.date_pack_complete, d3.date_completion)) AS last_done
+              FROM dbo.door d3
+              INNER JOIN dbo.door_type dt3 ON d3.door_type_id = dt3.id
+              WHERE d3.order_id = d.order_id
+                AND COALESCE(d3.status_id, 1) NOT IN (4, 6)
+                AND (dt3.slimline_y_n = 0 OR dt3.slimline_y_n IS NULL)
+                AND (dt3.door_type_description IS NULL OR LTRIM(RTRIM(dt3.door_type_description)) <> 'Standard Installation')
+                AND (COALESCE(d3.complete_pack, 0) = 1 OR COALESCE(d3.status_id, 1) = 3)
+            ) x
+            WHERE x.last_done IS NULL
+               OR x.last_done >= DATEADD(day, -@recent, CAST(GETDATE() AS date))
+          )
+          -- Orphan safety: a door with no order_id can't be grouped, so fall
+          -- back to its own completion date rather than silently vanishing.
+          OR (
+            d.order_id IS NULL
+            AND (COALESCE(d.date_pack_complete, d.date_completion) IS NULL
+                 OR COALESCE(d.date_pack_complete, d.date_completion) >= DATEADD(day, -@recent, CAST(GETDATE() AS date)))
+          )
+        )
+      )
     );
 `;
 
@@ -178,6 +233,7 @@ function normalise(rows) {
     date_paint: toDate(r.date_paint),
     date_pack: toDate(r.date_pack),
     date_completion: toDate(r.date_completion),
+    date_pack_complete: toDate(r.date_pack_complete),
     finish_description: r.finish_description == null ? null : String(r.finish_description).trim() || null,
     paint_colour_1: r.paint_colour_1 == null ? null : String(r.paint_colour_1),
     paint_colour_2: r.paint_colour_2 == null ? null : String(r.paint_colour_2),
@@ -214,7 +270,14 @@ async function push(doors) {
   const res = await fetch(INGEST_URL, {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": API_KEY },
-    body: JSON.stringify({ doors, snapshot: true, source: "sql-sync" }),
+    // Report our retention window so the hub never prunes tighter than we
+    // upload (which would make rows flap: pruned there, re-sent by us).
+    body: JSON.stringify({
+      doors,
+      snapshot: true,
+      source: "sql-sync",
+      retention: { recent: RECENT_DAYS, stale: STALE_DAYS },
+    }),
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Ingest failed ${res.status}: ${text}`);

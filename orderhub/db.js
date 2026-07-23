@@ -40,6 +40,7 @@ db.exec(`
     date_paint             TEXT,
     date_pack              TEXT,
     date_completion        TEXT,
+    date_pack_complete     TEXT,
     finish_description     TEXT,
     paint_colour_1         TEXT,
     paint_colour_2         TEXT,
@@ -133,6 +134,7 @@ db.exec(`
     ["date_punch", "TEXT"], ["date_bend", "TEXT"], ["date_weld", "TEXT"],
     ["date_buff", "TEXT"], ["date_paint", "TEXT"], ["date_pack", "TEXT"],
     ["finish_description", "TEXT"], ["paint_colour_1", "TEXT"], ["paint_colour_2", "TEXT"],
+    ["date_pack_complete", "TEXT"],
   ];
   for (const [name, decl] of add) if (!have.has(name)) db.exec(`ALTER TABLE door ADD COLUMN ${name} ${decl}`);
 
@@ -164,12 +166,12 @@ db.exec(`
 })();
 
 // ---- config ----------------------------------------------------------------
-// RECENT_DAYS: how long a PACKED door stays visible after its scheduled date.
-// STALE_DAYS: hard floor — nothing scheduled more than this many days ago is
-// shown, packed or not. This drops ancient un-packed orders (e.g. doors dated
-// years ago that were never packed and never cancelled) while still keeping
-// genuinely active, even mildly-overdue, work visible.
-const RECENT_DAYS = parseInt(process.env.RECENT_DAYS || "30", 10);
+// RECENT_DAYS: how long a FULLY COMPLETED order stays visible after its last
+// door was actually packed (date_pack_complete). Retention is per ORDER, not
+// per door — the whole order drops together once it's finished and aged out.
+// STALE_DAYS: hard floor — an un-packed door scheduled more than this many days
+// ago drops out, so ancient never-finished work doesn't linger forever.
+const RECENT_DAYS = parseInt(process.env.RECENT_DAYS || "14", 10);
 const STALE_DAYS = parseInt(process.env.STALE_DAYS || "90", 10);
 const RECENT_MODIFIER = `-${RECENT_DAYS} days`;
 const STALE_MODIFIER = `-${STALE_DAYS} days`;
@@ -188,31 +190,57 @@ const STATUS = {
 // is programmed before it's punched.
 const STAGES = ["program", "punch", "bend", "weld", "buff", "paint", "pack"];
 
-// A door is in the hub window when it isn't cancelled/removed AND either:
-//   - it's packed and was scheduled within RECENT_DAYS, or
-//   - it's not yet packed and either has no scheduled date or was scheduled
-//     within STALE_DAYS (so ancient un-packed doors drop out).
 // A door counts as "done" when it's packed OR its status is Complete (3).
-// Old Complete-but-unpacked doors (a common stale case) then age out via
-// RECENT_DAYS rather than lingering forever on the un-packed branch.
-const DONE_SQL = "(complete_pack = 1 OR IFNULL(status_id, 1) = 3)";
-const WINDOW_SQL =
-  `IFNULL(status_id, 1) NOT IN (${HIDDEN_STATUSES.join(",")}) AND (` +
-  `(${DONE_SQL} AND date_completion IS NOT NULL AND date_completion >= date('now', @recent)) ` +
-  `OR (NOT ${DONE_SQL} AND (date_completion IS NULL OR date_completion >= date('now', @stale)))` +
-  `)`;
-
+// A door is in the hub window when it isn't cancelled/removed AND either:
+//   - it's not done, and isn't ancient (scheduled within STALE_DAYS), or
+//   - it IS done, and its ORDER either still has live work, or the order's last
+//     actual completion was within RECENT_DAYS.
+// Retention is per ORDER so a finished order disappears as a whole, RECENT_DAYS
+// after its final door was packed — not door-by-door on scheduled dates.
 // Door types that aren't manufactured doors (service lines) — never store or
-// show these. Matched case- and whitespace-insensitively.
+// show these. Matched case- and whitespace-insensitively. Defined before the
+// window rules because the order-level subqueries below must apply the same
+// guard: a service line sitting in orders.db must not hold an order open or
+// skew its completion date.
 const EXCLUDED_TYPES = new Set(["standard installation"]);
 const isExcludedType = (t) => t != null && EXCLUDED_TYPES.has(String(t).trim().toLowerCase());
+const EXCLUDED_LIST = [...EXCLUDED_TYPES].map((t) => `'${t.replace(/'/g, "''")}'`).join(", ");
+// `a` is "" for the outer row, or an alias prefix like "d2.".
+const notExcludedType = (a) =>
+  `(${a}door_type_description IS NULL OR LOWER(TRIM(${a}door_type_description)) NOT IN (${EXCLUDED_LIST}))`;
 // Read-time guard so any excluded rows already sitting in orders.db are hidden
 // immediately (a snapshot sync also deletes them at source, but that may not
 // have run yet). Applied to every customer/admin query via buildWhere.
-const EXCLUDE_TYPE_SQL =
-  "(door_type_description IS NULL OR LOWER(TRIM(door_type_description)) NOT IN (" +
-  [...EXCLUDED_TYPES].map((t) => `'${t.replace(/'/g, "''")}'`).join(", ") +
-  "))";
+const EXCLUDE_TYPE_SQL = notExcludedType("");
+
+const doneFor = (a) => `(${a}complete_pack = 1 OR IFNULL(${a}status_id, 1) = 3)`;
+const DONE_SQL = doneFor("");
+// Completion stamp for a door: the real packed date, falling back to the
+// scheduled date for legacy rows that predate date_pack_complete.
+const DONE_AT_SQL = "COALESCE(date_pack_complete, date_completion)";
+// Does this door's order still have at least one live (not done, not ancient) door?
+const ORDER_LIVE_SQL =
+  `EXISTS (SELECT 1 FROM door d2 WHERE d2.order_id = door.order_id ` +
+  `AND IFNULL(d2.status_id, 1) NOT IN (${HIDDEN_STATUSES.join(",")}) ` +
+  `AND ${notExcludedType("d2.")} ` +
+  `AND NOT ${doneFor("d2.")} ` +
+  `AND (d2.date_completion IS NULL OR d2.date_completion >= date('now', @stale)))`;
+// When did the LAST FINISHED door on this order actually complete? Only finished
+// doors count, so an un-packed door's (scheduled) date can't inflate it. NULL
+// when the order carries no completion date at all — such an order is KEPT, not
+// deleted: we can't age out what we can't date.
+const ORDER_DONE_AT_SQL =
+  `(SELECT MAX(COALESCE(d3.date_pack_complete, d3.date_completion)) FROM door d3 ` +
+  `WHERE d3.order_id = door.order_id ` +
+  `AND IFNULL(d3.status_id, 1) NOT IN (${HIDDEN_STATUSES.join(",")}) ` +
+  `AND ${notExcludedType("d3.")} ` +
+  `AND ${doneFor("d3.")})`;
+const WINDOW_SQL =
+  `IFNULL(status_id, 1) NOT IN (${HIDDEN_STATUSES.join(",")}) AND (` +
+  `(NOT ${DONE_SQL} AND (date_completion IS NULL OR date_completion >= date('now', @stale))) ` +
+  `OR (${DONE_SQL} AND (${ORDER_LIVE_SQL} ` +
+  `OR ${ORDER_DONE_AT_SQL} IS NULL OR ${ORDER_DONE_AT_SQL} >= date('now', @recent)))` +
+  `)`;
 
 // Free/shared email domains must never scope by domain — two unrelated
 // customers on gmail would otherwise see each other. These are blocked from the
@@ -384,12 +412,12 @@ const upsertStmt = db.prepare(`
                     customer_acc_ref, status_id, complete_program, complete_punch, complete_bend,
                     complete_weld, complete_buff, complete_paint, complete_pack,
                     date_punch, date_bend, date_weld, date_buff, date_paint, date_pack,
-                    date_completion, finish_description, paint_colour_1, paint_colour_2, updated_at)
+                    date_completion, date_pack_complete, finish_description, paint_colour_1, paint_colour_2, updated_at)
   VALUES (@id, @order_id, @order_number, @order_ref, @door_ref, @door_type_description,
           @customer_acc_ref, @status_id, @complete_program, @complete_punch, @complete_bend,
           @complete_weld, @complete_buff, @complete_paint, @complete_pack,
           @date_punch, @date_bend, @date_weld, @date_buff, @date_paint, @date_pack,
-          @date_completion, @finish_description, @paint_colour_1, @paint_colour_2, datetime('now'))
+          @date_completion, @date_pack_complete, @finish_description, @paint_colour_1, @paint_colour_2, datetime('now'))
   ON CONFLICT(id) DO UPDATE SET
     order_id=excluded.order_id, order_number=excluded.order_number,
     order_ref=excluded.order_ref, door_ref=excluded.door_ref,
@@ -403,6 +431,7 @@ const upsertStmt = db.prepare(`
     date_weld=excluded.date_weld, date_buff=excluded.date_buff,
     date_paint=excluded.date_paint, date_pack=excluded.date_pack,
     date_completion=excluded.date_completion,
+    date_pack_complete=excluded.date_pack_complete,
     finish_description=excluded.finish_description,
     paint_colour_1=excluded.paint_colour_1, paint_colour_2=excluded.paint_colour_2,
     updated_at=datetime('now')
@@ -472,6 +501,7 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
       date_weld: d.date_weld || null, date_buff: d.date_buff || null,
       date_paint: d.date_paint || null, date_pack: d.date_pack || null,
       date_completion: d.date_completion || null,
+      date_pack_complete: d.date_pack_complete || null,
       finish_description: d.finish_description || null,
       paint_colour_1: d.paint_colour_1 || null,
       paint_colour_2: d.paint_colour_2 || null,
@@ -489,15 +519,41 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
 });
 
 // Delete rows that have aged out of the window (belt-and-braces trim).
-function pruneAgedOut() {
-  const info = db
+// opts.recentDays / opts.staleDays let the sync pass ITS retention settings, so
+// the hub never prunes TIGHTER than the sync uploads — otherwise rows flap
+// (deleted here, re-added by the next snapshot). We take the looser of the two.
+function pruneAgedOut(opts = {}) {
+  const num = (v) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+  const recent = `-${Math.max(num(opts.recentDays), RECENT_DAYS)} days`;
+  const stale = `-${Math.max(num(opts.staleDays), STALE_DAYS)} days`;
+  let changes = 0;
+  // 1. Cancelled / removed doors, and service lines, never belong here.
+  changes += db
+    .prepare(`DELETE FROM door WHERE IFNULL(status_id, 1) IN (${HIDDEN_STATUSES.join(",")})`)
+    .run().changes;
+  changes += db.prepare(`DELETE FROM door WHERE NOT ${EXCLUDE_TYPE_SQL}`).run().changes;
+  // 2. Ancient un-finished doors (never packed, long past their scheduled date).
+  changes += db
     .prepare(
-      `DELETE FROM door WHERE IFNULL(status_id, 1) IN (${HIDDEN_STATUSES.join(",")}) ` +
-        `OR (${DONE_SQL} AND (date_completion IS NULL OR date_completion < date('now', @recent))) ` +
-        `OR (NOT ${DONE_SQL} AND date_completion IS NOT NULL AND date_completion < date('now', @stale))`
+      `DELETE FROM door WHERE NOT ${DONE_SQL} AND date_completion IS NOT NULL AND date_completion < date('now', @stale)`
     )
-    .run({ recent: RECENT_MODIFIER, stale: STALE_MODIFIER });
-  return info.changes;
+    .run({ stale }).changes;
+  // 3. Fully completed orders whose LAST door was packed more than RECENT_DAYS
+  //    ago — dropped as a whole order. Orders with no completion date at all are
+  //    kept (we can't age out what we can't date). The order list is resolved
+  //    first so the DELETE isn't evaluated against a table it's mutating.
+  const aged = db
+    .prepare(
+      `SELECT order_id FROM door GROUP BY order_id ` +
+        `HAVING SUM(CASE WHEN ${DONE_SQL} THEN 0 ELSE 1 END) = 0 ` +
+        `AND MAX(${DONE_AT_SQL}) IS NOT NULL ` +
+        `AND MAX(${DONE_AT_SQL}) < date('now', @recent)`
+    )
+    .all({ recent })
+    .map((r) => r.order_id);
+  const del = db.prepare("DELETE FROM door WHERE order_id = ?");
+  for (const oid of aged) changes += del.run(oid).changes;
+  return changes;
 }
 
 function logSync(entry) {

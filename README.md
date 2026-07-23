@@ -25,7 +25,7 @@ See `.env.example`. The important ones:
 | `DATA_DIR` | Where the SQLite files live. **On Railway, point at a mounted Volume (e.g. `/data`)** or data is lost on redeploy. |
 | `SESSION_SECRET` | Signs Order Hub portal cookies. Required for portal login in production. |
 | `INGEST_API_KEY` | Shared secret for the internal sync → `/api/ingest/doors`. |
-| `RECENT_DAYS` | Recency window (default 30). Must match `sync/.env`. |
+| `RECENT_DAYS` | Retention for a fully-packed order, in days after its last door was actually packed (default 14). Must match `sync/.env`. |
 | `PORTAL_ADMIN_EMAIL` / `PORTAL_ADMIN_PASSWORD` | First staff admin, auto-created on boot if absent. |
 | `RESEND_API_KEY` | Enables the daily customer digest (unset = disabled). Sending domain must be verified in Resend. |
 | `NOTIFY_FROM` / `DIGEST_HOUR` / `PORTAL_URL` | Digest sender, earliest UK send hour (default 7), and the portal link in the email. |
@@ -49,7 +49,7 @@ Production data originates in the internal **SQL Server** (`dbo.door` ⋈ `dbo.d
 - **Customers** see orders for every `customer_acc_ref` mapped to their **email domain** (`domain_account_map`), unless given explicit **per-user ref overrides** (`user_ref_override`), which then take precedence.
 - **Free/shared email domains** (gmail, outlook, …) are blocked from the domain map and scope to nothing — such users must be given explicit overrides, so two unrelated customers can never collide on a shared domain.
 - **Staff** see everything.
-- Cancelled (`status_id 4`) and Removed (`6`) doors are excluded entirely; Active (`1`) and Query (`2`) both display as "Active"; On Hold (`5`) is badged. Recency window = not-yet-packed **OR** scheduled completion within `RECENT_DAYS`.
+- Cancelled (`status_id 4`) and Removed (`6`) doors are excluded entirely; Active (`1`) and Query (`2`) both display as "Active"; On Hold (`5`) is badged. Retention is **per order**: a door stays while it's still in production (until its scheduled date passes `STALE_DAYS`), or — once every door on the order is packed — for `RECENT_DAYS` after the last door was actually packed (`date_pack_complete`), at which point the whole order drops together.
 
 ## Creating accounts (there is no public sign-up)
 

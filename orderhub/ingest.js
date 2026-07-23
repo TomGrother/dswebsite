@@ -40,7 +40,13 @@ router.post("/doors", (req, res) => {
 
   try {
     const { upserted, removed } = store.ingestDoors(doors, { snapshot: !!req.body.snapshot });
-    const pruned = store.pruneAgedOut();
+    // The sync reports its own retention window so we never prune TIGHTER than
+    // it uploads — otherwise rows would flap (pruned here, re-sent next sync).
+    const r = req.body && req.body.retention;
+    const pruned = store.pruneAgedOut({
+      recentDays: r ? Number(r.recent) : undefined,
+      staleDays: r ? Number(r.stale) : undefined,
+    });
     const totalRemoved = removed + pruned;
     store.logSync({
       rows_received: doors.length,
