@@ -63,6 +63,18 @@ function emailShell(bodyHtml, { title = "Design &amp; Supply &middot; Order Hub"
 </div>`;
 }
 
+// A "bulletproof" call-to-action button. Desktop Outlook ignores padding on the
+// <a>, so it needs a VML roundrect (rounded, correctly sized); every other
+// client uses the fixed-width CSS anchor. Width is sized to the label.
+function emailButton(href, label, { bg = "#0E6551" } = {}) {
+  const h = esc(href);
+  const w = Math.round(label.length * 8.6 + 52);
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 6px"><tr><td>
+      <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${h}" style="height:46px;v-text-anchor:middle;width:${w}px;" arcsize="16%" stroke="f" fillcolor="${bg}"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">${label}</center></v:roundrect><![endif]-->
+      <a href="${h}" style="mso-hide:all;background-color:${bg};border-radius:8px;color:#ffffff;display:inline-block;font-family:Inter,Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;line-height:46px;text-align:center;text-decoration:none;width:${w}px;-webkit-text-size-adjust:none">${label}</a>
+    </td></tr></table>`;
+}
+
 function renderDigestEmail(user, events) {
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London", day: "numeric", month: "long", year: "numeric",
@@ -213,7 +225,7 @@ function renderResetEmail(resetUrl) {
   const subject = "Reset your Design & Supply Order Hub password";
   const body = `<p style="margin:0 0 14px;font-size:16px;color:#1a2b26">Password reset requested</p>
       <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">We received a request to reset the password for your Order Hub account. Click below to choose a new one. This link expires in 60 minutes and can be used once.</p>
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px"><tr><td bgcolor="#0E6551" style="background:#0E6551;border-radius:8px"><a href="${esc(resetUrl)}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 24px">Reset your password</a></td></tr></table>
+      ${emailButton(resetUrl, "Reset your password")}
       <p style="margin:22px 0 0;font-size:13px;color:#8a9994">If you didn't request this, you can safely ignore this email — your password won't change.</p>
       <p style="margin:14px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Trouble with the button? Paste this link into your browser:<br><span style="color:#0a4a5c;word-break:break-all">${esc(resetUrl)}</span></p>`;
   return { subject, html: emailShell(body, { preheader: subject }) };
@@ -238,7 +250,7 @@ function renderWelcomeEmail(user, tempPassword) {
         Temporary password: <span style="font-family:Consolas,monospace;background:#ffffff;border:1px solid #d7ddda;border-radius:5px;padding:2px 8px">${esc(tempPassword)}</span></p>
         <p style="margin:10px 0 0;font-size:13px;color:#8a9994">For your security you'll be asked to set your own password the first time you sign in — at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.</p>
       </td></tr></table>
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px"><tr><td bgcolor="#0E6551" style="background:#0E6551;border-radius:8px"><a href="${PORTAL_URL}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 26px">Sign in to your portal</a></td></tr></table>
+      ${emailButton(PORTAL_URL, "Sign in to your portal")}
       <p style="margin:24px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">What you'll see</p>
       <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
         <li>A live production tracker for each door: Programming &rarr; Punching &rarr; Bending &rarr; Welding &rarr; Buffing &rarr; Painting &rarr; Packing.</li>
