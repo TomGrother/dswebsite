@@ -142,6 +142,14 @@ function setRole(userId, role) {
     userId
   );
 }
+// Permanently remove an account and its dependent rows (ref overrides, reset
+// tokens). FK cascade isn't relied on (the foreign_keys pragma is off), so the
+// child rows are removed explicitly, all in one transaction.
+const deleteUser = db.transaction((userId) => {
+  db.prepare("DELETE FROM user_ref_override WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM password_reset WHERE user_id = ?").run(userId);
+  return db.prepare("DELETE FROM app_user WHERE id = ?").run(userId).changes;
+});
 
 /** Verify credentials. Generic result — never reveals which part was wrong. */
 async function authenticate(email, password) {
@@ -279,6 +287,7 @@ module.exports = {
   setPassword,
   setActive,
   setRole,
+  deleteUser,
   // password reset
   createResetToken,
   resetTokenUser,

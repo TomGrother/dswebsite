@@ -561,7 +561,7 @@ admin.get("/orders", (req, res) => {
   res.send(page("All Orders", `<a class="card-link" href="/portal/admin">&larr; Dashboard</a><h1 style="margin-top:12px">All <em style="font-style:normal;color:var(--accent)">Orders</em></h1>${toolbar}${body}`, { user: req.portalUser }));
 });
 
-function accountsBody(msg) {
+function accountsBody(msg, meId) {
   const users = auth.listUsers();
   const rows = users
     .map((u) => {
@@ -584,7 +584,7 @@ function accountsBody(msg) {
             <input type="text" name="password" placeholder="new password" style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px">
             <button class="btn btn-dark" style="padding:5px 10px;font-size:13px" type="submit">Set</button>
           </form>
-          <form method="post" action="/portal/admin/accounts/${u.id}/toggle"><button type="submit" style="background:none;border:0;color:${u.is_active ? "#b00" : "var(--accent)"};cursor:pointer;padding:0;font:inherit">${u.is_active ? "Disable" : "Enable"}</button></form>
+          <form method="post" action="/portal/admin/accounts/${u.id}/toggle" style="display:inline"><button type="submit" style="background:none;border:0;color:${u.is_active ? "#b7791f" : "var(--accent)"};cursor:pointer;padding:0;font:inherit">${u.is_active ? "Disable" : "Enable"}</button></form>${u.id === meId ? "" : ` &nbsp;·&nbsp; <form method="post" action="/portal/admin/accounts/${u.id}/delete" style="display:inline" onsubmit="return confirm('Permanently delete this account? This cannot be undone.')"><button type="submit" style="background:none;border:0;color:#b00;cursor:pointer;padding:0;font:inherit">Delete</button></form>`}
         </td>
       </tr>`;
     })
@@ -612,7 +612,7 @@ function accountsBody(msg) {
     <p style="color:var(--slate);font-size:14px;margin-top:14px">Customers see orders for every <code>customer_acc_ref</code> mapped to their email domain, unless given explicit ref overrides here. Staff see everything.</p>`;
 }
 
-admin.get("/accounts", (req, res) => res.send(page("Accounts", accountsBody(req.query.msg), { user: req.portalUser })));
+admin.get("/accounts", (req, res) => res.send(page("Accounts", accountsBody(req.query.msg, req.portalUser.id), { user: req.portalUser })));
 
 admin.post("/accounts", async (req, res) => {
   try {
@@ -639,7 +639,7 @@ admin.post("/accounts", async (req, res) => {
       Temporary password: <code style="background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 8px;font-size:15px">${esc(tempPw)}</code>
       ${detail ? `<div style="font-size:13px;margin-top:6px">${detail}</div>` : ""}
     </div>`;
-    res.send(page("Accounts", notice + accountsBody(""), { user: req.portalUser }));
+    res.send(page("Accounts", notice + accountsBody("", req.portalUser.id), { user: req.portalUser }));
   } catch (e) {
     res.redirect("/portal/admin/accounts?msg=" + encodeURIComponent(e.message));
   }
@@ -652,6 +652,20 @@ admin.post("/accounts/:id/toggle", (req, res) => {
   const u = auth.getUserById(Number(req.params.id));
   if (u) auth.setActive(u.id, !u.is_active);
   res.redirect("/portal/admin/accounts");
+});
+admin.post("/accounts/:id/delete", (req, res) => {
+  const back = (m) => res.redirect("/portal/admin/accounts?msg=" + encodeURIComponent(m));
+  const id = Number(req.params.id);
+  if (id === req.portalUser.id) return back("You can't delete your own account.");
+  const u = auth.getUserById(id);
+  if (!u) return back("Account not found.");
+  // Don't allow removing the last active staff account (would lock everyone out).
+  if (u.role === "staff") {
+    const otherStaff = auth.listUsers().filter((x) => x.role === "staff" && x.is_active && x.id !== id).length;
+    if (otherStaff === 0) return back("Can't delete the last active staff account.");
+  }
+  auth.deleteUser(id);
+  back("Account deleted: " + u.email);
 });
 admin.post("/accounts/:id/override", (req, res) => {
   try { auth.addOverride(Number(req.params.id), req.body.ref); res.redirect("/portal/admin/accounts?msg=" + encodeURIComponent("Override added.")); }
