@@ -93,6 +93,14 @@ app.use(
   })
 );
 
+// Lightweight deploy marker: which commit is actually running. Public and
+// unauthenticated so a deploy can be verified with a single curl.
+app.get("/healthz", (req, res) => {
+  res.type("text/plain").send(
+    "ok " + (process.env.RAILWAY_GIT_COMMIT_SHA || "local").slice(0, 12)
+  );
+});
+
 app.use((req, res, next) => {
   // Keep staging/preview domains out of search results; only the production
   // domain is indexable.
