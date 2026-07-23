@@ -139,6 +139,9 @@ db.exec(`
   // app_user: track when the password last changed, to invalidate older sessions.
   const userCols = new Set(db.prepare("PRAGMA table_info(app_user)").all().map((r) => r.name));
   if (!userCols.has("password_changed_at")) db.exec("ALTER TABLE app_user ADD COLUMN password_changed_at TEXT");
+  // Force a new customer to set their own password on first sign-in (they're
+  // created with a temporary one). Existing accounts default to 0 (not forced).
+  if (!userCols.has("must_change_password")) db.exec("ALTER TABLE app_user ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0");
 
   // Per-customer email preferences: opt-in/out + preferred UK send hour for the
   // daily updates digest and the orders snapshot. digest_watermark = highest

@@ -79,27 +79,58 @@ const getUserById = (id) => db.prepare("SELECT * FROM app_user WHERE id = ?").ge
 const listUsers = () =>
   db.prepare("SELECT id, email, role, display_name, is_active, created_at FROM app_user ORDER BY role, email").all();
 
+// Password policy: >=8 chars with an upper, a lower, a number and a symbol.
+// Returns an error message, or null if the password is acceptable.
+function passwordProblem(pw) {
+  const s = String(pw || "");
+  if (s.length < 8) return "Password must be at least 8 characters.";
+  if (!/[a-z]/.test(s)) return "Password needs a lowercase letter.";
+  if (!/[A-Z]/.test(s)) return "Password needs an uppercase letter.";
+  if (!/[0-9]/.test(s)) return "Password needs a number.";
+  if (!/[^A-Za-z0-9]/.test(s)) return "Password needs a symbol (e.g. ! ? @ #).";
+  return null;
+}
+
+// A random policy-compliant temporary password. Ambiguous characters
+// (0/O, 1/l/I) are avoided since customers type it in from an email.
+function generateTempPassword() {
+  const U = "ABCDEFGHJKLMNPQRSTUVWXYZ", L = "abcdefghijkmnpqrstuvwxyz", D = "23456789", S = "!@#$%*?";
+  const pick = (set) => set[crypto.randomInt(set.length)];
+  const chars = [pick(U), pick(L), pick(D), pick(S)];
+  const all = U + L + D + S;
+  while (chars.length < 12) chars.push(pick(all));
+  for (let i = chars.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+  return chars.join("");
+}
+
 async function createUser({ email, password, role = "customer", display_name = null }) {
   const clean = String(email || "").toLowerCase().trim();
   if (!clean || !clean.includes("@")) throw new Error("A valid email is required.");
-  if (!password || password.length < 8) throw new Error("Password must be at least 8 characters.");
+  const pwErr = passwordProblem(password);
+  if (pwErr) throw new Error(pwErr);
   if (getUserByEmail(clean)) throw new Error("An account with that email already exists.");
   const hash = await hashPassword(password);
+  const isStaff = role === "staff";
   const info = db
     .prepare("INSERT INTO app_user (email, password_hash, role, display_name) VALUES (?,?,?,?)")
-    .run(clean, hash, role === "staff" ? "staff" : "customer", display_name || null);
-  // Start a new customer's digest at the current max event id so their first
-  // daily summary covers only changes from here on, not a historical backlog.
-  db.prepare("UPDATE app_user SET digest_watermark = (SELECT IFNULL(MAX(id), 0) FROM door_event) WHERE id = ?").run(info.lastInsertRowid);
+    .run(clean, hash, isStaff ? "staff" : "customer", display_name || null);
+  // Start a new customer's digest at the current max event id (so their first
+  // summary carries no backlog), and require customers to set their own
+  // password on first sign-in (they're created with a temporary one).
+  db.prepare(
+    "UPDATE app_user SET digest_watermark = (SELECT IFNULL(MAX(id), 0) FROM door_event), must_change_password = ? WHERE id = ?"
+  ).run(isStaff ? 0 : 1, info.lastInsertRowid);
   return getUserById(info.lastInsertRowid);
 }
 async function setPassword(userId, password) {
-  if (!password || password.length < 8) throw new Error("Password must be at least 8 characters.");
+  const pwErr = passwordProblem(password);
+  if (pwErr) throw new Error(pwErr);
   const hash = await hashPassword(password);
   // Millisecond precision so a session issued moments before the change is still
-  // (correctly) invalidated by the iat comparison in currentUser().
+  // (correctly) invalidated by the iat comparison in currentUser(). Setting a
+  // password also clears the "must change on first login" flag.
   db.prepare(
-    "UPDATE app_user SET password_hash = ?, password_changed_at = strftime('%Y-%m-%d %H:%M:%f','now'), updated_at = datetime('now') WHERE id = ?"
+    "UPDATE app_user SET password_hash = ?, password_changed_at = strftime('%Y-%m-%d %H:%M:%f','now'), must_change_password = 0, updated_at = datetime('now') WHERE id = ?"
   ).run(hash, userId);
 }
 function setActive(userId, active) {
@@ -156,7 +187,8 @@ function resetTokenUser(rawToken) {
 
 /** Consume a reset token and set the new password. Returns {ok, user} / {ok:false, error}. */
 async function resetPasswordWithToken(rawToken, newPassword) {
-  if (!newPassword || newPassword.length < 8) return { ok: false, error: "Password must be at least 8 characters." };
+  const pwErr = passwordProblem(newPassword);
+  if (pwErr) return { ok: false, error: pwErr };
   const row = findResetRow(rawToken);
   if (!row) return { ok: false, error: "This reset link is invalid or has expired — please request a new one." };
   const user = getUserById(row.user_id);
@@ -211,6 +243,11 @@ function requireUser(req, res, next) {
   const user = currentUser(req);
   if (!user) return res.redirect("/portal/login?next=" + encodeURIComponent(req.originalUrl));
   req.portalUser = user;
+  // Customers created with a temporary password must set their own before they
+  // can use anything else in the portal.
+  if (user.must_change_password && req.path !== "/change-password") {
+    return res.redirect("/portal/change-password");
+  }
   next();
 }
 function requireStaff(req, res, next) {
@@ -233,6 +270,8 @@ module.exports = {
   requireUser,
   requireStaff,
   // user store
+  passwordProblem,
+  generateTempPassword,
   getUserByEmail,
   getUserById,
   listUsers,

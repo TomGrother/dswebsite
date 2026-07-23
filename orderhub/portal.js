@@ -406,7 +406,8 @@ function prefsBody(user, msg) {
         <div class="pref-time">Send at ${hourSelect("snapshot_hour", p.snapshot_hour)} <span style="color:var(--slate)">UK time</span></div>
       </div>
       <button class="btn btn-primary" type="submit" style="margin-top:8px">Save preferences</button>
-    </form>`;
+    </form>
+    <p style="margin-top:22px;font-size:13px"><a href="/portal/change-password" style="color:var(--accent);font-weight:600">Change your password</a></p>`;
 }
 
 router.get("/preferences", auth.requireUser, (req, res) => {
@@ -421,6 +422,36 @@ router.post("/preferences", auth.requireUser, (req, res) => {
     snapshot_hour: clampHour(req.body.snapshot_hour, 8),
   });
   res.redirect("/portal/preferences?msg=" + encodeURIComponent("Preferences saved."));
+});
+
+// ---- change password (customer; forced on first login) ---------------------
+function changePasswordBody(user, { error, forced } = {}) {
+  return `<span class="kicker">Order Hub</span><h1>${forced ? "Set your " : "Change your "}<em style="font-style:normal;color:var(--accent)">password</em></h1>
+    ${forced
+      ? `<p style="background:#fff3ec;color:#9a3412;border:1px solid #f2c4a3;padding:10px 16px;border-radius:8px">You're signed in with a temporary password. Please set your own to continue.</p>`
+      : `<p style="color:var(--slate);margin:6px 0 18px">Choose a new password for your account.</p>`}
+    ${error ? `<p style="background:#fdecec;color:#a12020;border:1px solid #f0caca;padding:10px 16px;border-radius:8px">${esc(error)}</p>` : ""}
+    <form method="post" action="/portal/change-password" class="form" style="max-width:420px">
+      <div><label for="password">New password</label><input type="password" id="password" name="password" required autocomplete="new-password" autofocus></div>
+      <div style="margin-top:12px"><label for="confirm">Confirm new password</label><input type="password" id="confirm" name="confirm" required autocomplete="new-password"></div>
+      <p style="color:var(--slate);font-size:13px;margin:10px 0 14px">At least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.</p>
+      <button class="btn btn-primary" type="submit">Save password</button>
+    </form>`;
+}
+
+router.get("/change-password", auth.requireUser, (req, res) => {
+  res.send(page("Change password", changePasswordBody(req.portalUser, { forced: !!req.portalUser.must_change_password }), { user: req.portalUser }));
+});
+router.post("/change-password", auth.requireUser, async (req, res) => {
+  const forced = !!req.portalUser.must_change_password;
+  const pw = req.body.password || "";
+  const problem = pw !== (req.body.confirm || "") ? "The two passwords don't match." : auth.passwordProblem(pw);
+  if (problem) {
+    return res.status(400).send(page("Change password", changePasswordBody(req.portalUser, { error: problem, forced }), { user: req.portalUser }));
+  }
+  await auth.setPassword(req.portalUser.id, pw); // clears must-change + stamps changed_at (invalidates the old session)
+  auth.issueSession(res, req, auth.getUserById(req.portalUser.id)); // re-issue so they stay signed in
+  res.redirect("/portal");
 });
 
 // ---- admin (staff only) ----------------------------------------------------
@@ -569,7 +600,7 @@ function accountsBody(msg) {
           <div><label>Display name (optional)</label><input type="text" name="display_name"></div>
         </div>
         <div class="form-row">
-          <div><label>Initial password</label><input type="text" name="password" required minlength="8" placeholder="min 8 characters"></div>
+          <div><label>Temporary password <span style="font-weight:400;color:var(--slate);font-size:12px">(blank = auto-generate)</span></label><input type="text" name="password" placeholder="auto-generated if left blank"></div>
           <div><label>Role</label><select name="role"><option value="customer">Customer</option><option value="staff">Staff</option></select></div>
         </div>
         <div><button class="btn btn-primary" type="submit">Create account</button></div>
@@ -585,8 +616,30 @@ admin.get("/accounts", (req, res) => res.send(page("Accounts", accountsBody(req.
 
 admin.post("/accounts", async (req, res) => {
   try {
-    await auth.createUser({ email: req.body.email, password: req.body.password, role: req.body.role, display_name: req.body.display_name });
-    res.redirect("/portal/admin/accounts?msg=" + encodeURIComponent("Account created."));
+    const provided = (req.body.password || "").trim();
+    const tempPw = provided || auth.generateTempPassword();
+    const role = req.body.role === "staff" ? "staff" : "customer";
+    const user = await auth.createUser({ email: req.body.email, password: tempPw, role, display_name: req.body.display_name });
+    let emailNote = "";
+    if (role === "customer") {
+      if (notify.isEnabled()) {
+        try {
+          await notify.sendWelcome(user, tempPw);
+          emailNote = " A welcome email with these details has been sent to them.";
+        } catch (err) {
+          emailNote = ` <b style="color:#a12020">The welcome email failed to send (${esc(err.message)})</b> — pass the temporary password on manually.`;
+        }
+      } else {
+        emailNote = " Email sending is off, so no welcome email was sent — pass the temporary password on manually.";
+      }
+    }
+    const detail = (role === "customer" ? "They'll be asked to set their own password on first sign-in." : "") + emailNote;
+    const notice = `<div style="background:var(--accent-soft);color:var(--accent-dark);padding:14px 18px;border-radius:8px;margin-bottom:18px">
+      <b>Account created for ${esc(user.email)}.</b><br>
+      Temporary password: <code style="background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 8px;font-size:15px">${esc(tempPw)}</code>
+      ${detail ? `<div style="font-size:13px;margin-top:6px">${detail}</div>` : ""}
+    </div>`;
+    res.send(page("Accounts", notice + accountsBody(""), { user: req.portalUser }));
   } catch (e) {
     res.redirect("/portal/admin/accounts?msg=" + encodeURIComponent(e.message));
   }

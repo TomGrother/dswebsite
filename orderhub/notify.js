@@ -241,6 +241,44 @@ async function sendPasswordReset(to, resetUrl, { send = sendViaResend } = {}) {
   return send(to, subject, html);
 }
 
+// ---- welcome / onboarding email --------------------------------------------
+const PORTAL_URL = (process.env.PUBLIC_BASE_URL || "https://designandsupply.co.uk") + "/portal";
+
+function renderWelcomeEmail(user, tempPassword) {
+  const name = user.display_name ? esc(user.display_name) : "there";
+  const subject = "Your Design & Supply Customer Portal login";
+  const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,Helvetica,sans-serif">
+    <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
+      <div style="background:#0E6551;padding:22px 28px"><div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:22px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply &middot; Customer Portal</div></div>
+      <div style="padding:28px">
+        <p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">Track your orders, live</p>
+        <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#5a6b66">Hi ${name}, we've set up a Customer Portal account for you. You can follow every doorset through our factory in real time — from programming through to packing.</p>
+        <div style="background:#f4f7f6;border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;margin:0 0 18px">
+          <p style="margin:0 0 8px;font-size:13px;color:#5a6b66;font-weight:600">Your sign-in details</p>
+          <p style="margin:0;font-size:14px;color:#1a2b26;line-height:1.9">Email: <b>${esc(user.email)}</b><br>
+          Temporary password: <span style="font-family:Consolas,monospace;background:#fff;border:1px solid #d7ddda;border-radius:5px;padding:2px 8px">${esc(tempPassword)}</span></p>
+          <p style="margin:10px 0 0;font-size:13px;color:#8a9994">For your security you'll be asked to set your own password the first time you sign in — at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.</p>
+        </div>
+        <a href="${PORTAL_URL}" style="display:inline-block;background:#0E6551;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 26px;border-radius:8px">Sign in to your portal</a>
+        <p style="margin:24px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">What you'll see</p>
+        <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
+          <li>A live production tracker for each door: Programming &rarr; Punching &rarr; Bending &rarr; Welding &rarr; Buffing &rarr; Painting &rarr; Packing.</li>
+          <li>Your door reference and type, the paint colour(s) and finish, and the scheduled completion date.</li>
+          <li>Optional daily emails — a summary of changes and/or a full orders snapshot — which you can switch on or off and time to suit you under <b>Email preferences</b>.</li>
+        </ul>
+        <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Any questions? Call 01685 350 114 or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>. If this account wasn't expected, please let us know.</p>
+      </div>
+      <div style="background:#f4f7f6;border-top:1px solid #e6ebe9;padding:16px 28px"><p style="margin:0;font-size:12px;color:#8a9994">Design &amp; Supply Ltd &middot; 13 Pant Industrial Estate, Merthyr Tydfil, CF48 2SR</p></div>
+    </div>
+  </div>`;
+  return { subject, html };
+}
+
+async function sendWelcome(user, tempPassword, { send = sendViaResend } = {}) {
+  const { subject, html } = renderWelcomeEmail(user, tempPassword);
+  return send(user.email, subject, html);
+}
+
 // ---- transport -------------------------------------------------------------
 async function sendViaResend(to, subject, html) {
   const key = process.env.RESEND_API_KEY;
@@ -358,4 +396,4 @@ function startDigestScheduler() {
   console.log("[digest] per-customer email scheduler enabled.");
 }
 
-module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, isEnabled, EVENT_LABELS };
+module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, renderWelcomeEmail, sendWelcome, isEnabled, EVENT_LABELS };
