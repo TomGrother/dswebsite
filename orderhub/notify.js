@@ -63,15 +63,6 @@ function emailShell(bodyHtml, { title = "Design &amp; Supply &middot; Order Hub"
 </div>`;
 }
 
-// A teaser shown in customer emails while the live portal is being rolled out.
-function comingSoonBanner() {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border-collapse:separate"><tr>
-    <td bgcolor="#e8f7fb" style="background:#e8f7fb;border:1px solid #b8e2ec;border-radius:10px;padding:14px 16px">
-      <div style="font-family:'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:15px;color:#0a4a5c;font-weight:700;margin-bottom:3px">Customer Hub &mdash; coming soon</div>
-      <div style="font-size:13px;color:#31606c;line-height:1.5">Soon you'll be able to log in to the Design &amp; Supply Customer Hub and watch your orders progress through production live. We'll send your login details shortly.</div>
-    </td></tr></table>`;
-}
-
 function renderDigestEmail(user, events) {
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London", day: "numeric", month: "long", year: "numeric",
@@ -108,7 +99,6 @@ function renderDigestEmail(user, events) {
   const name = user.display_name ? esc(user.display_name.split(" ")[0]) : "there";
   const body = `<p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
       <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">Here's what changed on your orders as of ${esc(dateLabel)}.</p>
-      ${comingSoonBanner()}
       ${orderBlocks}`;
   return { subject, html: emailShell(body, { preheader: subject }) };
 }
@@ -192,7 +182,6 @@ function renderOrdersEmail(user, orders) {
   }</style>`;
   const body = `<p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
       <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">Here's where your orders stand in production as of ${esc(dateLabel)}.</p>
-      ${comingSoonBanner()}
       ${orders.map(orderEmail).join("")}`;
   return { subject, html: responsive + emailShell(body, { preheader: subject }) };
 }
