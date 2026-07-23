@@ -1,58 +1,52 @@
 <!-- Customer Portal welcome / how-it-works email.
-     Self-contained, inline styles, email-client-safe (table layout). Send as-is
-     via Resend/Outlook, or paste into your email tool. Swap the greeting name if
-     personalising. -->
-<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,Helvetica,sans-serif">
-  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
+     Outlook-safe: table layout + MSO "ghost table" so it renders correctly in
+     desktop Outlook (Word engine) as well as web/mobile clients. Self-contained
+     inline styles — send as-is via Resend/Outlook or paste into your email tool. -->
+<div style="margin:0;padding:0;background:#f4f7f6">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f7f6" style="background:#f4f7f6;border-collapse:collapse">
+    <tr><td align="center" style="padding:24px 12px">
+      <!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+      <table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border:1px solid #e6ebe9;border-radius:12px;border-collapse:separate;font-family:Inter,Arial,Helvetica,sans-serif">
 
-    <!-- header -->
-    <div style="background:#0E6551;padding:22px 28px">
-      <div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:22px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;font-weight:700">Design &amp; Supply &middot; Customer Portal</div>
-    </div>
+        <tr><td bgcolor="#0E6551" style="background:#0E6551;padding:20px 28px;border-radius:12px 12px 0 0;font-family:'Barlow Condensed',Arial,sans-serif;font-size:21px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;font-weight:700">Design &amp; Supply &middot; Customer Portal</td></tr>
 
-    <div style="padding:28px">
-      <p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">Track your orders, live</p>
-      <p style="margin:0 0 22px;font-size:14px;line-height:1.6;color:#5a6b66">Your Design &amp; Supply Customer Portal lets you follow every doorset through our factory in real time — from programming right through to packing — so you always know where your order is without having to pick up the phone.</p>
+        <tr><td style="padding:28px;font-family:Inter,Arial,Helvetica,sans-serif">
+          <p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">Track your orders, live</p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#5a6b66">Your Design &amp; Supply Customer Portal lets you follow every doorset through our factory in real time — from programming right through to packing — so you always know where your order is without having to pick up the phone.</p>
 
-      <a href="https://designandsupply.co.uk/portal" style="display:inline-block;background:#0E6551;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 26px;border-radius:8px">Open your portal</a>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px"><tr><td bgcolor="#0E6551" style="background:#0E6551;border-radius:8px"><a href="https://designandsupply.co.uk/portal" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 26px">Open your portal</a></td></tr></table>
 
-      <!-- signing in -->
-      <p style="margin:28px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">Signing in</p>
-      <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#5a6b66">Go to <a href="https://designandsupply.co.uk/portal" style="color:#0E6551;font-weight:600">designandsupply.co.uk/portal</a> and sign in with the email address and password we've set up for you.</p>
-      <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
-        <li>Accounts are created by our team — there's no public sign-up. If you need a login, or access for a colleague, just let us know.</li>
-        <li>Forgotten your password? Use the <b>"Forgot your password?"</b> link on the sign-in page and we'll email you a reset link.</li>
-      </ul>
+          <p style="margin:28px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">Signing in</p>
+          <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#5a6b66">Go to <a href="https://designandsupply.co.uk/portal" style="color:#0E6551;font-weight:600">designandsupply.co.uk/portal</a> and sign in with the email address and password we've set up for you.</p>
+          <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
+            <li>Accounts are created by our team — there's no public sign-up. If you need a login, or access for a colleague, just let us know.</li>
+            <li>Forgotten your password? Use the <b>"Forgot your password?"</b> link on the sign-in page and we'll email you a reset link.</li>
+          </ul>
 
-      <!-- what you'll see -->
-      <p style="margin:26px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">What you'll see</p>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#5a6b66">Your live and recently completed orders, each broken down by doorset. For every door you'll see:</p>
-      <ul style="margin:0 0 10px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
-        <li><b>A live production tracker</b> showing the stage it has reached: Programming &rarr; Punching &rarr; Bending &rarr; Welding &rarr; Buffing &rarr; Painting &rarr; Packing.</li>
-        <li><b>Your door reference</b> and door type, so it's easy to match to your records.</li>
-        <li><b>The paint colour(s)</b> with a colour swatch, and the <b>finish</b>.</li>
-        <li><b>The scheduled completion date</b>. Any door placed on hold is clearly flagged in orange.</li>
-      </ul>
-      <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#8a9994">The portal shows when the production data was last updated — it refreshes automatically through each working day.</p>
+          <p style="margin:26px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">What you'll see</p>
+          <p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#5a6b66">Your live and recently completed orders, each broken down by doorset. For every door you'll see:</p>
+          <ul style="margin:0 0 10px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
+            <li><b>A live production tracker</b>: Programming &rarr; Punching &rarr; Bending &rarr; Welding &rarr; Buffing &rarr; Painting &rarr; Packing.</li>
+            <li><b>Your door reference</b> and door type, so it's easy to match to your records.</li>
+            <li><b>The paint colour(s)</b> with a colour swatch, and the <b>finish</b>.</li>
+            <li><b>The scheduled completion date</b>. Any door placed on hold is clearly flagged.</li>
+          </ul>
 
-      <!-- emails -->
-      <p style="margin:26px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">Choose your emails</p>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#5a6b66">Prefer updates to come to you? On the <b>Email preferences</b> page (in the portal) you can switch either email on or off and pick the time of day it arrives:</p>
-      <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
-        <li><b>Daily updates summary</b> — a short note listing what changed on your doors that day (only sent when something actually changes).</li>
-        <li><b>Daily orders snapshot</b> — a full overview of all your live orders and each door's current stage.</li>
-      </ul>
-      <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#5a6b66">You're in full control — turn them both off and just check the portal whenever suits you.</p>
+          <p style="margin:26px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">Choose your emails</p>
+          <p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#5a6b66">Prefer updates to come to you? On the <b>Email preferences</b> page you can switch either email on or off and pick the time of day it arrives:</p>
+          <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
+            <li><b>Daily updates summary</b> — a short note listing what changed on your doors that day (only sent when something changes).</li>
+            <li><b>Daily orders snapshot</b> — a full overview of all your live orders and each door's current stage.</li>
+          </ul>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#5a6b66">You're in full control — turn them both off and just check the portal whenever suits you.</p>
 
-      <!-- help -->
-      <p style="margin:26px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">Need a hand?</p>
-      <p style="margin:0 0 4px;font-size:14px;line-height:1.6;color:#5a6b66">We're happy to help with logins, access or anything you see in the portal.</p>
-      <p style="margin:0;font-size:14px;line-height:1.7;color:#5a6b66">Call <a href="tel:01685350114" style="color:#0E6551;font-weight:600">01685 350 114</a> or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551;font-weight:600">sales@designandsupply.co.uk</a>.</p>
-    </div>
+          <p style="margin:26px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">Need a hand?</p>
+          <p style="margin:0;font-size:14px;line-height:1.7;color:#5a6b66">Call <a href="tel:01685350114" style="color:#0E6551;font-weight:600">01685 350 114</a> or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551;font-weight:600">sales@designandsupply.co.uk</a>.</p>
+        </td></tr>
 
-    <!-- footer -->
-    <div style="background:#f4f7f6;border-top:1px solid #e6ebe9;padding:18px 28px">
-      <p style="margin:0;font-size:12px;line-height:1.6;color:#8a9994">Design &amp; Supply Ltd &middot; 13 Pant Industrial Estate, Merthyr Tydfil, CF48 2SR<br>01685 350 114 &middot; sales@designandsupply.co.uk &middot; designandsupply.co.uk</p>
-    </div>
-  </div>
+        <tr><td bgcolor="#f4f7f6" style="background:#f4f7f6;border-top:1px solid #e6ebe9;padding:16px 28px;border-radius:0 0 12px 12px;font-size:12px;line-height:1.6;color:#8a9994">Design &amp; Supply Ltd &middot; 13 Pant Industrial Estate, Merthyr Tydfil, CF48 2SR<br>01685 350 114 &middot; sales@designandsupply.co.uk &middot; designandsupply.co.uk</td></tr>
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td></tr>
+  </table>
 </div>

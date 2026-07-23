@@ -42,12 +42,34 @@ function esc(s) {
 }
 
 // ---- email rendering -------------------------------------------------------
+// Outlook-safe email shell. Desktop Outlook (Windows) renders with the Word
+// engine, which ignores max-width and mishandles padding on <div>. So the whole
+// layout is a centred, fixed-width table with an MSO "ghost table" to force the
+// 600px width, background on <td>/bgcolor, and all padding on table cells.
+function emailShell(bodyHtml, { title = "Design &amp; Supply &middot; Order Hub", preheader = "" } = {}) {
+  return `<div style="margin:0;padding:0;background:#f4f7f6">
+  ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${esc(preheader)}</div>` : ""}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f7f6" style="background:#f4f7f6;border-collapse:collapse">
+    <tr><td align="center" style="padding:24px 12px">
+      <!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+      <table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border:1px solid #e6ebe9;border-radius:12px;border-collapse:separate;font-family:Inter,Arial,Helvetica,sans-serif">
+        <tr><td bgcolor="#0E6551" style="background:#0E6551;padding:20px 28px;border-radius:12px 12px 0 0;font-family:'Barlow Condensed',Arial,sans-serif;font-size:21px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;font-weight:700">${title}</td></tr>
+        <tr><td style="padding:28px;font-family:Inter,Arial,Helvetica,sans-serif">${bodyHtml}</td></tr>
+        <tr><td bgcolor="#f4f7f6" style="background:#f4f7f6;border-top:1px solid #e6ebe9;padding:16px 28px;border-radius:0 0 12px 12px;font-size:12px;line-height:1.6;color:#8a9994">Design &amp; Supply Ltd &middot; 13 Pant Industrial Estate, Merthyr Tydfil, CF48 2SR<br>01685 350 114 &middot; sales@designandsupply.co.uk &middot; designandsupply.co.uk</td></tr>
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td></tr>
+  </table>
+</div>`;
+}
+
 // A teaser shown in customer emails while the live portal is being rolled out.
 function comingSoonBanner() {
-  return `<div style="background:#e8f7fb;border:1px solid #b8e2ec;border-radius:10px;padding:14px 16px;margin:0 0 20px">
-    <div style="font-family:'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:15px;color:#0a4a5c;font-weight:700;margin-bottom:3px">Customer Hub &mdash; coming soon</div>
-    <div style="font-size:13px;color:#31606c;line-height:1.5">Soon you'll be able to log in to the Design &amp; Supply Customer Hub and watch your orders progress through production live. We'll send your login details shortly.</div>
-  </div>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border-collapse:separate"><tr>
+    <td bgcolor="#e8f7fb" style="background:#e8f7fb;border:1px solid #b8e2ec;border-radius:10px;padding:14px 16px">
+      <div style="font-family:'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:15px;color:#0a4a5c;font-weight:700;margin-bottom:3px">Customer Hub &mdash; coming soon</div>
+      <div style="font-size:13px;color:#31606c;line-height:1.5">Soon you'll be able to log in to the Design &amp; Supply Customer Hub and watch your orders progress through production live. We'll send your login details shortly.</div>
+    </td></tr></table>`;
 }
 
 function renderDigestEmail(user, events) {
@@ -84,24 +106,11 @@ function renderDigestEmail(user, events) {
   }).join("");
 
   const name = user.display_name ? esc(user.display_name.split(" ")[0]) : "there";
-  const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
-  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
-    <div style="background:#0E6551;padding:20px 26px">
-      <div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply · Order Hub</div>
-    </div>
-    <div style="padding:26px">
-      <p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
+  const body = `<p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
       <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">Here's what changed on your orders as of ${esc(dateLabel)}.</p>
       ${comingSoonBanner()}
-      ${orderBlocks}
-      <p style="margin:24px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:16px">
-        Questions? Call <a href="tel:01685350114" style="color:#0E6551">01685 350 114</a> or email
-        <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>.
-      </p>
-    </div>
-  </div>
-</div>`;
-  return { subject, html };
+      ${orderBlocks}`;
+  return { subject, html: emailShell(body, { preheader: subject }) };
 }
 
 // ---- "current orders" broadcast (portal snapshot as an email) --------------
@@ -157,17 +166,17 @@ function doorEmail(door) {
 }
 function orderEmail(o) {
   const holdNote = o.onHold
-    ? `<div style="background:#fdf3e2;border:1px solid #ebc98a;border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px;color:#8a5a12">On hold — ${o.onHold} door${o.onHold > 1 ? "s are" : " is"} paused and not currently progressing through production. Please contact us if you need an update.</div>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0;border-collapse:separate"><tr><td bgcolor="#fdf3e2" style="background:#fdf3e2;border:1px solid #ebc98a;border-radius:8px;padding:10px 12px;font-size:13px;color:#8a5a12">On hold — ${o.onHold} door${o.onHold > 1 ? "s are" : " is"} paused and not currently progressing through production. Please contact us if you need an update.</td></tr></table>`
     : "";
-  return `<div class="ocard" style="border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;margin:0 0 18px">
-    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%"><tr>
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:separate"><tr><td class="ocard" style="border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%"><tr>
       <td style="font-family:'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:17px;color:#0E6551;font-weight:700">Order ${esc(o.order_number || o.order_id)}</td>
       <td style="text-align:right">${pill(o.summary, o.allPacked ? "#0E6551" : "#0a4a5c", o.allPacked ? "#e7f3ef" : "#eef4f6")}</td>
     </tr></table>
     ${o.order_ref ? `<div style="font-size:12px;color:#5a6b66;margin-top:2px">Ref: ${esc(o.order_ref)}</div>` : ""}
     ${holdNote}
     ${o.doors.map(doorEmail).join("")}
-  </div>`;
+  </td></tr></table>`;
 }
 function renderOrdersEmail(user, orders) {
   const dateLabel = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "long", year: "numeric" }).format(new Date());
@@ -181,19 +190,11 @@ function renderOrdersEmail(user, orders) {
     .stglbl{font-size:7px !important}
     .ocard{padding:13px 12px !important}
   }</style>`;
-  const html = `${responsive}<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
-  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
-    <div style="background:#0E6551;padding:20px 26px"><div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply · Order Hub</div></div>
-    <div class="ecard" style="padding:24px 26px">
-      <p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
+  const body = `<p style="margin:0 0 4px;font-size:16px;color:#1a2b26">Hello ${name},</p>
       <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">Here's where your orders stand in production as of ${esc(dateLabel)}.</p>
       ${comingSoonBanner()}
-      ${orders.map(orderEmail).join("")}
-      <p style="margin:22px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Questions? Call <a href="tel:01685350114" style="color:#0E6551">01685 350 114</a> or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>.</p>
-    </div>
-  </div>
-</div>`;
-  return { subject, html };
+      ${orders.map(orderEmail).join("")}`;
+  return { subject, html: responsive + emailShell(body, { preheader: subject }) };
 }
 
 /**
@@ -221,19 +222,12 @@ async function runOrdersBroadcast({ send = sendViaResend } = {}) {
 // ---- password reset email --------------------------------------------------
 function renderResetEmail(resetUrl) {
   const subject = "Reset your Design & Supply Order Hub password";
-  const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,sans-serif">
-  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
-    <div style="background:#0E6551;padding:20px 26px"><div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply · Order Hub</div></div>
-    <div style="padding:26px">
-      <p style="margin:0 0 14px;font-size:16px;color:#1a2b26">Password reset requested</p>
+  const body = `<p style="margin:0 0 14px;font-size:16px;color:#1a2b26">Password reset requested</p>
       <p style="margin:0 0 20px;font-size:14px;color:#5a6b66">We received a request to reset the password for your Order Hub account. Click below to choose a new one. This link expires in 60 minutes and can be used once.</p>
-      <a href="${esc(resetUrl)}" style="display:inline-block;background:#0E6551;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 24px;border-radius:8px">Reset your password</a>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px"><tr><td bgcolor="#0E6551" style="background:#0E6551;border-radius:8px"><a href="${esc(resetUrl)}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 24px">Reset your password</a></td></tr></table>
       <p style="margin:22px 0 0;font-size:13px;color:#8a9994">If you didn't request this, you can safely ignore this email — your password won't change.</p>
-      <p style="margin:14px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Trouble with the button? Paste this link into your browser:<br><span style="color:#0a4a5c;word-break:break-all">${esc(resetUrl)}</span></p>
-    </div>
-  </div>
-</div>`;
-  return { subject, html };
+      <p style="margin:14px 0 0;font-size:12px;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Trouble with the button? Paste this link into your browser:<br><span style="color:#0a4a5c;word-break:break-all">${esc(resetUrl)}</span></p>`;
+  return { subject, html: emailShell(body, { preheader: subject }) };
 }
 
 async function sendPasswordReset(to, resetUrl, { send = sendViaResend } = {}) {
@@ -247,31 +241,23 @@ const PORTAL_URL = (process.env.PUBLIC_BASE_URL || "https://designandsupply.co.u
 function renderWelcomeEmail(user, tempPassword) {
   const name = user.display_name ? esc(user.display_name) : "there";
   const subject = "Your Design & Supply Customer Portal login";
-  const html = `<div style="background:#f4f7f6;padding:24px 0;font-family:Inter,Arial,Helvetica,sans-serif">
-    <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e6ebe9">
-      <div style="background:#0E6551;padding:22px 28px"><div style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:22px;letter-spacing:1px;text-transform:uppercase;color:#fff;font-weight:700">Design &amp; Supply &middot; Customer Portal</div></div>
-      <div style="padding:28px">
-        <p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">Track your orders, live</p>
-        <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#5a6b66">Hi ${name}, we've set up a Customer Portal account for you. You can follow every doorset through our factory in real time — from programming through to packing.</p>
-        <div style="background:#f4f7f6;border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;margin:0 0 18px">
-          <p style="margin:0 0 8px;font-size:13px;color:#5a6b66;font-weight:600">Your sign-in details</p>
-          <p style="margin:0;font-size:14px;color:#1a2b26;line-height:1.9">Email: <b>${esc(user.email)}</b><br>
-          Temporary password: <span style="font-family:Consolas,monospace;background:#fff;border:1px solid #d7ddda;border-radius:5px;padding:2px 8px">${esc(tempPassword)}</span></p>
-          <p style="margin:10px 0 0;font-size:13px;color:#8a9994">For your security you'll be asked to set your own password the first time you sign in — at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.</p>
-        </div>
-        <a href="${PORTAL_URL}" style="display:inline-block;background:#0E6551;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 26px;border-radius:8px">Sign in to your portal</a>
-        <p style="margin:24px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">What you'll see</p>
-        <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
-          <li>A live production tracker for each door: Programming &rarr; Punching &rarr; Bending &rarr; Welding &rarr; Buffing &rarr; Painting &rarr; Packing.</li>
-          <li>Your door reference and type, the paint colour(s) and finish, and the scheduled completion date.</li>
-          <li>Optional daily emails — a summary of changes and/or a full orders snapshot — which you can switch on or off and time to suit you under <b>Email preferences</b>.</li>
-        </ul>
-        <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Any questions? Call 01685 350 114 or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>. If this account wasn't expected, please let us know.</p>
-      </div>
-      <div style="background:#f4f7f6;border-top:1px solid #e6ebe9;padding:16px 28px"><p style="margin:0;font-size:12px;color:#8a9994">Design &amp; Supply Ltd &middot; 13 Pant Industrial Estate, Merthyr Tydfil, CF48 2SR</p></div>
-    </div>
-  </div>`;
-  return { subject, html };
+  const body = `<p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">Track your orders, live</p>
+      <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#5a6b66">Hi ${name}, we've set up a Customer Portal account for you. You can follow every doorset through our factory in real time — from programming through to packing.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:separate"><tr><td bgcolor="#f4f7f6" style="background:#f4f7f6;border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px">
+        <p style="margin:0 0 8px;font-size:13px;color:#5a6b66;font-weight:600">Your sign-in details</p>
+        <p style="margin:0;font-size:14px;color:#1a2b26;line-height:1.9">Email: <b>${esc(user.email)}</b><br>
+        Temporary password: <span style="font-family:Consolas,monospace;background:#ffffff;border:1px solid #d7ddda;border-radius:5px;padding:2px 8px">${esc(tempPassword)}</span></p>
+        <p style="margin:10px 0 0;font-size:13px;color:#8a9994">For your security you'll be asked to set your own password the first time you sign in — at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.</p>
+      </td></tr></table>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px"><tr><td bgcolor="#0E6551" style="background:#0E6551;border-radius:8px"><a href="${PORTAL_URL}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 26px">Sign in to your portal</a></td></tr></table>
+      <p style="margin:24px 0 8px;font-size:16px;color:#1a2b26;font-weight:600">What you'll see</p>
+      <ul style="margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7;color:#5a6b66">
+        <li>A live production tracker for each door: Programming &rarr; Punching &rarr; Bending &rarr; Welding &rarr; Buffing &rarr; Painting &rarr; Packing.</li>
+        <li>Your door reference and type, the paint colour(s) and finish, and the scheduled completion date.</li>
+        <li>Optional daily emails — a summary of changes and/or a full orders snapshot — which you can switch on or off and time to suit you under <b>Email preferences</b>.</li>
+      </ul>
+      <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#8a9994;border-top:1px solid #eef1f0;padding-top:14px">Any questions? Call 01685 350 114 or email <a href="mailto:sales@designandsupply.co.uk" style="color:#0E6551">sales@designandsupply.co.uk</a>. If this account wasn't expected, please let us know.</p>`;
+  return { subject, html: emailShell(body, { title: "Design &amp; Supply &middot; Customer Portal", preheader: "Your Customer Portal login and temporary password" }) };
 }
 
 async function sendWelcome(user, tempPassword, { send = sendViaResend } = {}) {
