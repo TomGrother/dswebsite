@@ -102,6 +102,16 @@ router.use((req, res, next) => {
   res.redirect("/admin/login");
 });
 
+// Image upload: the browser resizes to a data URL and POSTs it here; we save it
+// to the volume and return its public /uploads/ path.
+router.post("/upload", (req, res) => {
+  try {
+    res.json({ ok: true, url: store.saveUpload(req.body && req.body.dataUrl) });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
 const TYPE_LABEL = { news: "News", "case-study": "Case Study" };
 
 function rows(type) {
@@ -144,26 +154,72 @@ function form(post, type) {
   const t = post ? post.type : type;
   return page(
     post ? "Edit" : "New",
-    `<h1>${post ? "Edit" : "New"} <em style="font-style:normal;color:var(--accent)">${esc(TYPE_LABEL[t] || t)}</em></h1>
+    `<style>
+    .img-upload .drop{border:2px dashed var(--line);border-radius:10px;padding:20px;text-align:center;color:var(--slate);cursor:pointer;background:#fafcfb;transition:border-color .15s,background .15s}
+    .img-upload .drop.over{border-color:var(--accent);background:var(--accent-soft)}
+    .img-preview{position:relative;display:inline-block;margin-bottom:10px}
+    .img-preview img{max-width:280px;max-height:180px;border:1px solid var(--line);border-radius:8px;display:block}
+    .img-preview button{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:0;background:#b00;color:#fff;cursor:pointer;font-size:15px;line-height:1}
+    </style>
+    <h1>${post ? "Edit" : "New"} <em style="font-style:normal;color:var(--accent)">${esc(TYPE_LABEL[t] || t)}</em></h1>
     <form method="post" action="${action}" class="form" style="margin-top:24px;max-width:900px">
       <div><label for="title">Title</label><input id="title" name="title" required value="${esc(p.title || "")}"></div>
       <div class="form-row">
         <div><label for="category">Category / tag</label><input id="category" name="category" value="${esc(p.category || "")}" placeholder="${t === "news" ? "Guides, Company News, Projects…" : "SR2 Security, Education…"}"></div>
         <div><label for="published_at">Date (YYYY-MM-DD)</label><input id="published_at" name="published_at" value="${esc(p.published_at || "")}" placeholder="2026-07-07"></div>
       </div>
-      <div class="form-row">
-        <div><label for="slug">URL slug (leave blank to auto-generate)</label><input id="slug" name="slug" value="${esc(p.slug || "")}"></div>
-        <div><label for="image">Image path or URL</label><input id="image" name="image" value="${esc(p.image || "")}" placeholder="/images/news/example.png"></div>
+      <div><label for="slug">URL slug (leave blank to auto-generate)</label><input id="slug" name="slug" value="${esc(p.slug || "")}"></div>
+      <div><label>Image</label>
+        <div class="img-upload">
+          <div class="img-preview" id="imgPreview"${p.image ? "" : ' style="display:none"'}>${p.image ? `<img src="${esc(p.image)}" alt=""><button type="button" id="imgClear" title="Remove image">×</button>` : ""}</div>
+          <div class="drop" id="imgDrop">Click or drop an image to upload<br><span style="color:var(--slate);font-size:12px">JPEG / PNG / WebP — resized automatically</span></div>
+          <input type="file" id="imgFile" accept="image/*" hidden>
+          <input type="text" id="image" name="image" value="${esc(p.image || "")}" placeholder="…or paste an image path / URL" style="margin-top:8px">
+          <div id="imgMsg" style="font-size:13px;margin-top:6px"></div>
+        </div>
       </div>
       <div><label for="excerpt">Excerpt (shown on the card)</label><textarea id="excerpt" name="excerpt" style="min-height:80px">${esc(p.excerpt || "")}</textarea></div>
-      <div><label for="body">Body (HTML: &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;, &lt;a&gt; …)</label><textarea id="body" name="body" style="min-height:420px;font-family:ui-monospace,Consolas,monospace;font-size:13.5px">${esc(p.body || "")}</textarea></div>
+      <div><label for="body">Body</label><textarea id="body" name="body" style="min-height:420px" placeholder="Write your article here. Leave a blank line between paragraphs.">${esc(p.body || "")}</textarea><small style="color:var(--slate);display:block;margin-top:6px">Just write — plain text. Leave a blank line between paragraphs. (Articles previously written in HTML still display correctly.)</small></div>
       <label class="consent"><input type="checkbox" name="is_published" value="1" ${!post || p.is_published ? "checked" : ""}> Published (visible on the site)</label>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <button class="btn btn-primary" type="submit">${post ? "Save changes" : "Create"}</button>
         <a class="btn btn-dark" href="/admin">Cancel</a>
         ${post ? `<a class="btn btn-dark" href="/${post.type === "news" ? "news" : "case-studies"}/${esc(post.slug)}" target="_blank" rel="noopener">Preview</a>` : ""}
       </div>
-    </form>`
+    </form>
+    <script>
+    (function(){
+      function $(id){return document.getElementById(id);}
+      var drop=$('imgDrop'),file=$('imgFile'),field=$('image'),prev=$('imgPreview'),msg=$('imgMsg');
+      if(!drop) return;
+      function bindClear(){var c=$('imgClear'); if(c) c.onclick=function(){field.value='';prev.style.display='none';prev.innerHTML='';};}
+      function showPreview(url){field.value=url;prev.style.display='';prev.innerHTML='<img src="'+url+'" alt=""><button type="button" id="imgClear" title="Remove image">×</button>';bindClear();}
+      function say(t,ok){msg.textContent=t;msg.style.color=ok?'var(--accent)':'#b00';}
+      function handle(f){
+        if(!f) return;
+        if(!/^image\\//.test(f.type)){say('Please choose an image file.',false);return;}
+        say('Uploading\\u2026',true);
+        var img=new Image();
+        img.onload=function(){
+          var max=1600,s=Math.min(1,max/Math.max(img.width,img.height)),w=Math.round(img.width*s),h=Math.round(img.height*s);
+          var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);
+          var data=c.toDataURL('image/jpeg',0.82);URL.revokeObjectURL(img.src);
+          fetch('/admin/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dataUrl:data})})
+            .then(function(r){return r.json();})
+            .then(function(j){if(!j.ok)throw new Error(j.error||'Upload failed');showPreview(j.url);say('Image uploaded.',true);})
+            .catch(function(e){say(e.message,false);});
+        };
+        img.onerror=function(){say('Could not read that image.',false);};
+        img.src=URL.createObjectURL(f);
+      }
+      drop.onclick=function(){file.click();};
+      file.onchange=function(e){handle(e.target.files[0]);e.target.value='';};
+      drop.addEventListener('dragover',function(e){e.preventDefault();drop.classList.add('over');});
+      drop.addEventListener('dragleave',function(){drop.classList.remove('over');});
+      drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('over');handle(e.dataTransfer.files[0]);});
+      bindClear();
+    })();
+    </script>`
   );
 }
 

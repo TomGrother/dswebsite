@@ -7,10 +7,15 @@
  */
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const Database = require("better-sqlite3");
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
+// Uploaded content images live on the volume (DATA_DIR) so a Railway deploy
+// doesn't wipe them. Served at /uploads by server.js.
+const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const db = new Database(path.join(DATA_DIR, "content.db"));
 db.pragma("journal_mode = WAL");
@@ -67,6 +72,19 @@ const getByIdStmt = db.prepare("SELECT * FROM posts WHERE id = ?");
 
 module.exports = {
   db,
+  UPLOADS_DIR,
+  // Save a base64 data-URL image onto the volume; returns its public /uploads/ path.
+  saveUpload(dataUrl) {
+    const m = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/i.exec(String(dataUrl || "").trim());
+    if (!m) throw new Error("Expected a PNG, JPEG or WebP image.");
+    const ext = m[1].toLowerCase() === "png" ? "png" : m[1].toLowerCase() === "webp" ? "webp" : "jpg";
+    const buf = Buffer.from(m[2], "base64");
+    if (!buf.length) throw new Error("The image was empty.");
+    if (buf.length > 6 * 1024 * 1024) throw new Error("Image too large (max 6MB).");
+    const name = "news-" + crypto.randomBytes(8).toString("hex") + "." + ext;
+    fs.writeFileSync(path.join(UPLOADS_DIR, name), buf);
+    return "/uploads/" + name;
+  },
   slugify,
   uniqueSlug,
 

@@ -40,6 +40,24 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
+// Article bodies may be plain text (new posts — blank line = new paragraph) or
+// legacy HTML. If the body already contains block/formatting tags, render it
+// as-is; otherwise escape it and build paragraphs (blank line = <p>, single
+// newline = <br>). This keeps old HTML articles working while new ones can be
+// written as plain text.
+function renderBody(body) {
+  const s = String(body || "");
+  if (!s.trim()) return "";
+  if (/<(p|h[1-6]|ul|ol|li|div|table|blockquote|br|img|a|strong|em|b|i|figure|iframe|span)\b/i.test(s)) return s;
+  return s
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((para) => para.trim())
+    .filter(Boolean)
+    .map((para) => "<p>" + esc(para).replace(/\n/g, "<br>") + "</p>")
+    .join("\n");
+}
+
 function readTemplate(file) {
   // Read per request so edits/rebuilds show up without a restart.
   return fs.readFileSync(file, "utf8");
@@ -155,7 +173,7 @@ function renderArticle(key, post) {
     "{{DATE}}": formatDate(post.published_at),
     "{{BREADCRUMB}}": breadcrumb,
     "{{FIGURE}}": figure,
-    "{{BODY}}": post.body || "",
+    "{{BODY}}": renderBody(post.body),
     "{{RELATED}}": related,
     "{{NAV}}": cfg.nav,
     "{{CTA_HEADING}}": esc(cfg.ctaHeading),

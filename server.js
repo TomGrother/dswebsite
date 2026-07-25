@@ -210,6 +210,13 @@ app.use("/shop", (req, res, next) => {
   res.status(401).send("Authentication required.");
 });
 
+// Admin-uploaded content images live on the DATA_DIR volume (so deploys don't
+// wipe them), served here.
+app.use(
+  "/uploads",
+  express.static(store.UPLOADS_DIR, { maxAge: "7d", fallthrough: false, index: false })
+);
+
 app.use(
   express.static(path.join(__dirname, "public"), {
     extensions: ["html"],
