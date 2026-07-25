@@ -266,14 +266,49 @@ async function sendWelcome(user, tempPassword, { send = sendViaResend } = {}) {
   return send(user.email, subject, html);
 }
 
+// ---- website enquiry (contact form) ----------------------------------------
+function renderEnquiryEmail(e) {
+  const subject = `Website enquiry — ${e.name}${e.subject ? " — " + e.subject : ""}`;
+  const row = (label, value, link) =>
+    value
+      ? `<tr><td style="padding:6px 14px 6px 0;font-size:13px;color:#5a6b66;vertical-align:top;white-space:nowrap">${label}</td>
+           <td style="padding:6px 0;font-size:14px;color:#1a2b26">${link ? `<a href="${link}" style="color:#0E6551;font-weight:600">${esc(value)}</a>` : esc(value)}</td></tr>`
+      : "";
+  const body = `<p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">New website enquiry</p>
+      <p style="margin:0 0 18px;font-size:14px;color:#5a6b66">Submitted via the contact form on designandsupply.co.uk. Reply to this email to answer ${esc(e.name)} directly.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:separate"><tr><td bgcolor="#f4f7f6" style="background:#f4f7f6;border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%">
+          ${row("Name", e.name)}
+          ${row("Email", e.email, "mailto:" + e.email)}
+          ${row("Phone", e.phone, "tel:" + String(e.phone || "").replace(/[^0-9+]/g, ""))}
+          ${row("Subject", e.subject)}
+          ${row("Received", e.received)}
+        </table>
+      </td></tr></table>
+      <p style="margin:0 0 6px;font-size:13px;color:#5a6b66;font-weight:600">Message</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate"><tr><td style="border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;color:#1a2b26">${esc(e.message).replace(/\r?\n/g, "<br>")}</td></tr></table>`;
+  return { subject, html: emailShell(body, { preheader: `${e.name}${e.phone ? " · " + e.phone : ""} — ${String(e.message).slice(0, 80)}` }) };
+}
+
+/** Email a website enquiry to the sales inbox. Reply-to is the enquirer. */
+async function sendEnquiry(e, { send = sendViaResend } = {}) {
+  const to = process.env.ENQUIRY_TO || "sales@designandsupply.co.uk";
+  const { subject, html } = renderEnquiryEmail(e);
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e.email || ""));
+  return send(to, subject, html, valid ? { replyTo: e.email } : {});
+}
+
 // ---- transport -------------------------------------------------------------
-async function sendViaResend(to, subject, html) {
+async function sendViaResend(to, subject, html, opts = {}) {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY is not set.");
+  const payload = { from: process.env.NOTIFY_FROM || FROM_DEFAULT, to, subject, html };
+  // reply_to lets staff hit Reply and answer the enquirer directly.
+  if (opts.replyTo) payload.reply_to = opts.replyTo;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({ from: process.env.NOTIFY_FROM || FROM_DEFAULT, to, subject, html }),
+    body: JSON.stringify(payload),
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Resend ${res.status}: ${text}`);
@@ -383,4 +418,4 @@ function startDigestScheduler() {
   console.log("[digest] per-customer email scheduler enabled.");
 }
 
-module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, renderWelcomeEmail, sendWelcome, isEnabled, EVENT_LABELS };
+module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, renderWelcomeEmail, sendWelcome, renderEnquiryEmail, sendEnquiry, isEnabled, EVENT_LABELS };

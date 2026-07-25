@@ -10,6 +10,7 @@ const content = require("./content");
 const adminRouter = require("./admin");
 const portalRouter = require("./orderhub/portal");
 const ingestRouter = require("./orderhub/ingest");
+const notify = require("./orderhub/notify");
 
 const app = express();
 app.set("trust proxy", 1); // Railway sits behind a proxy; needed for correct client IPs and req.protocol
@@ -232,7 +233,7 @@ app.use(
 
 // Contact form endpoint — enquiries show up in the Railway deploy logs.
 // Swap the console.log for an email service or database when ready.
-app.post("/api/contact", contactLimiter, (req, res) => {
+app.post("/api/contact", contactLimiter, async (req, res) => {
   const { name, email, phone, subject, message, company } = req.body || {};
   // Honeypot: "company" is an invisible field. Bots fill it; humans never do.
   if (company) {
@@ -241,11 +242,45 @@ app.post("/api/contact", contactLimiter, (req, res) => {
   if (!name || !email || !message) {
     return res.status(400).json({ ok: false, error: "Name, email and message are required." });
   }
-  console.log(
-    "=== NEW ENQUIRY ===",
-    JSON.stringify({ at: new Date().toISOString(), name, email, phone, subject, message })
-  );
-  res.json({ ok: true });
+
+  const enquiry = {
+    name: String(name).trim().slice(0, 200),
+    email: String(email).trim().slice(0, 200),
+    phone: phone ? String(phone).trim().slice(0, 60) : "",
+    subject: subject ? String(subject).trim().slice(0, 200) : "",
+    message: String(message).trim().slice(0, 5000),
+    received: new Date().toLocaleString("en-GB", { timeZone: "Europe/London" }),
+  };
+
+  // 1. Persist FIRST, on the volume, so an enquiry can never be lost even if
+  //    the notification email fails.
+  let id = null;
+  try {
+    id = store.saveEnquiry(enquiry);
+  } catch (err) {
+    console.error("[enquiry] could not be stored:", err.message);
+  }
+
+  // 2. Notify the sales inbox (reply-to is the enquirer, so Reply just works).
+  if (!notify.isEnabled()) {
+    console.error("[enquiry] RESEND_API_KEY is not set — nobody was emailed.", JSON.stringify(enquiry));
+    return res.json({ ok: true });
+  }
+  try {
+    await notify.sendEnquiry(enquiry);
+    if (id) store.markEnquiryEmailed(id);
+    res.json({ ok: true });
+  } catch (err) {
+    if (id) store.markEnquiryFailed(id, err.message);
+    console.error("[enquiry] EMAIL FAILED —", err.message, JSON.stringify(enquiry));
+    // Be honest: we can't promise a callback if nobody was notified. The
+    // enquiry is stored, but the visitor should have a way to reach us now.
+    res.status(502).json({
+      ok: false,
+      error:
+        "Sorry — we couldn't send your enquiry just now. Please call 01685 350 114 or email sales@designandsupply.co.uk and we'll help straight away.",
+    });
+  }
 });
 
 // Branded 404

@@ -38,6 +38,20 @@ db.exec(`
     UNIQUE (type, slug)
   );
   CREATE INDEX IF NOT EXISTS idx_posts_type_published ON posts (type, is_published);
+
+  -- Website contact-form enquiries. Stored on the volume as the durable record
+  -- so an enquiry survives even if the notification email fails to send.
+  CREATE TABLE IF NOT EXISTS enquiry (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT,
+    email      TEXT,
+    phone      TEXT,
+    subject    TEXT,
+    message    TEXT,
+    emailed_at TEXT,
+    error      TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 function slugify(text) {
@@ -73,6 +87,28 @@ const getByIdStmt = db.prepare("SELECT * FROM posts WHERE id = ?");
 module.exports = {
   db,
   UPLOADS_DIR,
+
+  // ---- contact-form enquiries ---------------------------------------------
+  saveEnquiry(e) {
+    return db
+      .prepare(
+        "INSERT INTO enquiry (name, email, phone, subject, message) VALUES (@name, @email, @phone, @subject, @message)"
+      )
+      .run({
+        name: e.name || null,
+        email: e.email || null,
+        phone: e.phone || null,
+        subject: e.subject || null,
+        message: e.message || null,
+      }).lastInsertRowid;
+  },
+  markEnquiryEmailed: (id) =>
+    db.prepare("UPDATE enquiry SET emailed_at = datetime('now'), error = NULL WHERE id = ?").run(id),
+  markEnquiryFailed: (id, error) =>
+    db.prepare("UPDATE enquiry SET error = ? WHERE id = ?").run(String(error || "").slice(0, 500), id),
+  recentEnquiries: (n = 50) =>
+    db.prepare("SELECT * FROM enquiry ORDER BY id DESC LIMIT ?").all(n),
+
   // Save a base64 data-URL image onto the volume; returns its public /uploads/ path.
   saveUpload(dataUrl) {
     const m = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/i.exec(String(dataUrl || "").trim());
