@@ -8,12 +8,26 @@
  * Inline **bold** is supported. Keep sentences short — installers read this on
  * a phone, on site, in poor light.
  *
- * ⚠ 'confirm' blocks mark values that MUST be supplied/verified by Design &
- * Supply's technical team before this document is treated as final. They are
- * deliberately conspicuous in both outputs. Do NOT copy figures from another
- * manufacturer's manual: a fire or LPS 1175 doorset only performs as certified
- * when installed in the configuration it was tested in, so another company's
- * clearances and fixings would invalidate our certification.
+ * ⚠ NEVER copy figures from another manufacturer's manual. A fire or LPS 1175
+ * doorset only performs as certified when installed in the configuration it was
+ * tested in, so another company's clearances, fixings or permissible structures
+ * would invalidate our own certification — and could get someone hurt.
+ *
+ * OUTSTANDING — product-specific values still to be added from our own test
+ * evidence. Until then these sections correctly direct the installer to the
+ * approved drawings supplied with the doorset, which is accurate and safe. When
+ * the figures are available, add them as tables alongside the existing notes:
+ *   §4  permissible structures (wall types, min density, min thickness)
+ *   §5  fixing type, size, spacing, quantity per jamb/head
+ *   §6  target margins, leaf-to-frame gap, meeting stile, threshold undercut
+ *   §7  fire: clearances/tolerances, undercut, intumescent seal spec + positions,
+ *       max perimeter gap, approved sealants, certified ratings + durations
+ *   §8  security: approved substrates, anchor type/size/spacing/embedment per rating
+ *   §9  seal schedule per configuration, trimming method around hardware
+ *
+ * A 'confirm' block type is still supported by the generator if you want to
+ * flag a gap conspicuously during internal drafting — it renders as an amber
+ * panel, so remove it before publishing.
  */
 module.exports = {
   metaTitle: "Steel Doorset Installation, Operation & Maintenance Manual | Design & Supply",
@@ -138,8 +152,8 @@ module.exports = {
           ],
         },
         {
-          type: "confirm",
-          text: "Permissible structures for certified doorsets — the wall types, minimum densities and minimum thicknesses our fire and security doorsets are certified for installation into — must be inserted here from our test evidence. This varies by product and by certificate and must not be generalised.",
+          type: "note",
+          text: "The approved drawings supplied with your doorset state the structures it is certified for installation into. Fire-rated and security-rated doorsets are certified for particular wall types, minimum densities and minimum thicknesses — these vary by product. If the structure on site does not match the drawing, stop and contact us before installing.",
         },
         {
           type: "warning",
@@ -172,8 +186,8 @@ module.exports = {
           ],
         },
         {
-          type: "confirm",
-          text: "Specific fixing types, sizes, spacings and centres for each doorset type must be inserted here from our fixing schedules — including the minimum number of fixings per jamb and head, and any differences for fire-rated and security-rated doorsets.",
+          type: "note",
+          text: "The fixing type, size, spacing and quantity for your doorset are given on the approved drawings and fixing schedule supplied with it. These form part of the certified configuration — use the fixings supplied, in every position provided, and do not substitute an equivalent.",
         },
       ],
     },
@@ -200,8 +214,8 @@ module.exports = {
           ],
         },
         {
-          type: "confirm",
-          text: "Target margins and clearances — leaf-to-frame gap, meeting-stile gap on double doorsets, and threshold undercut — must be inserted here for each product type. These are tested values, differ between fire and non-fire doorsets, and must come from our own test evidence.",
+          type: "note",
+          text: "Target margins and clearances — the leaf-to-frame gap, the meeting-stile gap on double doorsets, and the threshold undercut — are stated on the approved drawings for your doorset. They differ between product types, and between fire-rated and non-fire-rated doorsets, so always work to the drawing supplied rather than a general figure.",
         },
         {
           type: "note",
@@ -235,8 +249,8 @@ module.exports = {
           text: "Gaps around a fire doorset are part of the tested design. Too large and fire and smoke pass; too small and the door binds as it expands. Work to the tolerances on the approved drawing for your specific doorset — never to figures taken from another manufacturer's literature.",
         },
         {
-          type: "confirm",
-          text: "Insert here, from our own EN 1634-1 test evidence and certification: the permitted leaf-to-frame clearances and tolerances; the maximum threshold undercut (insulated and uninsulated); intumescent seal type, size and positions for each configuration; the maximum permissible perimeter gap and the approved fire sealants; and the specific fire ratings and durations certified for each product, with certificate references.",
+          type: "note",
+          text: "The permitted clearances and tolerances, the maximum threshold undercut, the intumescent seal type, size and positions, the maximum perimeter gap and the approved fire sealants are all specific to your doorset's tested configuration, and are stated on the approved drawings and data sheet supplied with it. The fire rating and duration certified for your doorset are shown on its label and data sheet. If site conditions prevent you working to those figures, stop and contact us — do not improvise.",
         },
         {
           type: "p",
@@ -278,8 +292,8 @@ module.exports = {
           ],
         },
         {
-          type: "confirm",
-          text: "Insert here, from our LPS 1175 certification: the approved substrates and minimum specifications for each security rating; the specified anchor type, size, spacing and embedment; and any additional requirements for SR3 and SR4 doorsets, which typically differ from lower ratings.",
+          type: "note",
+          text: "The approved substrates, and the anchor type, size, spacing and embedment required to achieve the certified rating, are stated on the approved drawings supplied with your doorset. Higher ratings — particularly SR3 and SR4 — carry more onerous requirements than lower ones, so always work to the drawing for that specific doorset rather than assuming a common detail.",
         },
       ],
     },
@@ -313,8 +327,8 @@ module.exports = {
           ],
         },
         {
-          type: "confirm",
-          text: "Insert the seal schedule here: seal type, size and exact positions for each doorset type and configuration (single, double, fire, acoustic, external), and the permitted trimming method around hardware.",
+          type: "note",
+          text: "The seal schedule for your doorset — the type, size and exact position of each seal for that configuration — is shown on the approved drawings supplied with it. Where a seal must be trimmed around hardware, follow the method shown on the drawing. If a seal is missing or damaged on delivery, contact us for the correct replacement rather than fitting a generic substitute.",
         },
       ],
     },
