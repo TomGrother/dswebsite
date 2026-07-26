@@ -1289,6 +1289,62 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .finish-tag b { color: #24312c; font-weight: 600; }
 
+/* ---- Installation / O&M manual page ------------------------------------- */
+.man-actions {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  padding-bottom: 22px; border-bottom: 1px solid var(--line); margin-bottom: 26px;
+}
+.man-meta { color: var(--slate); font-size: 13px; }
+.man-toc {
+  background: var(--mist); border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px 26px; margin-bottom: 38px;
+}
+.man-toc h2 { font-size: 19px; margin-bottom: 12px; }
+.man-toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 34px; }
+.man-toc li { margin-bottom: 7px; break-inside: avoid; }
+.man-toc a { color: var(--ink); text-decoration: none; font-size: 14.5px; }
+.man-toc a:hover { color: var(--accent); text-decoration: underline; }
+.man-section { margin-bottom: 40px; scroll-margin-top: 90px; }
+.man-section > h2 {
+  display: flex; align-items: baseline; gap: 12px; font-size: 26px;
+  padding-bottom: 10px; border-bottom: 2px solid var(--accent); margin-bottom: 16px;
+}
+.man-num {
+  font-family: var(--font-display); font-size: 17px; color: #fff;
+  background: var(--accent); border-radius: 6px; padding: 2px 10px; flex: none;
+}
+.man-intro { color: var(--slate); font-size: 16px; margin-bottom: 16px; }
+.man-section p { margin-bottom: 14px; line-height: 1.7; }
+.man-steps { margin: 0 0 18px; padding-left: 22px; }
+.man-steps li { margin-bottom: 11px; line-height: 1.65; padding-left: 4px; }
+.man-steps li::marker { color: var(--accent); font-weight: 700; }
+.man-warning, .man-note, .man-confirm {
+  border-radius: 10px; padding: 15px 18px; margin: 0 0 18px; font-size: 14.5px; line-height: 1.6;
+}
+.man-warning { background: #fff3ec; border: 1px solid #f2c4a3; }
+.man-warning b { display: block; color: #9a3412; margin-bottom: 5px; }
+.man-warning p { margin: 0 !important; }
+.man-note { background: var(--mist); border: 1px solid var(--line); color: var(--slate); }
+.man-confirm { background: #fdf3e2; border: 1px solid #ebc98a; }
+.man-confirm b { display: block; color: #8a5a12; margin-bottom: 5px; }
+.man-confirm p { margin: 0 !important; }
+.man-help {
+  background: var(--mist); border: 1px solid var(--line); border-radius: 12px;
+  padding: 24px 26px; margin-top: 40px;
+}
+.man-help h2 { font-size: 21px; margin-bottom: 8px; }
+.man-help p { margin: 0; }
+@media (max-width: 720px) {
+  .man-toc ol { columns: 1; }
+  .man-section > h2 { font-size: 22px; }
+}
+/* Printing the web page should produce something usable too */
+@media print {
+  .site-header, .topbar, .site-footer, .man-actions, .nav-toggle, .page-hero { display: none !important; }
+  .man-section { page-break-inside: avoid; }
+  a[href^="/"]::after { content: ""; }
+}
+
 /* Customer email-preference cards */
 .pref-card {
   border: 1px solid var(--line); border-radius: 12px; background: #fff;

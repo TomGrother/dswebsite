@@ -11,6 +11,7 @@ The public website for [designandsupply.co.uk](https://designandsupply.co.uk) **
 npm install
 cp .env.example .env          # then edit the values (see below)
 npm run build                 # bake header/footer + SEO into public/*.html
+npm run build:manual          # regenerate the O&M manual (web page + PDF), then build
 npm start                     # http://localhost:3000
 ```
 

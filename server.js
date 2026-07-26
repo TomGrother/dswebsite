@@ -47,6 +47,7 @@ const PAGES = [
   { slug: "case-studies", priority: "0.7" },
   { slug: "news", priority: "0.6" },
   { slug: "downloads", priority: "0.7" },
+  { slug: "installation-guides", priority: "0.7" },
   { slug: "contact", priority: "0.8" },
   { slug: "terms", priority: "0.2" },
   { slug: "refund-policy", priority: "0.2" },

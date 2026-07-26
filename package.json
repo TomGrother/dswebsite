@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "build": "node build.js",
+    "build:manual": "node build-manual.js && node build.js",
     "seed": "node seed.js",
     "test": "node --test \"orderhub/tests/**/*.test.js\"",
     "orderhub": "node orderhub/seed.js"
@@ -24,5 +25,8 @@
   },
   "allowScripts": {
     "better-sqlite3@12.11.1": true
+  },
+  "devDependencies": {
+    "pdfkit": "^0.19.1"
   }
 }

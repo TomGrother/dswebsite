@@ -53,6 +53,7 @@ const OG_IMAGE = {
   "slimline-security.html": "/images/slimline/janisol.png",
   "slimline-fire.html": "/images/slimline/janisol-2.png",
   "slimline-non-rated.html": "/images/slimline/janisol.png",
+  "installation-guides.html": "/images/doors/cat-security.png",
 };
 const DEFAULT_OG_IMAGE = "/images/products/steel.png";
 
