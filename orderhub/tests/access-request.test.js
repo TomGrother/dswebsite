@@ -60,11 +60,11 @@ test("renderAccessRequestEmail escapes user input (no HTML injection)", () => {
   assert.ok(html.includes("&lt;script&gt;"), "the company name is HTML-escaped");
 });
 
-test("sendAccessRequest sets reply-to to the requester and targets the sales inbox", async () => {
+test("sendAccessRequest sets reply-to to the requester and targets Tom's inbox", async () => {
   let captured = null;
   const fakeSend = async (to, subject, html, opts) => { captured = { to, subject, opts }; };
   await notify.sendAccessRequest({ company: "Acme", name: "Sam", email: "sam@acme.co.uk", received: "now" }, { send: fakeSend });
   assert.ok(captured, "send was called");
-  assert.strictEqual(captured.to, "sales@designandsupply.co.uk", "goes to the sales inbox by default");
+  assert.strictEqual(captured.to, "tom@designandsupply.co.uk", "goes to Tom by default");
   assert.strictEqual(captured.opts.replyTo, "sam@acme.co.uk", "reply-to is the requester");
 });

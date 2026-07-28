@@ -331,7 +331,7 @@ function renderAccessRequestEmail(r) {
 
 /** Email a portal access request to the sales inbox. Reply-to is the requester. */
 async function sendAccessRequest(r, { send = sendViaResend } = {}) {
-  const to = process.env.ACCESS_REQUEST_TO || process.env.ENQUIRY_TO || "sales@designandsupply.co.uk";
+  const to = process.env.ACCESS_REQUEST_TO || "tom@designandsupply.co.uk";
   const { subject, html } = renderAccessRequestEmail(r);
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(r.email || ""));
   return send(to, subject, html, valid ? { replyTo: r.email } : {});
