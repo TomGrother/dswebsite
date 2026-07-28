@@ -21,6 +21,7 @@ const PRODUCTION_HOST = "designandsupply.co.uk";
 // Throttle abuse-prone endpoints (brute force on login, contact-form spam).
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: "Too many attempts. Please wait a few minutes and try again." });
 const contactLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: "Too many enquiries from this device. Please try again shortly." } });
+const signupLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: "Too many requests. Please wait a few minutes and try again." });
 
 // All indexable pages ("" = homepage) — used for the sitemap
 const PAGES = [
@@ -191,6 +192,7 @@ app.use(["/portal", "/api/ingest"], (req, res, next) => {
 });
 app.post("/portal/login", loginLimiter);
 app.post("/portal/forgot", loginLimiter); // throttle reset requests (anti email-bomb)
+app.post("/portal/request-access", signupLimiter); // throttle the public access-request form
 app.use("/portal", portalRouter);
 app.use("/api/ingest", ingestRouter);
 

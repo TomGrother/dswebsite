@@ -220,10 +220,82 @@ router.get("/login", (req, res) => {
           <div style="text-align:right;margin-top:-6px"><a href="/portal/forgot" style="font-size:13px;color:var(--slate)">Forgot your password?</a></div>
           <div><button class="btn btn-primary" type="submit">Sign in</button></div>
         </form>
-        <p style="color:var(--slate);font-size:14px;margin-top:22px">No account? Contact us on <a href="tel:01685350114">01685 350 114</a> or <a href="mailto:sales@designandsupply.co.uk">sales@designandsupply.co.uk</a>.</p>
+        <p style="color:var(--slate);font-size:14px;margin-top:22px">No account yet? <a href="/portal/request-access" style="color:var(--accent);font-weight:600">Request access</a> and we'll set you up — or call <a href="tel:01685350114">01685 350 114</a>.</p>
       </div>`
     )
   );
+});
+
+// ---- request access (no public sign-up; this just tells us who wants one) ---
+router.get("/request-access", (req, res) => {
+  if (auth.currentUser(req)) return res.redirect("/portal");
+  const sent = req.query.sent
+    ? `<div class="auth-wrap">
+        <span class="kicker">Order Hub</span>
+        <h1>Request <em style="font-style:normal;color:var(--accent)">Received</em></h1>
+        <p style="color:var(--accent-dark);background:var(--accent-soft);padding:12px 14px;border-radius:8px;margin:8px 0 18px">Thanks — we've got your details and a member of the team will set up your login and be in touch shortly.</p>
+        <p style="color:var(--slate);font-size:14px"><a href="/portal/login">&larr; Back to sign in</a></p>
+      </div>`
+    : null;
+  if (sent) return res.send(page("Request access", sent));
+
+  const bad = req.query.bad
+    ? '<p style="color:#b00;margin-bottom:14px">Please add your company, your name and a valid email so we can set you up.</p>'
+    : "";
+  res.send(
+    page(
+      "Request access",
+      `<div class="auth-wrap">
+        <span class="kicker">Order Hub</span>
+        <h1>Request <em style="font-style:normal;color:var(--accent)">Access</em></h1>
+        <p style="color:var(--slate);margin:8px 0 22px">Don't have a login yet? Tell us who you are and we'll set up your Customer Portal account and send your sign-in details.</p>
+        ${bad}
+        <form method="post" action="/portal/request-access" class="form">
+          <div><label for="company">Company name</label><input type="text" id="company" name="company" required autofocus maxlength="120"></div>
+          <div><label for="name">Your name</label><input type="text" id="name" name="name" required maxlength="120"></div>
+          <div><label for="email">Email</label><input type="email" id="email" name="email" required maxlength="160" autocomplete="email"></div>
+          <div><label for="phone">Phone <span style="color:var(--slate);font-weight:400">(optional)</span></label><input type="tel" id="phone" name="phone" maxlength="40" autocomplete="tel"></div>
+          <div><label for="message">Anything else? <span style="color:var(--slate);font-weight:400">(optional)</span></label><textarea id="message" name="message" rows="3" maxlength="1000"></textarea></div>
+          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+          <div><button class="btn btn-primary" type="submit">Request access</button></div>
+        </form>
+        <p style="color:var(--slate);font-size:14px;margin-top:22px"><a href="/portal/login">&larr; Back to sign in</a></p>
+      </div>`
+    )
+  );
+});
+
+router.post("/request-access", async (req, res) => {
+  const b = req.body || {};
+  // Honeypot: real users never see this field; bots fill it. Silently accept
+  // (so the bot thinks it worked) but record nothing.
+  if (b.website) return res.redirect("/portal/request-access?sent=1");
+
+  const clip = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
+  const company = clip(b.company, 120);
+  const name = clip(b.name, 120);
+  const email = clip(b.email, 160).toLowerCase();
+  const phone = clip(b.phone, 40);
+  const message = clip(b.message, 1000);
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!company || !name || !emailOk) return res.redirect("/portal/request-access?bad=1");
+
+  // Persist first (survives a failed send / restart), then notify.
+  let id = null;
+  try { id = store.saveAccessRequest({ company, name, email, phone: phone || null, message: message || null }); }
+  catch (e) { console.error("[access-request] save failed:", e.message); }
+  try {
+    if (notify.isEnabled()) {
+      const received = new Date().toLocaleString("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      await notify.sendAccessRequest({ company, name, email, phone, message, received });
+      if (id) store.markAccessRequestEmailed(id);
+    } else {
+      console.warn("[access-request] RESEND_API_KEY not set — request from", company, "-", email);
+    }
+  } catch (e) {
+    console.error("[access-request] email failed:", e.message);
+  }
+  res.redirect("/portal/request-access?sent=1");
 });
 
 // ---- password reset (self-service; sign-up stays in-house) ------------------
@@ -464,6 +536,7 @@ admin.use(auth.requireStaff);
 
 admin.get("/", (req, res) => {
   const s = store.stats();
+  const pendingAccess = store.pendingAccessRequestCount();
   const last = store.lastSync();
   const syncLine = last
     ? `${last.status === "ok" ? "✓" : "⚠"} ${esc(last.ran_at)} — received ${last.rows_received ?? "?"}, upserted ${last.rows_upserted ?? "?"}, removed ${last.rows_removed ?? "?"}${last.message ? " — " + esc(last.message) : ""}`
@@ -505,6 +578,7 @@ admin.get("/", (req, res) => {
         <a class="card" href="/portal/admin/accounts"><h3>Accounts</h3><p>Create customer/staff logins, set passwords, manage ref overrides.</p><span class="card-link">Open</span></a>
         <a class="card" href="/portal/admin/mappings"><h3>Domain Mappings</h3><p>Link email domains to customer_acc_ref values.</p><span class="card-link">Open</span></a>
         <a class="card" href="/portal/admin/stats"><h3>Statistics</h3><p>Portal logins per day and how many customers are signing in.</p><span class="card-link">Open</span></a>
+        <a class="card" href="/portal/admin/access-requests"><h3>Access Requests${pendingAccess ? ` <span class="pill pill-draft" style="vertical-align:middle">${pendingAccess} new</span>` : ""}</h3><p>People who asked for a login and need setting up.</p><span class="card-link">Open</span></a>
       </div>
       <div class="grid grid-2" style="margin-top:22px">
         <div class="card"><h3>Sync Health</h3><p style="color:var(--slate)">${syncLine}</p><a class="card-link" href="/portal/admin/sync">View sync log</a></div>
@@ -848,6 +922,46 @@ admin.get("/stats", (req, res) => {
   <p style="color:var(--slate);font-size:13px;margin-top:14px">Tracking since ${esc(fmtDay(totals.first_day, { day: "numeric", month: "short", year: "numeric" }))}. Counts credential sign-ins; a user returning within their 12-hour session isn't re-counted.</p>`;
 
   res.send(page("Login Statistics", body, { user: req.portalUser }));
+});
+
+// ---- access requests (staff only) ------------------------------------------
+admin.get("/access-requests", (req, res) => {
+  const reqs = store.recentAccessRequests(100);
+  const rows = reqs.length
+    ? reqs.map((r) => {
+        const when = fmtSyncStamp(r.created_at);
+        const done = r.status === "done";
+        return `<tr${done ? ' style="opacity:.55"' : ""}>
+          <td style="white-space:nowrap" title="${esc(when.abs)}">${esc(when.abs || r.created_at)}</td>
+          <td><b>${esc(r.company || "—")}</b></td>
+          <td>${esc(r.name || "—")}</td>
+          <td>${r.email ? `<a href="mailto:${esc(r.email)}" style="color:var(--accent);font-weight:600">${esc(r.email)}</a>` : "—"}</td>
+          <td>${r.phone ? esc(r.phone) : "—"}</td>
+          <td style="max-width:260px">${r.message ? esc(r.message) : '<span style="color:var(--slate)">—</span>'}</td>
+          <td style="white-space:nowrap">${done
+            ? '<span class="pill pill-live">Done</span>'
+            : `<form method="post" action="/portal/admin/access-requests/${r.id}/done" style="display:inline"><button type="submit" style="background:none;border:0;color:var(--accent);cursor:pointer;padding:0;font:inherit">Mark done</button></form>`}</td>
+        </tr>`;
+      }).join("")
+    : '<tr><td colspan="7" style="color:var(--slate)">No access requests yet.</td></tr>';
+  const msg = req.query.msg ? `<p style="background:var(--accent-soft);color:var(--accent-dark);padding:10px 16px;border-radius:8px">${esc(req.query.msg)}</p>` : "";
+  res.send(
+    page(
+      "Access Requests",
+      `<a class="card-link" href="/portal/admin">&larr; Dashboard</a>
+       <h1 style="margin-top:12px">Access <em style="font-style:normal;color:var(--accent)">Requests</em></h1>
+       <p style="color:var(--slate);margin:6px 0 18px">People who asked for a login via the portal. Set them up in <a href="/portal/admin/accounts" style="color:var(--accent)">Accounts</a>, then mark the request done.</p>
+       ${msg}
+       <div class="table-scroll"><table class="admin-table"><tr><th>Received</th><th>Company</th><th>Name</th><th>Email</th><th>Phone</th><th>Note</th><th></th></tr>${rows}</table></div>`,
+      { user: req.portalUser }
+    )
+  );
+});
+
+admin.post("/access-requests/:id/done", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isInteger(id)) store.markAccessRequestDone(id);
+  res.redirect("/portal/admin/access-requests?msg=" + encodeURIComponent("Marked as done."));
 });
 
 router.use("/admin", admin);

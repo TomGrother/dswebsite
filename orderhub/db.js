@@ -137,6 +137,22 @@ db.exec(`
     ts      TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_login_event_day ON login_event (day);
+
+  -- Access requests from the portal "request access" form. There is no public
+  -- sign-up — staff create the real accounts — so this just captures who wants
+  -- one. Persisted first (before the notification email) so a request is never
+  -- lost if email sending fails or the box restarts mid-send.
+  CREATE TABLE IF NOT EXISTS access_request (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    company    TEXT,
+    name       TEXT,
+    email      TEXT,
+    phone      TEXT,
+    message    TEXT,
+    status     TEXT NOT NULL DEFAULT 'new',
+    emailed_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Migration: add columns to an existing door table (deployed DBs on the volume
@@ -635,6 +651,19 @@ module.exports = {
       "INSERT OR REPLACE INTO digest_log (digest_date, sent_at, recipients, events) VALUES (?, datetime('now'), ?, ?)"
     ).run(date, recipients, events),
   lastDigest: () => db.prepare("SELECT * FROM digest_log ORDER BY digest_date DESC LIMIT 1").get(),
+
+  // ---- portal access requests (no public sign-up) -------------------------
+  saveAccessRequest: ({ company, name, email, phone = null, message = null }) =>
+    db.prepare("INSERT INTO access_request (company, name, email, phone, message) VALUES (?,?,?,?,?)")
+      .run(company, name, email, phone, message).lastInsertRowid,
+  markAccessRequestEmailed: (id) =>
+    db.prepare("UPDATE access_request SET emailed_at = datetime('now') WHERE id = ?").run(id).changes,
+  markAccessRequestDone: (id) =>
+    db.prepare("UPDATE access_request SET status = 'done' WHERE id = ?").run(id).changes,
+  recentAccessRequests: (n = 100) =>
+    db.prepare("SELECT * FROM access_request ORDER BY (status = 'new') DESC, id DESC LIMIT ?").all(n),
+  pendingAccessRequestCount: () =>
+    db.prepare("SELECT COUNT(*) AS n FROM access_request WHERE status = 'new'").get().n,
 
   // ---- portal login statistics --------------------------------------------
   // Record one successful credential sign-in. `day` defaults to today (London)

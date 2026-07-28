@@ -302,6 +302,41 @@ async function sendEnquiry(e, { send = sendViaResend } = {}) {
   return send(to, subject, html, valid ? { replyTo: e.email } : {});
 }
 
+// ---- portal access request (someone with no login asked to be set up) ------
+function renderAccessRequestEmail(r) {
+  const who = r.company || r.name || r.email;
+  const subject = `Portal access request — ${who}`;
+  const row = (label, value, link) =>
+    value
+      ? `<tr><td style="padding:6px 14px 6px 0;font-size:13px;color:#5a6b66;vertical-align:top;white-space:nowrap">${label}</td>
+           <td style="padding:6px 0;font-size:14px;color:#1a2b26">${link ? `<a href="${link}" style="color:#0E6551;font-weight:600">${esc(value)}</a>` : esc(value)}</td></tr>`
+      : "";
+  const accountsUrl = (process.env.PUBLIC_BASE_URL || "https://designandsupply.co.uk") + "/portal/admin/accounts";
+  const body = `<p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">New portal access request</p>
+      <p style="margin:0 0 18px;font-size:14px;color:#5a6b66">Someone without a login asked to be set up on the Customer Portal. Reply to this email to reach them directly, then create their account in the Order Hub.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:separate"><tr><td bgcolor="#f4f7f6" style="background:#f4f7f6;border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%">
+          ${row("Company", r.company)}
+          ${row("Name", r.name)}
+          ${row("Email", r.email, "mailto:" + r.email)}
+          ${row("Phone", r.phone, "tel:" + String(r.phone || "").replace(/[^0-9+]/g, ""))}
+          ${row("Received", r.received)}
+        </table>
+      </td></tr></table>
+      ${r.message ? `<p style="margin:0 0 6px;font-size:13px;color:#5a6b66;font-weight:600">Note from them</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:separate"><tr><td style="border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;color:#1a2b26">${esc(r.message).replace(/\r?\n/g, "<br>")}</td></tr></table>` : ""}
+      ${emailButton(accountsUrl, "Set up their account")}`;
+  return { subject, html: emailShell(body, { preheader: `${who}${r.email ? " · " + r.email : ""} — asked for a portal login` }) };
+}
+
+/** Email a portal access request to the sales inbox. Reply-to is the requester. */
+async function sendAccessRequest(r, { send = sendViaResend } = {}) {
+  const to = process.env.ACCESS_REQUEST_TO || process.env.ENQUIRY_TO || "sales@designandsupply.co.uk";
+  const { subject, html } = renderAccessRequestEmail(r);
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(r.email || ""));
+  return send(to, subject, html, valid ? { replyTo: r.email } : {});
+}
+
 // ---- transport -------------------------------------------------------------
 async function sendViaResend(to, subject, html, opts = {}) {
   const key = process.env.RESEND_API_KEY;
@@ -422,4 +457,4 @@ function startDigestScheduler() {
   console.log("[digest] per-customer email scheduler enabled.");
 }
 
-module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, renderWelcomeEmail, sendWelcome, renderEnquiryEmail, sendEnquiry, isEnabled, EVENT_LABELS };
+module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, renderWelcomeEmail, sendWelcome, renderEnquiryEmail, sendEnquiry, renderAccessRequestEmail, sendAccessRequest, isEnabled, EVENT_LABELS };
