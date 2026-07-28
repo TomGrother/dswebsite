@@ -325,6 +325,10 @@ router.post("/login", async (req, res) => {
   const user = await auth.authenticate(req.body.email, req.body.password);
   if (!user) return res.redirect("/portal/login?bad=1");
   auth.issueSession(res, req, user);
+  // Record the sign-in for the admin login statistics. Never let a stats write
+  // failure block the actual login.
+  try { store.recordLogin({ userId: user.id, email: user.email, role: user.role }); }
+  catch (e) { console.error("[stats] recordLogin failed:", e.message); }
   const next = typeof req.body.next === "string" && req.body.next.startsWith("/portal") ? req.body.next : "/portal";
   res.redirect(next);
 });
@@ -500,6 +504,7 @@ admin.get("/", (req, res) => {
         <a class="card" href="/portal/admin/orders"><h3>All Orders</h3><p>Every live order across all customers, with filters.</p><span class="card-link">Open</span></a>
         <a class="card" href="/portal/admin/accounts"><h3>Accounts</h3><p>Create customer/staff logins, set passwords, manage ref overrides.</p><span class="card-link">Open</span></a>
         <a class="card" href="/portal/admin/mappings"><h3>Domain Mappings</h3><p>Link email domains to customer_acc_ref values.</p><span class="card-link">Open</span></a>
+        <a class="card" href="/portal/admin/stats"><h3>Statistics</h3><p>Portal logins per day and how many customers are signing in.</p><span class="card-link">Open</span></a>
       </div>
       <div class="grid grid-2" style="margin-top:22px">
         <div class="card"><h3>Sync Health</h3><p style="color:var(--slate)">${syncLine}</p><a class="card-link" href="/portal/admin/sync">View sync log</a></div>
@@ -720,6 +725,90 @@ admin.get("/sync", (req, res) => {
       { user: req.portalUser }
     )
   );
+});
+
+// ---- login statistics (staff only) ----------------------------------------
+// Format a stored "YYYY-MM-DD" London calendar day for display. Parse at noon
+// UTC so the label never slips to an adjacent day under any timezone.
+function fmtDay(dayStr, opts) {
+  const d = new Date(dayStr + "T12:00:00Z");
+  if (isNaN(d)) return dayStr;
+  return d.toLocaleDateString("en-GB", { timeZone: "Europe/London", ...opts });
+}
+
+admin.get("/stats", (req, res) => {
+  const WINDOW = 30;
+  const totals = store.loginTotals(); // { logins, users, first_day, last_day }
+  const byDay = new Map(store.loginStatsByDay(90).map((r) => [r.day, r]));
+
+  // Continuous, zero-filled last-30-days series. Pure calendar arithmetic from
+  // today's London date (no instants), so DST never adds or drops a day.
+  const [Y, M, D] = store.londonDay().split("-").map(Number);
+  const cursor = new Date(Date.UTC(Y, M - 1, D));
+  const series = [];
+  for (let i = 0; i < WINDOW; i++) {
+    const day = cursor.toISOString().slice(0, 10);
+    const r = byDay.get(day);
+    series.unshift({ day, logins: r ? r.logins : 0, users: r ? r.users : 0 });
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+
+  const peak = series.reduce((m, d) => (d.logins > m.logins ? d : m), { logins: 0, day: null });
+  const windowLogins = series.reduce((n, d) => n + d.logins, 0);
+
+  let body = `<a class="card-link" href="/portal/admin">&larr; Dashboard</a>
+    <h1 style="margin-top:12px">Login <em style="font-style:normal;color:var(--accent)">Statistics</em></h1>
+    <p style="color:var(--slate);margin:6px 0 20px">Successful customer &amp; staff sign-ins to the portal, per day. Portal sessions last 12 hours, so a returning user signs in about once a day.</p>`;
+
+  if (!totals || !totals.logins) {
+    body += `<div class="card" style="text-align:center;padding:34px 24px">
+      <h3 style="margin-bottom:6px">No sign-ins recorded yet</h3>
+      <p style="color:var(--slate);margin:0">Login tracking starts from this release. As customers and staff sign in, their daily counts will build up here.</p>
+    </div>`;
+    return res.send(page("Login Statistics", body, { user: req.portalUser }));
+  }
+
+  const max = Math.max(1, ...series.map((d) => d.logins));
+  const bars = series
+    .map((d) => {
+      const h = Math.round((d.logins / max) * 100);
+      const title = `${fmtDay(d.day, { weekday: "short", day: "numeric", month: "short" })} — ${d.logins} login${d.logins === 1 ? "" : "s"}, ${d.users} user${d.users === 1 ? "" : "s"}`;
+      return `<div class="lc-col" title="${esc(title)}">
+        <div class="lc-val">${d.logins || ""}</div>
+        <div class="lc-bar${d.logins ? "" : " zero"}" style="height:${h}%"></div>
+        <div class="lc-x">${esc(fmtDay(d.day, { day: "numeric" }))}</div>
+      </div>`;
+    })
+    .join("");
+
+  // Table: only days with at least one sign-in, most recent first.
+  const tableRows = series
+    .filter((d) => d.logins)
+    .reverse()
+    .map((d) => `<tr><td>${esc(fmtDay(d.day, { weekday: "short", day: "numeric", month: "short", year: "numeric" }))}</td><td>${d.logins}</td><td>${d.users}</td></tr>`)
+    .join("");
+
+  body += `<style>
+    .lc-chart{display:flex;align-items:flex-end;gap:5px;height:200px;padding:14px 4px 0;min-width:640px}
+    .lc-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+    .lc-val{font-size:11px;color:var(--slate);line-height:1;margin-bottom:3px;height:12px}
+    .lc-bar{width:100%;max-width:26px;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;transition:opacity .15s}
+    .lc-bar.zero{background:#e2e9e6}
+    .lc-col:hover .lc-bar{opacity:.78}
+    .lc-x{font-size:10px;color:#9ab0a8;margin-top:6px}
+  </style>
+  <div class="spec-strip" style="margin:0 0 26px">
+    <div><b>${totals.logins}</b><span>Total sign-ins</span></div>
+    <div><b>${totals.users}</b><span>Distinct users</span></div>
+    <div><b>${windowLogins}</b><span>Sign-ins (30 days)</span></div>
+    <div><b>${peak.logins}</b><span>Busiest day${peak.day ? " · " + esc(fmtDay(peak.day, { day: "numeric", month: "short" })) : ""}</span></div>
+  </div>
+  <h3 style="margin:0 0 4px">Last 30 days</h3>
+  <div class="table-scroll"><div class="lc-chart">${bars}</div></div>
+  <div class="table-scroll" style="margin-top:26px"><table class="admin-table"><tr><th>Day</th><th>Sign-ins</th><th>Distinct users</th></tr>${tableRows}</table></div>
+  <p style="color:var(--slate);font-size:13px;margin-top:14px">Tracking since ${esc(fmtDay(totals.first_day, { day: "numeric", month: "short", year: "numeric" }))}. Counts credential sign-ins; a user returning within their 12-hour session isn't re-counted.</p>`;
+
+  res.send(page("Login Statistics", body, { user: req.portalUser }));
 });
 
 router.use("/admin", admin);

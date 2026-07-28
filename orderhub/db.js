@@ -121,6 +121,22 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_reset_token ON password_reset (token_hash);
+
+  -- Portal login events: one row per successful credential sign-in, for the
+  -- admin "logins per day" statistics. user_id is intentionally NOT a cascading
+  -- FK — deleting an account must not rewrite historical login counts — so
+  -- email/role are denormalised and the row outlives the user. The day column
+  -- holds the Europe/London calendar date, stamped at write time so per-day
+  -- aggregation is timezone-correct regardless of the (UTC) server clock.
+  CREATE TABLE IF NOT EXISTS login_event (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    email   TEXT,
+    role    TEXT,
+    day     TEXT NOT NULL,
+    ts      TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_login_event_day ON login_event (day);
 `);
 
 // Migration: add columns to an existing door table (deployed DBs on the volume
@@ -570,8 +586,15 @@ function logSync(entry) {
   });
 }
 
+// Europe/London calendar date (YYYY-MM-DD). Used to stamp login events so the
+// admin per-day stats bucket correctly whatever timezone the server runs in.
+function londonDay(d = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(d);
+}
+
 module.exports = {
   db,
+  londonDay,
   RECENT_DAYS,
   STAGES,
   isGenericDomain,
@@ -612,6 +635,31 @@ module.exports = {
       "INSERT OR REPLACE INTO digest_log (digest_date, sent_at, recipients, events) VALUES (?, datetime('now'), ?, ?)"
     ).run(date, recipients, events),
   lastDigest: () => db.prepare("SELECT * FROM digest_log ORDER BY digest_date DESC LIMIT 1").get(),
+
+  // ---- portal login statistics --------------------------------------------
+  // Record one successful credential sign-in. `day` defaults to today (London)
+  // but is injectable so tests can seed history across multiple days.
+  recordLogin: ({ userId = null, email = null, role = null, day = londonDay() } = {}) =>
+    db.prepare("INSERT INTO login_event (user_id, email, role, day) VALUES (?,?,?,?)")
+      .run(userId, email == null ? null : String(email), role == null ? null : String(role), day),
+  // Per-day counts (total logins + distinct users), most recent day first.
+  // Only days that actually have logins are returned; the caller zero-fills.
+  loginStatsByDay: (days = 60) =>
+    db.prepare(
+      `SELECT day, COUNT(*) AS logins, COUNT(DISTINCT user_id) AS users
+         FROM login_event
+        GROUP BY day
+        ORDER BY day DESC
+        LIMIT ?`
+    ).all(days),
+  loginTotals: () =>
+    db.prepare(
+      `SELECT COUNT(*) AS logins, COUNT(DISTINCT user_id) AS users,
+              MIN(day) AS first_day, MAX(day) AS last_day
+         FROM login_event`
+    ).get(),
+  recentLogins: (n = 15) =>
+    db.prepare("SELECT user_id, email, role, ts FROM login_event ORDER BY id DESC LIMIT ?").all(n),
 
   // ---- per-customer email preferences -------------------------------------
   getPrefs: (userId) =>
