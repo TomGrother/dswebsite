@@ -36,7 +36,7 @@ test("recency window: keep unpacked + recently-scheduled, drop old-packed/cancel
     { snapshot: true }
   );
   auth.addMapping("r.co.uk", "R");
-  const u = await auth.createUser({ email: "u@r.co.uk", password: "Password123", role: "customer" });
+  const u = await auth.createUser({ email: "u@r.co.uk", password: "Password123!", role: "customer" });
 
   const ids = store.ordersForUser(u, {}).flatMap((o) => o.doors.map((x) => x.id)).sort();
   assert.deepStrictEqual(ids, [1, 2], "keeps unpacked+recent and packed+recent; drops old-packed, cancelled, removed, and ancient un-packed");

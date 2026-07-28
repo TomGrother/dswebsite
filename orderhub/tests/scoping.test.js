@@ -41,7 +41,7 @@ test("domain-scoped customer sees only their domain's refs", async () => {
   auth.addMapping("acme.co.uk", "ACME01");
   auth.addMapping("acme.co.uk", "ACME02");
   auth.addMapping("other.co.uk", "OTHER01");
-  const acme = await auth.createUser({ email: "buyer@acme.co.uk", password: "Password123", role: "customer" });
+  const acme = await auth.createUser({ email: "buyer@acme.co.uk", password: "Password123!", role: "customer" });
 
   const orders = store.ordersForUser(acme, {});
   assert.deepStrictEqual(refsSeen(orders), ["ACME01", "ACME02"], "sees both Acme refs");
@@ -51,25 +51,25 @@ test("domain-scoped customer sees only their domain's refs", async () => {
 });
 
 test("customer with an explicit override is restricted to just that ref", async () => {
-  const u = await auth.createUser({ email: "restricted@acme.co.uk", password: "Password123", role: "customer" });
+  const u = await auth.createUser({ email: "restricted@acme.co.uk", password: "Password123!", role: "customer" });
   auth.addOverride(u.id, "ACME01"); // even though the domain maps to ACME01+ACME02
   const orders = store.ordersForUser(u, {});
   assert.deepStrictEqual(refsSeen(orders), ["ACME01"], "override wins over domain map");
 });
 
 test("a generic email domain scopes to nothing (no cross-customer leak)", async () => {
-  const g = await auth.createUser({ email: "someone@gmail.com", password: "Password123", role: "customer" });
+  const g = await auth.createUser({ email: "someone@gmail.com", password: "Password123!", role: "customer" });
   const orders = store.ordersForUser(g, {});
   assert.strictEqual(orders.length, 0, "gmail user sees no orders without explicit overrides");
 });
 
 test("a customer whose domain maps to nothing sees nothing", async () => {
-  const u = await auth.createUser({ email: "buyer@unmapped.co.uk", password: "Password123", role: "customer" });
+  const u = await auth.createUser({ email: "buyer@unmapped.co.uk", password: "Password123!", role: "customer" });
   assert.strictEqual(store.ordersForUser(u, {}).length, 0);
 });
 
 test("staff see every customer's orders", async () => {
-  const staff = await auth.createUser({ email: "staff@designandsupply.co.uk", password: "Password123", role: "staff" });
+  const staff = await auth.createUser({ email: "staff@designandsupply.co.uk", password: "Password123!", role: "staff" });
   const orders = store.ordersForUser(staff, {});
   assert.deepStrictEqual(refsSeen(orders), ["ACME01", "ACME02", "OTHER01"]);
 });

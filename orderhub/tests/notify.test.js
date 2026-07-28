@@ -21,8 +21,8 @@ const d = (offset) => new Date(Date.now() + offset * 86400000).toISOString().sli
 test("digest: captures transitions, emails each customer only their own changes", async () => {
   auth.addMapping("r.co.uk", "R");
   auth.addMapping("other.co.uk", "OTHER");
-  await auth.createUser({ email: "u@r.co.uk", password: "Password123", role: "customer", display_name: "Rita Buyer" });
-  await auth.createUser({ email: "o@other.co.uk", password: "Password123", role: "customer" });
+  await auth.createUser({ email: "u@r.co.uk", password: "Password123!", role: "customer", display_name: "Rita Buyer" });
+  await auth.createUser({ email: "o@other.co.uk", password: "Password123!", role: "customer" });
 
   // Baseline load into an empty hub -> NO events (avoids first-run spam).
   store.ingestDoors(
@@ -48,7 +48,7 @@ test("digest: captures transitions, emails each customer only their own changes"
 
   const sent = [];
   const fakeSend = async (to, subject, html) => { sent.push({ to, subject, html }); };
-  const result = await notify.runDigest({ send: fakeSend, force: true });
+  const result = await notify.runDigest({ send: fakeSend });
 
   assert.strictEqual(result.events, 4, "4 change events captured");
   assert.strictEqual(result.emails, 2, "one email per affected customer");
@@ -71,15 +71,26 @@ test("digest: captures transitions, emails each customer only their own changes"
 
 test("digest: idempotent — a second run has nothing left to send", async () => {
   const sent = [];
-  const result = await notify.runDigest({ send: async (...a) => sent.push(a), force: true });
+  const result = await notify.runDigest({ send: async (...a) => sent.push(a) });
   assert.strictEqual(result.emails, 0, "no emails second time");
   assert.strictEqual(result.events, 0, "events already marked notified");
   assert.strictEqual(sent.length, 0, "transport not called");
 });
 
-test("digest: once-a-day guard skips a non-forced run after one has sent", async () => {
-  const result = await notify.runDigest({ send: async () => {}, force: false });
-  assert.strictEqual(result.skipped, "already-sent-today", "guarded against double-send");
+test("digest: once-a-day guard — a customer sent today is not due again until tomorrow", () => {
+  // The first test's runDigest sent to both customers, which stamps
+  // digest_last_sent = today. The scheduler's at-most-once-a-day guard lives in
+  // customersDueForDigest: a customer already sent today is excluded, and
+  // re-included on a later day.
+  const rita = auth.getUserByEmail("u@r.co.uk");
+  const sentDate = store.getPrefs(rita.id).digest_last_sent;
+  assert.ok(sentDate, "the send stamped digest_last_sent");
+
+  const dueToday = store.customersDueForDigest(sentDate, 23);
+  assert.ok(!dueToday.some((u) => u.email === "u@r.co.uk"), "already-sent customer is skipped today");
+
+  const dueLater = store.customersDueForDigest("2099-01-01", 23);
+  assert.ok(dueLater.some((u) => u.email === "u@r.co.uk"), "due again on a later day");
 });
 
 test("orders broadcast: emails each customer a full snapshot of their live orders, scoped", async () => {
@@ -94,7 +105,7 @@ test("orders broadcast: emails each customer a full snapshot of their live order
   assert.ok(rita.html.includes("D-1"), "shows door reference");
   assert.ok(rita.html.includes("Program") && rita.html.includes("Punch") && rita.html.includes("Pack"),
     "renders the production-stage tracker");
-  assert.ok(rita.html.includes("coming soon"), "includes the Customer Hub coming-soon banner");
+  assert.ok(!rita.html.includes("coming soon"), "no stale Customer Hub coming-soon banner (it was removed)");
   assert.ok(!rita.html.includes("D-9"), "scoped — no other customer's door in her email");
   assert.ok(rita.subject.includes("production status"), "snapshot subject, not a change summary");
 
