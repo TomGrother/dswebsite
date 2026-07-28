@@ -788,6 +788,36 @@ admin.get("/stats", (req, res) => {
     .map((d) => `<tr><td>${esc(fmtDay(d.day, { weekday: "short", day: "numeric", month: "short", year: "numeric" }))}</td><td>${d.logins}</td><td>${d.users}</td></tr>`)
     .join("");
 
+  // Who is signing in: one row per user, most recently active first.
+  const roleTag = (role) =>
+    role === "staff"
+      ? '<span class="pill pill-draft">Staff</span>'
+      : '<span class="pill pill-live">Customer</span>';
+  const userName = (u) => {
+    const name = u.display_name ? esc(u.display_name) : esc(u.email || "(unknown)");
+    const sub = u.display_name && u.email ? `<div style="font-size:12px;color:var(--slate)">${esc(u.email)}</div>` : "";
+    const del = u.deleted ? ' <span style="color:#b00;font-size:12px">(deleted)</span>' : "";
+    return `${name}${del}${sub}`;
+  };
+  const byUser = store.loginsByUser();
+  const userRows = byUser
+    .map((u) => {
+      const seen = fmtSyncStamp(u.last_ts);
+      return `<tr><td>${userName(u)}</td><td>${roleTag(u.role)}</td><td>${u.logins}</td><td>${u.days}</td><td title="${esc(seen.abs)}">${esc(seen.rel)}</td></tr>`;
+    })
+    .join("");
+
+  // Latest individual sign-ins.
+  const recent = store.recentLogins(20);
+  const recentRows = recent
+    .map((r) => {
+      const when = fmtSyncStamp(r.ts);
+      const who = r.display_name ? esc(r.display_name) : esc(r.email || "(unknown)");
+      const del = r.deleted ? ' <span style="color:#b00;font-size:12px">(deleted)</span>' : "";
+      return `<tr><td title="${esc(when.abs)}">${esc(when.abs)}</td><td>${who}${del}</td><td>${roleTag(r.role)}</td></tr>`;
+    })
+    .join("");
+
   body += `<style>
     .lc-chart{display:flex;align-items:flex-end;gap:5px;height:200px;padding:14px 4px 0;min-width:640px}
     .lc-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
@@ -805,7 +835,16 @@ admin.get("/stats", (req, res) => {
   </div>
   <h3 style="margin:0 0 4px">Last 30 days</h3>
   <div class="table-scroll"><div class="lc-chart">${bars}</div></div>
-  <div class="table-scroll" style="margin-top:26px"><table class="admin-table"><tr><th>Day</th><th>Sign-ins</th><th>Distinct users</th></tr>${tableRows}</table></div>
+
+  <h3 style="margin:30px 0 4px">Who's signing in</h3>
+  <p style="color:var(--slate);font-size:13px;margin:0 0 10px">Each user who has signed in, most recently active first.</p>
+  <div class="table-scroll"><table class="admin-table"><tr><th>User</th><th>Role</th><th>Sign-ins</th><th>Days active</th><th>Last seen</th></tr>${userRows}</table></div>
+
+  <h3 style="margin:30px 0 4px">Recent sign-ins</h3>
+  <div class="table-scroll"><table class="admin-table"><tr><th>When (UK)</th><th>User</th><th>Role</th></tr>${recentRows}</table></div>
+
+  <h3 style="margin:30px 0 4px">Sign-ins by day</h3>
+  <div class="table-scroll"><table class="admin-table"><tr><th>Day</th><th>Sign-ins</th><th>Distinct users</th></tr>${tableRows}</table></div>
   <p style="color:var(--slate);font-size:13px;margin-top:14px">Tracking since ${esc(fmtDay(totals.first_day, { day: "numeric", month: "short", year: "numeric" }))}. Counts credential sign-ins; a user returning within their 12-hour session isn't re-counted.</p>`;
 
   res.send(page("Login Statistics", body, { user: req.portalUser }));

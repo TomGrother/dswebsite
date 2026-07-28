@@ -53,3 +53,19 @@ test("recentLogins: newest first, capped at n", () => {
   assert.strictEqual(recent.length, 2, "respects the limit");
   assert.strictEqual(recent[0].email, "c@x.co.uk", "most recent first");
 });
+
+test("loginsByUser: one row per user with counts, days and last-seen", () => {
+  // Seeded so far: user 1 (3 sign-ins across 2 days), user 2 (1), user 3 (1).
+  const rows = store.loginsByUser();
+  const byId = new Map(rows.map((r) => [r.user_id, r]));
+
+  assert.strictEqual(byId.get(1).logins, 3, "user 1 has 3 sign-ins");
+  assert.strictEqual(byId.get(1).days, 2, "user 1 active on 2 distinct days");
+  assert.strictEqual(byId.get(2).logins, 1, "user 2 has 1 sign-in");
+  assert.strictEqual(byId.get(3).logins, 1, "user 3 (staff) has 1 sign-in");
+
+  // No app_user rows exist in this test DB, so every user reads as deleted and
+  // falls back to the email stored on the event.
+  assert.strictEqual(byId.get(2).email, "b@x.co.uk", "falls back to the stored email");
+  assert.strictEqual(byId.get(2).deleted, 1, "flags an account with no app_user row");
+});

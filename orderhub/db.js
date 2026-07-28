@@ -658,8 +658,36 @@ module.exports = {
               MIN(day) AS first_day, MAX(day) AS last_day
          FROM login_event`
     ).get(),
-  recentLogins: (n = 15) =>
-    db.prepare("SELECT user_id, email, role, ts FROM login_event ORDER BY id DESC LIMIT ?").all(n),
+  // Most recent individual sign-ins (who + when). Joins app_user for the
+  // current display name; falls back to the email stored on the event, which
+  // survives even if the account is later deleted.
+  recentLogins: (n = 20) =>
+    db.prepare(
+      `SELECT le.user_id, le.email, le.role, le.ts, u.display_name,
+              CASE WHEN u.id IS NULL THEN 1 ELSE 0 END AS deleted
+         FROM login_event le
+         LEFT JOIN app_user u ON u.id = le.user_id
+        ORDER BY le.ts DESC, le.id DESC
+        LIMIT ?`
+    ).all(n),
+  // One row per user who has ever signed in: total sign-ins, distinct days, and
+  // when they were last seen. Deleted accounts still appear (via the stored
+  // email), flagged deleted=1.
+  loginsByUser: () =>
+    db.prepare(
+      `SELECT le.user_id,
+              COALESCE(u.email, MAX(le.email)) AS email,
+              u.display_name                   AS display_name,
+              COALESCE(u.role, MAX(le.role))   AS role,
+              MAX(CASE WHEN u.id IS NULL THEN 1 ELSE 0 END) AS deleted,
+              COUNT(*)               AS logins,
+              COUNT(DISTINCT le.day) AS days,
+              MAX(le.ts)             AS last_ts
+         FROM login_event le
+         LEFT JOIN app_user u ON u.id = le.user_id
+        GROUP BY le.user_id
+        ORDER BY last_ts DESC`
+    ).all(),
 
   // ---- per-customer email preferences -------------------------------------
   getPrefs: (userId) =>
