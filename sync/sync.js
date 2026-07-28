@@ -98,38 +98,52 @@ const QUERY = `
       (
         (COALESCE(d.complete_pack, 0) = 1 OR COALESCE(d.status_id, 1) = 3)
         AND (
-          -- The order still has live (not done, not ancient) work.
-          EXISTS (
-            SELECT 1
-            FROM dbo.door d2
-            INNER JOIN dbo.door_type dt2 ON d2.door_type_id = dt2.id
-            WHERE d2.order_id = d.order_id
-              AND COALESCE(d2.status_id, 1) NOT IN (4, 6)
-              AND (dt2.slimline_y_n = 0 OR dt2.slimline_y_n IS NULL)
-              AND (dt2.door_type_description IS NULL OR LTRIM(RTRIM(dt2.door_type_description)) <> 'Standard Installation')
-              AND NOT (COALESCE(d2.complete_pack, 0) = 1 OR COALESCE(d2.status_id, 1) = 3)
-              AND (d2.date_completion IS NULL OR d2.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date)))
+          -- A door with a real order_id is kept per ORDER: the order still has
+          -- live work, or its last actual completion is inside the window.
+          -- IMPORTANT: these EXISTS subqueries must only run when order_id is
+          -- present. For a NULL order_id, d3.order_id = d.order_id is UNKNOWN and
+          -- matches no rows, so MAX(...) over the empty set returns NULL and the
+          -- "x.last_done IS NULL" test fires — which would keep EVERY undateable-
+          -- by-order done door forever (this is what pushed ~10k stale legacy
+          -- doors and overran the 4mb ingest limit). NULL order_id is handled
+          -- solely by the orphan branch below, on the door's OWN date.
+          (
+            d.order_id IS NOT NULL
+            AND (
+              -- The order still has live (not done, not ancient) work.
+              EXISTS (
+                SELECT 1
+                FROM dbo.door d2
+                INNER JOIN dbo.door_type dt2 ON d2.door_type_id = dt2.id
+                WHERE d2.order_id = d.order_id
+                  AND COALESCE(d2.status_id, 1) NOT IN (4, 6)
+                  AND (dt2.slimline_y_n = 0 OR dt2.slimline_y_n IS NULL)
+                  AND (dt2.door_type_description IS NULL OR LTRIM(RTRIM(dt2.door_type_description)) <> 'Standard Installation')
+                  AND NOT (COALESCE(d2.complete_pack, 0) = 1 OR COALESCE(d2.status_id, 1) = 3)
+                  AND (d2.date_completion IS NULL OR d2.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date)))
+              )
+              -- ...or the order's last ACTUAL completion is inside the window.
+              -- Only FINISHED doors count, so an un-packed door's scheduled date
+              -- can't inflate it. An order with no completion date at all is kept.
+              OR EXISTS (
+                SELECT 1 FROM (
+                  SELECT MAX(COALESCE(d3.date_pack_complete, d3.date_completion)) AS last_done
+                  FROM dbo.door d3
+                  INNER JOIN dbo.door_type dt3 ON d3.door_type_id = dt3.id
+                  WHERE d3.order_id = d.order_id
+                    AND COALESCE(d3.status_id, 1) NOT IN (4, 6)
+                    AND (dt3.slimline_y_n = 0 OR dt3.slimline_y_n IS NULL)
+                    AND (dt3.door_type_description IS NULL OR LTRIM(RTRIM(dt3.door_type_description)) <> 'Standard Installation')
+                    AND (COALESCE(d3.complete_pack, 0) = 1 OR COALESCE(d3.status_id, 1) = 3)
+                ) x
+                WHERE x.last_done IS NULL
+                   OR x.last_done >= DATEADD(day, -@recent, CAST(GETDATE() AS date))
+              )
+            )
           )
-          -- ...or the order's last ACTUAL completion is inside the window. Only
-          -- FINISHED doors count, so an un-packed door's scheduled date can't
-          -- inflate it. An order with no completion date at all is kept — we
-          -- can't age out what we can't date.
-          OR EXISTS (
-            SELECT 1 FROM (
-              SELECT MAX(COALESCE(d3.date_pack_complete, d3.date_completion)) AS last_done
-              FROM dbo.door d3
-              INNER JOIN dbo.door_type dt3 ON d3.door_type_id = dt3.id
-              WHERE d3.order_id = d.order_id
-                AND COALESCE(d3.status_id, 1) NOT IN (4, 6)
-                AND (dt3.slimline_y_n = 0 OR dt3.slimline_y_n IS NULL)
-                AND (dt3.door_type_description IS NULL OR LTRIM(RTRIM(dt3.door_type_description)) <> 'Standard Installation')
-                AND (COALESCE(d3.complete_pack, 0) = 1 OR COALESCE(d3.status_id, 1) = 3)
-            ) x
-            WHERE x.last_done IS NULL
-               OR x.last_done >= DATEADD(day, -@recent, CAST(GETDATE() AS date))
-          )
-          -- Orphan safety: a door with no order_id can't be grouped, so fall
-          -- back to its own completion date rather than silently vanishing.
+          -- Orphan: a done door with no order_id can't be grouped, so age it out
+          -- on its OWN pack/completion date. Undateable rows (both dates NULL) are
+          -- kept — we can't age out what we can't date.
           OR (
             d.order_id IS NULL
             AND (COALESCE(d.date_pack_complete, d.date_completion) IS NULL
