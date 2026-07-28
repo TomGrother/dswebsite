@@ -79,6 +79,11 @@ const QUERY = `
     AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
     -- Exclude non-door service lines (e.g. installation) — not a manufactured door.
     AND (dt.door_type_description IS NULL OR LTRIM(RTRIM(dt.door_type_description)) <> 'Standard Installation')
+    -- A door with no scheduled completion date (date_completion) is stale /
+    -- incomplete data and is excluded entirely, ahead of the retention rules
+    -- below. Every genuine door carries a scheduled date; rows without one are
+    -- legacy or placeholder noise the portal shouldn't show.
+    AND d.date_completion IS NOT NULL
     -- "Done" = packed OR status Complete (3). Retention is per ORDER: a door
     -- still in production stays until it's ancient (STALE_DAYS); a done door
     -- stays while its order still has live work, or for RECENT_DAYS after the
@@ -92,7 +97,7 @@ const QUERY = `
     AND (
       (
         NOT (COALESCE(d.complete_pack, 0) = 1 OR COALESCE(d.status_id, 1) = 3)
-        AND (d.date_completion IS NULL OR d.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date)))
+        AND d.date_completion >= DATEADD(day, -@stale, CAST(GETDATE() AS date))
       )
       OR
       (
@@ -124,7 +129,7 @@ const QUERY = `
               )
               -- ...or the order's last ACTUAL completion is inside the window.
               -- Only FINISHED doors count, so an un-packed door's scheduled date
-              -- can't inflate it. An order with no completion date at all is kept.
+              -- can't inflate it.
               OR EXISTS (
                 SELECT 1 FROM (
                   SELECT MAX(COALESCE(d3.date_pack_complete, d3.date_completion)) AS last_done
@@ -142,12 +147,12 @@ const QUERY = `
             )
           )
           -- Orphan: a done door with no order_id can't be grouped, so age it out
-          -- on its OWN pack/completion date. Undateable rows (both dates NULL) are
-          -- kept — we can't age out what we can't date.
+          -- on its OWN pack/completion date. (It always has a scheduled date now —
+          -- the top-level filter dropped undated rows — so there is nothing
+          -- undateable left to special-case.)
           OR (
             d.order_id IS NULL
-            AND (COALESCE(d.date_pack_complete, d.date_completion) IS NULL
-                 OR COALESCE(d.date_pack_complete, d.date_completion) >= DATEADD(day, -@recent, CAST(GETDATE() AS date)))
+            AND COALESCE(d.date_pack_complete, d.date_completion) >= DATEADD(day, -@recent, CAST(GETDATE() AS date))
           )
         )
       )
