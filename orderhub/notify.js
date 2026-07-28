@@ -244,6 +244,10 @@ function renderWelcomeEmail(user, tempPassword) {
   const subject = "Your Design & Supply Customer Portal login";
   const body = `<p style="margin:0 0 6px;font-size:20px;color:#1a2b26;font-weight:600">Track your orders, live</p>
       <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#5a6b66">Hi ${name}, we've set up a Customer Portal account for you. You can follow every doorset through our factory in real time — from programming through to packing.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:separate"><tr><td bgcolor="#eef5f2" style="background:#eef5f2;border:1px solid #cfe3db;border-left:4px solid #0E6551;border-radius:10px;padding:14px 18px">
+        <p style="margin:0 0 6px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#0E6551;font-weight:700">Beta &middot; Early access</p>
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#1a2b26">You're one of the first. The Customer Portal is currently in beta testing, being rolled out to a small group of valued customers ahead of a wider launch. Thank you for helping us shape it — if anything doesn't look quite right, just let us know and we'll put it straight.</p>
+      </td></tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:separate"><tr><td bgcolor="#f4f7f6" style="background:#f4f7f6;border:1px solid #e6ebe9;border-radius:10px;padding:16px 18px">
         <p style="margin:0 0 8px;font-size:13px;color:#5a6b66;font-weight:600">Your sign-in details</p>
         <p style="margin:0;font-size:14px;color:#1a2b26;line-height:1.9">Email: <b>${esc(user.email)}</b><br>
