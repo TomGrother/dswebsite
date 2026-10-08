@@ -73,13 +73,18 @@ function uniqueSlug(type, desired, ignoreId) {
   return slug;
 }
 
+// Newest first by DATE. sort_order comes second — it was the migrated WP
+// ordering (15..1) and admin-created posts get 0, so leading with it pinned
+// every new article below all the old ones. Date-first preserves the migrated
+// order (their dates descend in step with sort_order) and leaves sort_order as
+// a manual tiebreaker for same-day posts.
 const listPublished = db.prepare(`
   SELECT * FROM posts WHERE type = ? AND is_published = 1
-  ORDER BY sort_order DESC, COALESCE(published_at,'') DESC, id DESC
+  ORDER BY COALESCE(published_at,'') DESC, sort_order DESC, id DESC
 `);
 const listAllOfType = db.prepare(`
   SELECT * FROM posts WHERE type = ?
-  ORDER BY sort_order DESC, COALESCE(published_at,'') DESC, id DESC
+  ORDER BY COALESCE(published_at,'') DESC, sort_order DESC, id DESC
 `);
 const getBySlugStmt = db.prepare("SELECT * FROM posts WHERE type = ? AND slug = ? AND is_published = 1");
 const getByIdStmt = db.prepare("SELECT * FROM posts WHERE id = ?");
@@ -146,7 +151,9 @@ module.exports = {
         excerpt: p.excerpt || null,
         body: p.body || null,
         image: p.image || null,
-        published_at: p.published_at || null,
+        // Blank date would sink the post to the bottom of the date-first sort,
+        // so a new post defaults to today (UK) — visible and editable in admin.
+        published_at: p.published_at || new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date()),
         is_published: p.is_published === 0 ? 0 : 1,
         sort_order: p.sort_order || 0,
       });
