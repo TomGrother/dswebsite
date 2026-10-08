@@ -54,6 +54,15 @@ db.exec(`
   );
 `);
 
+// Backfill: posts saved before published_at defaulted to today could have a
+// blank date, which the date-first sort pins to the bottom of the page. Their
+// created_at is exactly "when it was posted", so adopt its date. Idempotent —
+// runs at every boot, touches only dateless rows.
+const backfilled = db
+  .prepare("UPDATE posts SET published_at = substr(created_at, 1, 10) WHERE published_at IS NULL OR published_at = ''")
+  .run().changes;
+if (backfilled) console.log(`Backfilled published_at from created_at on ${backfilled} post(s).`);
+
 function slugify(text) {
   return String(text)
     .toLowerCase()
