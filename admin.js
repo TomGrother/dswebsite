@@ -9,44 +9,9 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
-const sanitizeHtml = require("sanitize-html");
 const store = require("./db");
 
 const router = express.Router();
-
-// Every article body passes through here on save. The editor produces HTML,
-// and legacy articles already stored HTML that renderBody() outputs verbatim —
-// so this allowlist is the only thing standing between a pasted-from-Word mess
-// (or worse) and the public site. Plain-text bodies pass through unchanged and
-// still render via the paragraph builder in content.js.
-function cleanBody(html) {
-  const s = String(html || "");
-  if (!s.trim()) return "";
-  return sanitizeHtml(s, {
-    allowedTags: ["p", "br", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s",
-      "ul", "ol", "li", "a", "blockquote", "img", "figure", "figcaption", "iframe", "hr"],
-    allowedAttributes: {
-      a: ["href", "target", "rel"],
-      img: ["src", "alt", "width", "height"],
-      iframe: ["src", "width", "height", "allowfullscreen", "frameborder"],
-    },
-    // Video embeds: YouTube/Vimeo only (legacy articles use them).
-    allowedIframeHostnames: ["www.youtube.com", "youtube.com", "www.youtube-nocookie.com", "player.vimeo.com"],
-    allowedSchemes: ["http", "https", "mailto", "tel"],
-    // An iframe whose src failed the hostname check would survive as an empty
-    // tag and render as a blank box — drop it outright.
-    exclusiveFilter: (frame) => frame.tag === "iframe" && !(frame.attribs && frame.attribs.src),
-    // Word/Google-Docs paste arrives as div soup — flatten it to paragraphs,
-    // and make sure links opened in a new tab can't reach back to our window.
-    transformTags: {
-      div: "p",
-      a: (tagName, attribs) => ({
-        tagName: "a",
-        attribs: attribs.target === "_blank" ? { ...attribs, rel: "noopener" } : attribs,
-      }),
-    },
-  });
-}
 
 // Cache-bust the stylesheet (these pages render live, not via build.js).
 let CSS_V = "";
@@ -195,24 +160,6 @@ function form(post, type) {
     .img-preview{position:relative;display:inline-block;margin-bottom:10px}
     .img-preview img{max-width:280px;max-height:180px;border:1px solid var(--line);border-radius:8px;display:block}
     .img-preview button{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:0;background:#b00;color:#fff;cursor:pointer;font-size:15px;line-height:1}
-    .ed-bar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;background:var(--mist);padding:7px 9px}
-    .ed-bar button{border:1px solid transparent;background:none;border-radius:6px;padding:5px 10px;font-size:13.5px;color:var(--ink);cursor:pointer;line-height:1.2}
-    .ed-bar button:hover{background:#fff;border-color:var(--line)}
-    .ed-bar button.on{background:#fff;border-color:var(--accent);color:var(--accent)}
-    .ed-bar select{border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:13.5px;background:#fff;color:var(--ink)}
-    .ed-sep{width:1px;height:20px;background:var(--line);margin:0 4px}
-    .ed-area{border:1px solid var(--line);border-radius:0 0 8px 8px;background:#fff;min-height:420px;padding:18px 20px;font-size:16px;line-height:1.65;color:var(--ink);outline:none;overflow-y:auto}
-    .ed-area:focus{border-color:var(--accent)}
-    .ed-area p{margin:0 0 14px;color:var(--slate)}
-    .ed-area h2{font-size:24px;margin:22px 0 10px;color:var(--ink)}
-    .ed-area h3{font-size:19px;margin:18px 0 8px;color:var(--ink)}
-    .ed-area ul,.ed-area ol{padding-left:24px;margin:0 0 14px;color:var(--slate)}
-    .ed-area ul{list-style:disc}.ed-area ol{list-style:decimal}
-    .ed-area li{margin-bottom:6px}
-    .ed-area blockquote{border-left:3px solid var(--accent);padding-left:16px;margin:16px 0;color:var(--ink)}
-    .ed-area a{color:var(--accent);text-decoration:underline}
-    .ed-area strong,.ed-area b{color:var(--ink)}
-    .ed-area img{max-width:100%;height:auto;border-radius:8px}
     </style>
     <h1>${post ? "Edit" : "New"} <em style="font-style:normal;color:var(--accent)">${esc(TYPE_LABEL[t] || t)}</em></h1>
     <form method="post" action="${action}" class="form" style="margin-top:24px;max-width:900px">
@@ -232,32 +179,7 @@ function form(post, type) {
         </div>
       </div>
       <div><label for="excerpt">Excerpt (shown on the card)</label><textarea id="excerpt" name="excerpt" style="min-height:80px">${esc(p.excerpt || "")}</textarea></div>
-      <div><label for="body">Body</label>
-        <div id="edWrap" style="display:none">
-          <div class="ed-bar" id="edBar">
-            <select id="edStyle" title="Text style">
-              <option value="p">Paragraph</option>
-              <option value="h2">Heading</option>
-              <option value="h3">Subheading</option>
-              <option value="blockquote">Quote</option>
-            </select>
-            <span class="ed-sep"></span>
-            <button type="button" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-            <button type="button" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-            <button type="button" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
-            <span class="ed-sep"></span>
-            <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">&bull; List</button>
-            <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
-            <span class="ed-sep"></span>
-            <button type="button" id="edLink" title="Insert link">Link</button>
-            <button type="button" id="edUnlink" title="Remove link">Unlink</button>
-            <span class="ed-sep"></span>
-            <button type="button" id="edClear" title="Clear formatting">Clear</button>
-          </div>
-          <div class="ed-area" id="edArea" contenteditable="true"></div>
-        </div>
-        <textarea id="body" name="body" style="min-height:420px" placeholder="Write your article here. Leave a blank line between paragraphs.">${esc(p.body || "")}</textarea>
-        <small style="color:var(--slate);display:block;margin-top:6px">Format as you write — headings, bold, lists and links come through exactly as styled on the site. Pasting from Word is cleaned up automatically.</small></div>
+      <div><label for="body">Body</label><textarea id="body" name="body" style="min-height:420px" placeholder="Write your article here. Leave a blank line between paragraphs.">${esc(p.body || "")}</textarea><small style="color:var(--slate);display:block;margin-top:6px">Just write — plain text. Leave a blank line between paragraphs. (Articles previously written in HTML still display correctly.)</small></div>
       <label class="consent"><input type="checkbox" name="is_published" value="1" ${!post || p.is_published ? "checked" : ""}> Published (visible on the site)</label>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <button class="btn btn-primary" type="submit">${post ? "Save changes" : "Create"}</button>
@@ -297,84 +219,6 @@ function form(post, type) {
       drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('over');handle(e.dataTransfer.files[0]);});
       bindClear();
     })();
-    </script>
-    <script>
-    (function(){
-      function $(id){return document.getElementById(id);}
-      var ta=$('body'),wrap=$('edWrap'),ed=$('edArea'),bar=$('edBar'),sel=$('edStyle');
-      if(!ta||!wrap||!ed||!bar) return;
-      function escText(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-      function plainToHtml(t){
-        return t.replace(/\\r\\n/g,'\\n').split(/\\n{2,}/).map(function(p){return p.trim();}).filter(Boolean)
-          .map(function(p){return '<p>'+escText(p).replace(/\\n/g,'<br>')+'</p>';}).join('');
-      }
-      var v=ta.value||'';
-      var looksHtml=/<(p|h[1-6]|ul|ol|li|div|table|blockquote|br|img|a|strong|em|b|i|figure|iframe|span)[\\s>/]/i.test(v);
-      ed.innerHTML=v.trim()?(looksHtml?v:plainToHtml(v)):'<p><br></p>';
-      ta.style.display='none'; wrap.style.display='';
-      try{document.execCommand('defaultParagraphSeparator',false,'p');}catch(e){}
-      function sync(){ta.value=ed.innerHTML;}
-      ed.addEventListener('input',sync);
-      ta.form.addEventListener('submit',sync);
-      bar.addEventListener('click',function(e){
-        var b=e.target.closest('button[data-cmd]'); if(!b) return;
-        ed.focus(); document.execCommand(b.getAttribute('data-cmd'),false,null); sync(); states();
-      });
-      sel.addEventListener('change',function(){ ed.focus(); document.execCommand('formatBlock',false,'<'+sel.value+'>'); sync(); });
-      $('edLink').onclick=function(){
-        ed.focus(); var u=prompt('Link address (https://\\u2026)'); if(!u) return;
-        if(!/^(https?:|mailto:|tel:|\\/)/i.test(u)) u='https://'+u;
-        document.execCommand('createLink',false,u); sync();
-      };
-      $('edUnlink').onclick=function(){ ed.focus(); document.execCommand('unlink',false,null); sync(); };
-      $('edClear').onclick=function(){ ed.focus(); document.execCommand('removeFormat',false,null); document.execCommand('formatBlock',false,'<p>'); sync(); states(); };
-      function states(){
-        ['bold','italic','underline','insertUnorderedList','insertOrderedList'].forEach(function(c){
-          var b=bar.querySelector('button[data-cmd="'+c+'"]'); if(!b) return;
-          var on=false; try{on=document.queryCommandState(c);}catch(e){}
-          b.classList.toggle('on',on);
-        });
-        var n=window.getSelection&&window.getSelection().anchorNode,blk='p';
-        while(n&&n!==ed){ if(n.nodeType===1){var t=n.tagName.toLowerCase(); if(t==='h2'||t==='h3'||t==='blockquote'){blk=t;break;}} n=n.parentNode; }
-        sel.value=blk;
-      }
-      document.addEventListener('selectionchange',function(){
-        var s=document.getSelection();
-        if(s&&s.anchorNode&&ed.contains(s.anchorNode)) states();
-      });
-      ed.addEventListener('paste',function(e){
-        var cd=e.clipboardData; if(!cd) return;
-        e.preventDefault();
-        var html=cd.getData('text/html');
-        if(html){
-          var box=document.createElement('div'); box.innerHTML=html;
-          ['script','style','meta','link','title'].forEach(function(t){
-            Array.prototype.slice.call(box.querySelectorAll(t)).forEach(function(n){n.parentNode&&n.parentNode.removeChild(n);});
-          });
-          var ALLOW={P:1,BR:1,H2:1,H3:1,H4:1,STRONG:1,B:1,EM:1,I:1,U:1,S:1,UL:1,OL:1,LI:1,A:1,BLOCKQUOTE:1,IMG:1,FIGURE:1,FIGCAPTION:1,HR:1};
-          var els=Array.prototype.slice.call(box.querySelectorAll('*'));
-          for(var i=els.length-1;i>=0;i--){
-            var el=els[i],tag=el.tagName;
-            if(tag==='DIV'||tag==='SECTION'||tag==='ARTICLE'){
-              var pEl=document.createElement('p');
-              while(el.firstChild) pEl.appendChild(el.firstChild);
-              el.parentNode.replaceChild(pEl,el); el=pEl; tag='P';
-            } else if(!ALLOW[tag]){
-              while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el);
-              el.parentNode.removeChild(el); continue;
-            }
-            for(var a=el.attributes.length-1;a>=0;a--){
-              var nm=el.attributes[a].name;
-              if(!((tag==='A'&&nm==='href')||(tag==='IMG'&&(nm==='src'||nm==='alt')))) el.removeAttribute(nm);
-            }
-          }
-          document.execCommand('insertHTML',false,box.innerHTML);
-        } else {
-          document.execCommand('insertText',false,cd.getData('text/plain'));
-        }
-        sync();
-      });
-    })();
     </script>`
   );
 }
@@ -393,7 +237,7 @@ router.post("/new/:type", (req, res) => {
     title: b.title,
     category: b.category,
     excerpt: b.excerpt,
-    body: cleanBody(b.body),
+    body: b.body,
     image: b.image,
     published_at: b.published_at,
     is_published: b.is_published ? 1 : 0,
@@ -414,7 +258,7 @@ router.post("/edit/:id", (req, res) => {
     title: b.title,
     category: b.category,
     excerpt: b.excerpt,
-    body: cleanBody(b.body),
+    body: b.body,
     image: b.image,
     published_at: b.published_at,
     is_published: b.is_published ? 1 : 0,
