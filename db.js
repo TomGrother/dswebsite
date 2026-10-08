@@ -54,14 +54,39 @@ db.exec(`
   );
 `);
 
-// Backfill: posts saved before published_at defaulted to today could have a
-// blank date, which the date-first sort pins to the bottom of the page. Their
-// created_at is exactly "when it was posted", so adopt its date. Idempotent —
-// runs at every boot, touches only dateless rows.
-const backfilled = db
-  .prepare("UPDATE posts SET published_at = substr(created_at, 1, 10) WHERE published_at IS NULL OR published_at = ''")
-  .run().changes;
-if (backfilled) console.log(`Backfilled published_at from created_at on ${backfilled} post(s).`);
+// The sort and the article date both need published_at in ISO YYYY-MM-DD.
+// People naturally type UK dates ("25/09/2026") into the field — accept them.
+// Returns ISO for ISO or recognisable D/M/YYYY input (also - or . separators),
+// null for blank/unrecognisable.
+function toIsoDate(value) {
+  const s = String(value == null ? "" : value).trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
+  if (m) {
+    const day = m[1].padStart(2, "0"), month = m[2].padStart(2, "0");
+    if (+month >= 1 && +month <= 12 && +day >= 1 && +day <= 31) return `${m[3]}-${month}-${day}`;
+  }
+  return null;
+}
+
+// Normalise at boot: blank dates adopt the post's created_at ("when it was
+// posted"); non-ISO dates (UK-format entries) are converted, or fall back to
+// created_at if unrecognisable. Blank/malformed published_at both fail to
+// render on the article page AND string-sort to the wrong end of the list.
+// Idempotent — a row is only written when the value actually changes.
+{
+  const rows = db
+    .prepare("SELECT id, published_at, created_at FROM posts WHERE published_at IS NULL OR published_at NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'")
+    .all();
+  const fix = db.prepare("UPDATE posts SET published_at = ? WHERE id = ?");
+  let n = 0;
+  for (const r of rows) {
+    const iso = toIsoDate(r.published_at) || String(r.created_at).slice(0, 10);
+    if (iso !== r.published_at) { fix.run(iso, r.id); n++; }
+  }
+  if (n) console.log(`Normalised published_at on ${n} post(s).`);
+}
 
 function slugify(text) {
   return String(text)
@@ -162,7 +187,7 @@ module.exports = {
         image: p.image || null,
         // Blank date would sink the post to the bottom of the date-first sort,
         // so a new post defaults to today (UK) — visible and editable in admin.
-        published_at: p.published_at || new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date()),
+        published_at: toIsoDate(p.published_at) || new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date()),
         is_published: p.is_published === 0 ? 0 : 1,
         sort_order: p.sort_order || 0,
       });
@@ -186,7 +211,9 @@ module.exports = {
       excerpt: p.excerpt ?? existing.excerpt,
       body: p.body ?? existing.body,
       image: p.image ?? existing.image,
-      published_at: p.published_at ?? existing.published_at,
+      // Convert whatever was typed to ISO; if it's unrecognisable, keep the
+      // existing date rather than storing something unrenderable/unsortable.
+      published_at: p.published_at === undefined ? existing.published_at : (toIsoDate(p.published_at) || existing.published_at),
       is_published: p.is_published === undefined ? existing.is_published : (p.is_published ? 1 : 0),
       sort_order: p.sort_order ?? existing.sort_order,
     });
