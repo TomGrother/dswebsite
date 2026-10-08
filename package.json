@@ -12,7 +12,7 @@
     "orderhub": "node orderhub/seed.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": "22.x"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
@@ -21,7 +21,8 @@
     "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^8.6.0",
-    "helmet": "^8.3.0"
+    "helmet": "^8.3.0",
+    "sanitize-html": "^2.18.0"
   },
   "allowScripts": {
     "better-sqlite3@12.11.1": true
