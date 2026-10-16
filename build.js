@@ -102,6 +102,23 @@ function extract(html, re) {
   return m ? m[1].trim() : "";
 }
 
+// Google Analytics 4 — injected into every page's <head> at build time so all
+// public pages (and the article template, hence every news/case-study page)
+// carry it from one source of truth. Idempotent: skipped if already present.
+const GA_SNIPPET = `<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K0JBFPBKKP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-K0JBFPBKKP');
+</script>`;
+function addAnalytics(html) {
+  if (html.includes("googletagmanager.com/gtag")) return html;
+  return html.replace("</head>", GA_SNIPPET + "\n</head>");
+}
+
 function seoBlock(file, html) {
   const title = extract(html, /<title>([\s\S]*?)<\/title>/i);
   const desc = extract(html, /<meta name="description" content="([^"]*)"/i);
@@ -215,6 +232,7 @@ for (const file of files) {
   }
 
   html = addHeadIcons(html);
+  html = addAnalytics(html);
 
   // BreadcrumbList schema (once), just before </body>
   if (!html.includes('"BreadcrumbList"')) {
@@ -235,7 +253,7 @@ for (const file of files) {
 const TEMPLATES = path.join(__dirname, "templates");
 if (fs.existsSync(path.join(TEMPLATES, "article.html"))) {
   let tpl = fs.readFileSync(path.join(TEMPLATES, "article.html"), "utf8");
-  tpl = updateYears(addHeadIcons(bustAssets(rewriteLinks(bakeShell(tpl)))));
+  tpl = updateYears(addAnalytics(addHeadIcons(bustAssets(rewriteLinks(bakeShell(tpl))))));
   fs.writeFileSync(path.join(TEMPLATES, "article.built.html"), tpl);
   console.log("built templates/article.built.html");
 }
