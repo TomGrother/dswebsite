@@ -37,8 +37,8 @@ module.exports = {
   strapline:
     "Everything needed to install, hand over, operate and maintain a Design & Supply steel doorset — written for professional installers and facilities teams. Read it on this page, or download the PDF for your O&M pack.",
   docRef: "DS-IOM-001",
-  version: "2.0",
-  date: "July 2026",
+  version: "2.1",
+  date: "October 2026",
   pdfFilename: "Design-and-Supply-Installation-Operation-Maintenance-Manual.pdf",
 
   sections: [
@@ -240,7 +240,7 @@ module.exports = {
             "Seal the perimeter gap between frame and structure with a fire-rated sealant suitable for the gap size and substrate.",
             "Do not cut, drill or weld the leaf or frame on site.",
             "Ensure the doorset closes fully and latches from any open position, unaided. A fire door that does not latch does not work.",
-            "Replace any certification label removed during installation. If it cannot be replaced, obtain a replacement from us — do not leave a certified doorset unlabelled.",
+            "Do not remove or deface the certification label: **removal of a certification label invalidates the doorset's certification**. If a label is disturbed or damaged during installation, obtain a replacement from us before handover — a certified doorset must never be left unlabelled.",
           ],
         },
         {
@@ -288,7 +288,7 @@ module.exports = {
             "Fit only the certified locking and hardware specified for that doorset. Substituted locks, cylinders or keeps invalidate the rating.",
             "Do not modify the leaf, frame, or anchor points on site.",
             "Check the doorset operates correctly, and that locking engages fully, before handover.",
-            "Replace any security certification label removed during installation.",
+            "Do not remove the security certification label: **removal of a certification label invalidates the certification**. If one is disturbed or damaged during installation, obtain a replacement from us before handover.",
           ],
         },
         {
@@ -409,6 +409,7 @@ module.exports = {
             "Do not hang loads from the leaf, or use the door as a restraint for other equipment.",
             "Do not obstruct the swing of the door, or store materials against it.",
             "Escape doors must remain unobstructed and immediately openable from the inside at all times.",
+            "Never remove, paint over or deface the certification label on a fire or security doorset: **removal of a certification label invalidates the certification**. If a label is damaged or missing, contact us for a replacement.",
             "Report damage, binding, failure to latch, or any hardware fault promptly — a fire or security doorset that is not working correctly is not providing the protection it was specified for.",
           ],
         },
