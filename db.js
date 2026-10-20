@@ -48,11 +48,17 @@ db.exec(`
     phone      TEXT,
     subject    TEXT,
     message    TEXT,
+    df_ref     TEXT,
     emailed_at TEXT,
     error      TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+// Existing databases predate the df_ref column (DesignForce email-tracking ref).
+if (!db.prepare("SELECT 1 FROM pragma_table_info('enquiry') WHERE name = 'df_ref'").get()) {
+  db.exec("ALTER TABLE enquiry ADD COLUMN df_ref TEXT");
+}
 
 // The sort and the article date both need published_at in ISO YYYY-MM-DD.
 // People naturally type UK dates ("25/09/2026") into the field — accept them.
@@ -131,7 +137,7 @@ module.exports = {
   saveEnquiry(e) {
     return db
       .prepare(
-        "INSERT INTO enquiry (name, email, phone, subject, message) VALUES (@name, @email, @phone, @subject, @message)"
+        "INSERT INTO enquiry (name, email, phone, subject, message, df_ref) VALUES (@name, @email, @phone, @subject, @message, @df_ref)"
       )
       .run({
         name: e.name || null,
@@ -139,6 +145,7 @@ module.exports = {
         phone: e.phone || null,
         subject: e.subject || null,
         message: e.message || null,
+        df_ref: e.df_ref || null,
       }).lastInsertRowid;
   },
   markEnquiryEmailed: (id) =>

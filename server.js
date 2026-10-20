@@ -237,7 +237,7 @@ app.use(
 // Contact form endpoint — enquiries show up in the Railway deploy logs.
 // Swap the console.log for an email service or database when ready.
 app.post("/api/contact", contactLimiter, async (req, res) => {
-  const { name, email, phone, subject, message, company } = req.body || {};
+  const { name, email, phone, subject, message, company, df_ref } = req.body || {};
   // Honeypot: "company" is an invisible field. Bots fill it; humans never do.
   if (company) {
     return res.json({ ok: true }); // silently accept and drop
@@ -252,6 +252,9 @@ app.post("/api/contact", contactLimiter, async (req, res) => {
     phone: phone ? String(phone).trim().slice(0, 60) : "",
     subject: subject ? String(subject).trim().slice(0, 200) : "",
     message: String(message).trim().slice(0, 5000),
+    // DesignForce email-tracking reference: ties the enquiry to the marketing
+    // email the visitor came from. Only a well-formed value is kept.
+    df_ref: /^DFREF-[A-Za-z0-9_-]{1,64}$/.test(String(df_ref || "").trim()) ? String(df_ref).trim() : "",
     received: new Date().toLocaleString("en-GB", { timeZone: "Europe/London" }),
   };
 

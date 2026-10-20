@@ -287,6 +287,7 @@ function renderEnquiryEmail(e) {
           ${row("Phone", e.phone, "tel:" + String(e.phone || "").replace(/[^0-9+]/g, ""))}
           ${row("Subject", e.subject)}
           ${row("Received", e.received)}
+          ${row("Ref", e.df_ref)}
         </table>
       </td></tr></table>
       <p style="margin:0 0 6px;font-size:13px;color:#5a6b66;font-weight:600">Message</p>

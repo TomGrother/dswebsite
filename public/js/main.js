@@ -106,7 +106,16 @@
             phone: field("phone"),
             subject: field("subject"),
             message: field("message"),
-            company: field("company")
+            company: field("company"),
+            // The DesignForce script fills #df_ref for consented email visitors.
+            // Fallback: derive it from the df_t cookie (same documented value,
+            // DFREF- + id; the cookie only exists after marketing consent) so the
+            // reference still reaches the sales email if the script hasn't
+            // filled the field — today's staging s.js doesn't fill it yet.
+            df_ref: field("df_ref") || (function () {
+              var m = document.cookie.match(/(?:^|;\s*)df_t=([A-Za-z0-9_-]{1,64})(?:;|$)/);
+              return m ? "DFREF-" + m[1] : "";
+            })()
           })
         }).then(function (r) {
           if (!r.ok) throw new Error("bad status");
