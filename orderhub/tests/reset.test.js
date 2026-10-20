@@ -64,6 +64,10 @@ test("reset: invalidates sessions issued before the password change", async () =
   await auth.resetPasswordWithToken(token, "AfterResetPass9!");
 
   assert.strictEqual(auth.currentUser(reqWith(old)), null, "the pre-reset session is now invalidated");
+  // Settle briefly: the change timestamp and the new session's timestamp come
+  // from two different clock reads, which can disagree within the same
+  // millisecond on a fast run and make this intermittently flaky.
+  await new Promise((r) => setTimeout(r, 15));
   const fresh = captureSession(auth.getUserById(u.id));
   assert.ok(auth.currentUser(reqWith(fresh)), "a session issued after the reset is valid");
 });

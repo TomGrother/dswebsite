@@ -29,6 +29,7 @@ function assetHash(rel) {
 }
 const CSS_V = assetHash("css/style.css");
 const JS_V = assetHash("js/main.js");
+const CONSENT_V = assetHash("js/consent.js");
 
 const header = fs.readFileSync(path.join(__dirname, "partials", "header.html"), "utf8").trim();
 const footer = fs.readFileSync(path.join(__dirname, "partials", "footer.html"), "utf8").trim();
@@ -102,10 +103,10 @@ function extract(html, re) {
   return m ? m[1].trim() : "";
 }
 
-// Google Analytics 4 — injected into every page's <head> at build time so all
-// public pages (and the article template, hence every news/case-study page)
-// carry it from one source of truth. Idempotent: skipped if already present.
-const GA_SNIPPET = `<!-- Google tag (gtag.js) -->
+// The ORIGINAL unconditional GA block (v1, injected 2026-10-16). Kept verbatim
+// so already-built pages can have it stripped before the consent-gated block
+// goes in. Do not edit this string.
+const OLD_GA_SNIPPET = `<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-K0JBFPBKKP"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -114,9 +115,43 @@ const GA_SNIPPET = `<!-- Google tag (gtag.js) -->
 
   gtag('config', 'G-K0JBFPBKKP');
 </script>`;
+
+// Consent-gated tracking, injected into every page's <head> at build time:
+// 1. DesignForce email-tracking stubs + script, exactly per their integration
+//    doc (the two inline lines MUST precede the script; the whole block must
+//    precede the cookie-banner code). At go-live, change 'email-staging.' to
+//    'email.' here and rebuild.
+// 2. GA4 loader — defines window.dsLoadGA but loads NOTHING until the consent
+//    banner grants analytics (hard gate: zero Google requests before consent).
+// 3. The consent banner itself (js/consent.js) wires both categories.
+const TRACKING_SNIPPET = (consentV) => `<!-- Design & Supply email tracking -->
+<script>
+  window.dfTrackConsent = window.dfTrackConsent || function () { window.dfTrackConsentGiven = true; };
+  window.dfTrackRevoke = window.dfTrackRevoke || function () { window.dfTrackConsentGiven = false; document.cookie = 'df_t=; Max-Age=0; Path=/; SameSite=Lax; Secure'; };
+</script>
+<script src="https://email-staging.designandsupply.co.uk/t/s.js" async></script>
+<!-- Google Analytics (consent-gated: loads only after the banner grants analytics) -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  window.dsLoadGA = function () {
+    if (window.__dsGA) return;
+    window.__dsGA = 1;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-K0JBFPBKKP';
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', 'G-K0JBFPBKKP');
+  };
+</script>
+<script src="/js/consent.js?v=${consentV}" defer></script>`;
+
 function addAnalytics(html) {
-  if (html.includes("googletagmanager.com/gtag")) return html;
-  return html.replace("</head>", GA_SNIPPET + "\n</head>");
+  // Strip the v1 unconditional GA block wherever it was baked in.
+  html = html.split(OLD_GA_SNIPPET + "\n").join("").split(OLD_GA_SNIPPET).join("");
+  if (html.includes("<!-- Design & Supply email tracking -->")) return html;
+  return html.replace("</head>", TRACKING_SNIPPET(CONSENT_V) + "\n</head>");
 }
 
 function seoBlock(file, html) {
@@ -215,7 +250,8 @@ function bakeShell(html) {
 function bustAssets(html) {
   return html
     .replace(/\/css\/style\.css(\?v=[a-f0-9]+)?/g, `/css/style.css?v=${CSS_V}`)
-    .replace(/\/js\/main\.js(\?v=[a-f0-9]+)?/g, `/js/main.js?v=${JS_V}`);
+    .replace(/\/js\/main\.js(\?v=[a-f0-9]+)?/g, `/js/main.js?v=${JS_V}`)
+    .replace(/\/js\/consent\.js(\?v=[a-f0-9]+)?/g, `/js/consent.js?v=${CONSENT_V}`);
 }
 
 const files = fs.readdirSync(PUBLIC).filter((f) => f.endsWith(".html"));

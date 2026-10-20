@@ -22,15 +22,28 @@
 <meta property="og:description" content="LPS 1175 SR2 steel security doors with optional fire rating, vision panels, louvres and access control. LPCB certified, UK manufactured — free quotes.">
 <meta property="og:image" content="https://designandsupply.co.uk/images/doors/security-main.png">
 <meta name="twitter:card" content="summary_large_image">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-K0JBFPBKKP"></script>
+<!-- Design & Supply email tracking -->
+<script>
+  window.dfTrackConsent = window.dfTrackConsent || function () { window.dfTrackConsentGiven = true; };
+  window.dfTrackRevoke = window.dfTrackRevoke || function () { window.dfTrackConsentGiven = false; document.cookie = 'df_t=; Max-Age=0; Path=/; SameSite=Lax; Secure'; };
+</script>
+<script src="https://email-staging.designandsupply.co.uk/t/s.js" async></script>
+<!-- Google Analytics (consent-gated: loads only after the banner grants analytics) -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-K0JBFPBKKP');
+  window.dsLoadGA = function () {
+    if (window.__dsGA) return;
+    window.__dsGA = 1;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-K0JBFPBKKP';
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', 'G-K0JBFPBKKP');
+  };
 </script>
+<script src="/js/consent.js?v=ad93cfc261" defer></script>
 </head>
 <body data-page="products">
 <!--HEADER-->
@@ -255,6 +268,7 @@
     <li><a href="/privacy-policy">Privacy Policy</a></li>
     <li><a href="/terms">Terms &amp; Conditions</a></li>
     <li><a href="/refund-policy">Refund Policy</a></li>
+    <li><a href="#" data-cookie-settings>Cookie Settings</a></li>
   </ul>
 </div>
 </footer>
