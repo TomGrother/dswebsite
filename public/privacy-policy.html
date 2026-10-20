@@ -22,15 +22,28 @@
 <meta property="og:description" content="Privacy policy for Design & Supply Limited — what personal data we collect through this website, how we use it, and your rights.">
 <meta property="og:image" content="https://designandsupply.co.uk/images/products/steel.png">
 <meta name="twitter:card" content="summary_large_image">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-K0JBFPBKKP"></script>
+<!-- Design & Supply email tracking -->
+<script>
+  window.dfTrackConsent = window.dfTrackConsent || function () { window.dfTrackConsentGiven = true; };
+  window.dfTrackRevoke = window.dfTrackRevoke || function () { window.dfTrackConsentGiven = false; document.cookie = 'df_t=; Max-Age=0; Path=/; SameSite=Lax; Secure'; };
+</script>
+<script src="https://email-staging.designandsupply.co.uk/t/s.js" async></script>
+<!-- Google Analytics (consent-gated: loads only after the banner grants analytics) -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-K0JBFPBKKP');
+  window.dsLoadGA = function () {
+    if (window.__dsGA) return;
+    window.__dsGA = 1;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-K0JBFPBKKP';
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', 'G-K0JBFPBKKP');
+  };
 </script>
+<script src="/js/consent.js?v=4dd69c25ee" defer></script>
 </head>
 <body>
 <!--HEADER-->
@@ -116,7 +129,7 @@
       <thead><tr><th>Cookie / storage</th><th>Category</th><th>Lasts</th><th>Purpose</th></tr></thead>
       <tbody>
         <tr><td><code>ds_consent</code> (browser storage)</td><td>Essential</td><td>Until cleared</td><td>Remembers your cookie choices.</td></tr>
-        <tr><td><code>_ga</code>, <code>_ga_*</code></td><td>Analytics</td><td>Up to 2 years</td><td>Google Analytics — anonymous usage statistics.</td></tr>
+        <tr><td><code>_ga</code>, <code>_ga_*</code></td><td>Analytics</td><td>Up to 40 years</td><td>Google Analytics — anonymous usage statistics.</td></tr>
         <tr><td><code>df_t</code></td><td>Marketing</td><td>90 days from the latest email click</td><td>Links page views to the Design &amp; Supply email you clicked.</td></tr>
         <tr><td><code>df_sid</code> (session storage)</td><td>Marketing</td><td>Until the tab closes, or 30 minutes of inactivity</td><td>Groups the pages viewed into one visit.</td></tr>
       </tbody>
@@ -192,6 +205,7 @@
     <li><a href="/privacy-policy">Privacy Policy</a></li>
     <li><a href="/terms">Terms &amp; Conditions</a></li>
     <li><a href="/refund-policy">Refund Policy</a></li>
+    <li><a href="#" data-cookie-settings>Cookie Settings</a></li>
   </ul>
 </div>
 </footer>
