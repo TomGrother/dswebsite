@@ -104,8 +104,8 @@ function renderSalesEmail(r) {
   };
 }
 
-/** Express handler for POST /api/spec-pack. `send` is injectable for tests. */
-function handler({ send } = {}) {
+/** Express handler for POST /api/spec-pack. `send` and `post` are injectable for tests. */
+function handler({ send, post } = {}) {
   return async (req, res) => {
     const b = req.body || {};
     if (b.website) return res.json({ ok: true }); // honeypot: bots fill it, people never see it
@@ -141,7 +141,76 @@ function handler({ send } = {}) {
       console.error("[spec-pack] sales notification failed —", err.message); // the requester still got their pack
     }
     res.json({ ok: true });
+    // After responding, so DesignForce can never slow or fail the visitor's request.
+    if (id && r.marketing_consent && (post || designforceEnabled())) {
+      const row = store.specPackRequests().find((x) => x.id === Number(id));
+      await syncRow(row, post || postToDesignForce);
+    }
   };
+}
+
+// ---- DesignForce -------------------------------------------------------------
+// Opted-in contacts are sent to DesignForce's marketing-contact endpoint (spec:
+// docs/designforce-marketing-contacts.md). Off until both settings exist.
+// Only ever called for rows with marketing_consent = 1.
+
+const designforceEnabled = () => !!(process.env.DESIGNFORCE_MARKETING_URL && process.env.DESIGNFORCE_MARKETING_KEY);
+
+/** The JSON body DesignForce receives for one stored request row. */
+function designforcePayload(row) {
+  return {
+    external_id: `spec-pack-${row.id}`,
+    email: row.email,
+    name: row.name,
+    company: row.company || null,
+    source: "website-spec-pack",
+    consent: {
+      given: true,
+      text: row.consent_text,
+      given_at: new Date(String(row.created_at).replace(" ", "T") + "Z").toISOString(),
+      method: "Website form opt-in, unticked by default",
+      page: "https://designandsupply.co.uk/downloads",
+    },
+    df_ref: row.df_ref || null,
+  };
+}
+
+async function postToDesignForce(payload) {
+  const res = await fetch(process.env.DESIGNFORCE_MARKETING_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": process.env.DESIGNFORCE_MARKETING_KEY },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) throw new Error(`DesignForce ${res.status}: ${(await res.text()).slice(0, 300)}`);
+}
+
+/** Push one stored row; records success or the error. `post` is injectable for tests. */
+async function syncRow(row, post = postToDesignForce) {
+  if (!row || !row.marketing_consent) return false;
+  try {
+    await post(designforcePayload(row));
+    store.markSpecPackSynced(row.id);
+    return true;
+  } catch (err) {
+    store.markSpecPackSyncFailed(row.id, err.message);
+    console.error("[spec-pack] DesignForce sync failed —", err.message);
+    return false;
+  }
+}
+
+/** Push every opted-in request not yet in DesignForce (retries and the one-off backfill). */
+async function syncPending(post = postToDesignForce) {
+  let sent = 0, failed = 0;
+  for (const row of store.specPackPendingDesignForce()) (await syncRow(row, post)) ? sent++ : failed++;
+  return { sent, failed };
+}
+
+/** Retry anything that failed to reach DesignForce: a minute after boot, then every 6 hours. */
+function startDesignForceRetry() {
+  const tick = () => { if (designforceEnabled()) syncPending().catch((e) => console.error("[spec-pack] retry:", e.message)); };
+  setTimeout(tick, 60 * 1000).unref();
+  setInterval(tick, 6 * 60 * 60 * 1000).unref();
 }
 
 /** CSV of all requests, for importing opted-in contacts into DesignForce. */
@@ -152,10 +221,10 @@ function toCsv(rows) {
     if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
     return `"${s.replace(/"/g, '""')}"`;
   };
-  const head = ["requested_at", "name", "email", "company", "marketing_consent", "consent_text", "df_ref", "emailed_at", "error"];
+  const head = ["requested_at", "name", "email", "company", "marketing_consent", "consent_text", "df_ref", "emailed_at", "error", "designforce_synced_at"];
   return [head.join(",")]
-    .concat(rows.map((r) => [r.created_at, r.name, r.email, r.company, r.marketing_consent ? "yes" : "no", r.consent_text, r.df_ref, r.emailed_at, r.error].map(q).join(",")))
+    .concat(rows.map((r) => [r.created_at, r.name, r.email, r.company, r.marketing_consent ? "yes" : "no", r.consent_text, r.df_ref, r.emailed_at, r.error, r.designforce_synced_at].map(q).join(",")))
     .join("\r\n");
 }
 
-module.exports = { handler, parseRequest, renderPackEmail, renderSalesEmail, toCsv, manifest };
+module.exports = { handler, parseRequest, renderPackEmail, renderSalesEmail, toCsv, manifest, designforceEnabled, designforcePayload, syncRow, syncPending, startDesignForceRetry };

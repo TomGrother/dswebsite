@@ -73,6 +73,14 @@ db.exec(`
   );
 `);
 
+// Opted-in spec-pack contacts are pushed to DesignForce (specpack.js); these
+// record whether each one got there, so failures can be retried.
+for (const col of ["designforce_synced_at TEXT", "designforce_error TEXT"]) {
+  if (!db.prepare("SELECT 1 FROM pragma_table_info('spec_pack_request') WHERE name = ?").get(col.split(" ")[0])) {
+    db.exec(`ALTER TABLE spec_pack_request ADD COLUMN ${col}`);
+  }
+}
+
 // Existing databases predate the df_ref column (DesignForce email-tracking ref).
 if (!db.prepare("SELECT 1 FROM pragma_table_info('enquiry') WHERE name = 'df_ref'").get()) {
   db.exec("ALTER TABLE enquiry ADD COLUMN df_ref TEXT");
@@ -211,6 +219,12 @@ module.exports = {
   markSpecPackFailed: (id, error) =>
     db.prepare("UPDATE spec_pack_request SET error = ? WHERE id = ?").run(String(error || "").slice(0, 500), id),
   specPackRequests: () => db.prepare("SELECT * FROM spec_pack_request ORDER BY id DESC").all(),
+  specPackPendingDesignForce: () =>
+    db.prepare("SELECT * FROM spec_pack_request WHERE marketing_consent = 1 AND designforce_synced_at IS NULL ORDER BY id").all(),
+  markSpecPackSynced: (id) =>
+    db.prepare("UPDATE spec_pack_request SET designforce_synced_at = datetime('now'), designforce_error = NULL WHERE id = ?").run(id),
+  markSpecPackSyncFailed: (id, error) =>
+    db.prepare("UPDATE spec_pack_request SET designforce_error = ? WHERE id = ?").run(String(error || "").slice(0, 500), id),
 
   // Save a base64 data-URL image onto the volume; returns its public /uploads/ path.
   saveUpload(dataUrl) {

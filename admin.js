@@ -158,12 +158,29 @@ router.get("/spec-pack", (req, res) => {
         <td>${esc(r.company || "—")}</td>
         <td><span class="pill ${r.marketing_consent ? "pill-live" : "pill-draft"}">${r.marketing_consent ? "Opted in" : "No"}</span></td>
         <td>${r.emailed_at ? "Sent" : r.error ? `<span style="color:#b00" title="${esc(r.error)}">Failed</span>` : "—"}</td>
+        <td>${!r.marketing_consent ? "—" : r.designforce_synced_at ? "Sent" : r.designforce_error ? `<span style="color:#b00" title="${esc(r.designforce_error)}">Failed — will retry</span>` : "Pending"}</td>
         <td style="font-size:13px;color:var(--slate)">${esc(r.df_ref || "")}</td></tr>`).join("")
-    : `<tr><td colspan="6" style="color:var(--slate)">No requests yet.</td></tr>`;
+    : `<tr><td colspan="7" style="color:var(--slate)">No requests yet.</td></tr>`;
+  const sp = require("./specpack");
+  const pending = store.specPackPendingDesignForce().length;
+  const synced = req.query.synced ? `<p style="color:var(--accent);font-weight:600">${esc(req.query.synced)}</p>` : "";
+  const dfLine = sp.designforceEnabled()
+    ? `<p style="margin:0 0 18px"><b>DesignForce:</b> connected — opted-in contacts are sent automatically.${pending ? ` ${pending} waiting.` : ""}</p>
+       ${pending ? `<form method="post" action="/admin/spec-pack/sync" style="margin:0 0 22px"><button class="btn btn-primary" type="submit">Send ${pending} to DesignForce</button></form>` : ""}`
+    : `<p style="margin:0 0 18px;color:var(--slate)"><b>DesignForce:</b> not connected yet — set <code>DESIGNFORCE_MARKETING_URL</code> and <code>DESIGNFORCE_MARKETING_KEY</code> on Railway. Until then, use the CSV.</p>`;
   res.send(page("Spec pack requests", `<h1>Spec pack <em style="font-style:normal;color:var(--accent)">requests</em></h1>
     <p style="color:var(--slate);max-width:760px">People who asked for the specification pack on the downloads page. Only those marked <b>Opted in</b> ticked the box for product news, so only they should go into marketing campaigns. The CSV includes the consent wording each person agreed to.</p>
-    <p style="margin:18px 0 24px"><a class="btn btn-primary" href="/admin/spec-pack.csv">Download CSV</a> <span style="margin-left:12px;color:var(--slate)">${all.length} requests · ${opted} opted in</span></p>
-    <table class="admin-table"><tr><th>Requested</th><th>Name</th><th>Company</th><th>Marketing</th><th>Pack email</th><th>Ref</th></tr>${rowsHtml}</table>`));
+    <p style="margin:18px 0 18px"><a class="btn btn-outline-dark" href="/admin/spec-pack.csv" style="border:1px solid var(--line);color:var(--ink)">Download CSV</a> <span style="margin-left:12px;color:var(--slate)">${all.length} requests · ${opted} opted in</span></p>
+    ${synced}${dfLine}
+    <table class="admin-table"><tr><th>Requested</th><th>Name</th><th>Company</th><th>Marketing</th><th>Pack email</th><th>DesignForce</th><th>Ref</th></tr>${rowsHtml}</table>`));
+});
+
+// Send every opted-in contact not yet in DesignForce (retries + one-off backfill).
+router.post("/spec-pack/sync", async (req, res) => {
+  const sp = require("./specpack");
+  if (!sp.designforceEnabled()) return res.redirect("/admin/spec-pack");
+  const { sent, failed } = await sp.syncPending();
+  res.redirect("/admin/spec-pack?synced=" + encodeURIComponent(`Sent ${sent} to DesignForce${failed ? `, ${failed} failed (see the DesignForce column)` : ""}.`));
 });
 
 router.get("/spec-pack.csv", (req, res) => {

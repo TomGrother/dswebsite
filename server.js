@@ -241,6 +241,7 @@ app.use(
 // Specification pack: emails every document to the visitor (see specpack.js).
 const specPackLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: "Too many requests from this device. Please try again shortly." } });
 app.post("/api/spec-pack", specPackLimiter, require("./specpack").handler());
+require("./specpack").startDesignForceRetry();
 
 // Contact form endpoint — enquiries show up in the Railway deploy logs.
 // Swap the console.log for an email service or database when ready.
