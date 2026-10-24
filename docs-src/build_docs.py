@@ -630,15 +630,17 @@ def build_manual():
 # garbled "claimed effect in our no performance" read as "claimed defect in,
 # or non-performance of", the dead technical-downloads.php link replaced by
 # the O&M manual's address, and the contact details updated to the current
-# ones (the fax line is dropped). Anything that changes what is warranted is
-# Tom's call — see the open questions listed in the commit that added this.
+# ones (the fax line is dropped). Terms changed on Tom's instruction (Oct 2026):
+# the period is twelve months from delivery (matching clause 15 of the website
+# T&Cs; the original said one year from manufacture / from completion), and the
+# statutory-rights line is added; claims go to sales@.
 
 WARRANTY = {
-    "term": "One (1) year from date of manufacture",
+    "term": "Twelve (12) months from date of delivery",
     "ours": [
         "We warrant that our products conform to our standard specifications, also that they shall be free from defects in material and workmanship. This warranty is not intended to supplement normal inspection; care and service of the products covered hereunder by the purchaser, and shall not obligate us to provide free service during the warranty period to correct breakage, maladjustments, inadequate maintenance, building subsidence or improper installation.",
         "Our liability for defective material shall not exceed the actual cost of material furnished. Inspection shall, at our option, be performed at our plant or at such other place as we may designate and in such event, freight for returning equipment to our plant (or such other place as may be designated by us) for inspection shall be paid by purchaser.",
-        "The steel doors and slimline products manufactured by Design and Supply Ltd, are warranted for a period of one (1) year from the date of completion against rust damage, when installed and finish painted to customer recommendations. Rust damage and finish paint warranties are null and void should the product be subject to highly corrosive conditions caused by cleaning solutions, chemical or corrosive atmospheres.",
+        "The steel doors and slimline products manufactured by Design and Supply Ltd, are warranted for a period of twelve (12) months from the date of delivery against rust damage, when installed and finish painted to customer recommendations. Rust damage and finish paint warranties are null and void should the product be subject to highly corrosive conditions caused by cleaning solutions, chemical or corrosive atmospheres.",
         "This warranty shall not apply to products which, in the opinion of Design and Supply Ltd, have been modified, altered or repaired in any way without the express written consent of this company.",
         "We shall under no circumstances be liable for any special, indirect, incidental or consequential damages or losses whatsoever arising out of or in any way relating to, any breach of express or implied warranty or claimed defect in, or non-performance of, our products.",
     ],
@@ -655,7 +657,7 @@ WARRANTY = {
         "Incidental or consequential damage.",
         "Failure to produce and display the Operation and Maintenance Manual, downloadable from designandsupply.co.uk/installation-guides.",
     ],
-    "legal": "This Warranty sets forth our maximum liability for our products. We shall not be liable for special, indirect, consequential, or incidental damages. Your sole and exclusive remedy with respect to any and all losses or damages resulting from any cause whatsoever shall be as specified herein. We make no other warranty or guarantee, either express or implied, including implied warranties of merchantability and fitness for a particular purpose to the original purchaser or to any subsequent user of the product, except as expressly contained herein.",
+    "legal": "This Warranty sets forth our maximum liability for our products. We shall not be liable for special, indirect, consequential, or incidental damages. Your sole and exclusive remedy with respect to any and all losses or damages resulting from any cause whatsoever shall be as specified herein. We make no other warranty or guarantee, either express or implied, including implied warranties of merchantability and fitness for a particular purpose to the original purchaser or to any subsequent user of the product, except as expressly contained herein. This warranty does not affect your statutory rights.",
 }
 
 
