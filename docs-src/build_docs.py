@@ -379,57 +379,100 @@ def build_sheets(only=None):
 
 
 # --------------------------------------------------------------- colours --
-# The ~500 swatches and their (vector-outlined) codes stay exactly as in the
-# original chart; only its header and footer bands are replaced on each page.
+# Redesigned chart: one tile per RAL/BS colour (158 of them), grouped by
+# colour family, listing each finish and product reference available in it.
+# Data: docs-src/data/colours.json — 484 rows read from the original chart
+# (its codes are vector outlines) by two OCR engines that had to agree, the
+# rest checked by eye; swatch colours are the original's exact fill values.
 
-COLOURS_SRC = HERE / "source" / "DS_All_Standard_Colours-original.pdf"
-HEAD_R = (0, 0, 612, 97)      # swatch grid starts at y = 102 pt
-FOOT_R = (0, 697, 612, 792)   # swatch grid ends at y = 685 pt
+FAMILIES = [
+    ("1", "Yellows &amp; beiges"), ("2", "Oranges"), ("3", "Reds"), ("4", "Violets"), ("5", "Blues"),
+    ("6", "Greens"), ("7", "Greys"), ("8", "Browns"), ("9", "Whites &amp; blacks"), ("BS", "British Standard (BS 4800)"),
+]
 
-COLOURS_HEAD = f"""<style>@page {{ size: 612pt 97pt; margin: 0; }}
-.band {{ position: relative; width: 612pt; height: 97pt; overflow: hidden; background: radial-gradient(260pt 120pt at 82% 0%, rgba(65,189,214,.24), transparent 70%), linear-gradient(180deg, #082a23, #061f1a); color: #fff; }}
-.band::after {{ content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3pt; background: var(--cyan); }}
-.band .logo {{ position: absolute; left: 30pt; top: 22pt; width: 128pt; }}
-.band .t {{ position: absolute; right: 30pt; top: 22pt; text-align: right; }}
-.band .kick {{ margin-bottom: 4pt; }}
-.band h1 {{ font-size: 26pt; color: #fff; }}
-</style><div class="band"><img class="logo" src="{LOGO}" alt=""><div class="t"><div class="kick">Colour chart</div><h1>Our standard <em>colours.</em></h1></div></div>"""
 
-COLOURS_FOOT = f"""<style>@page {{ size: 612pt 95pt; margin: 0; }}
-.wrap {{ width: 612pt; height: 95pt; position: relative; background: #fff; }}
-.disc {{ position: absolute; left: 30pt; right: 30pt; top: 5pt; text-align: center; font-size: 6.6pt; letter-spacing: .3pt; color: var(--slate); }}
-.bar {{ position: absolute; left: 0; right: 0; bottom: 0; height: 66pt; background: var(--night); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 30pt 0 34pt; }}
-.bar::before {{ content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4.5pt; background: var(--cyan); }}
-.bar b {{ display: block; font-family: 'Barlow Condensed'; font-size: 14pt; font-weight: 700; letter-spacing: .5pt; text-transform: uppercase; }}
-.bar span {{ font-size: 7.6pt; color: #a9c5bd; }}
-.bar .r {{ text-align: right; }}
-.bar .r b {{ font-size: 20pt; font-weight: 800; }}
-.bar .r span {{ color: var(--cyan); }}
-</style><div class="wrap"><div class="disc">All colours and finishes are available, but options outside of this list may incur additional cost or an extended lead time.</div>
-<div class="bar"><div><b>Contact us today</b><span>To discuss any colours outside of this range.</span></div><div class="r"><b>{PHONE}</b><span>{CONTACT}</span></div></div></div>"""
+def _finish_label(r):
+    """'HR' + 'Smooth Matt HR' -> 'Smooth Matt HR'; other qualifiers (GL, CA) are kept
+    in front exactly as the original printed them. Rows printed without a finish say so."""
+    finish, suffix = r["finish"], r["suffix"]
+    parts = [p for p in suffix.split() if p not in finish.split()]
+    label = " ".join(parts + [finish]).strip()
+    return label or "Finish not stated"
+
+
+def _ink(hexc):
+    r, g, b = (int(hexc[i:i + 2], 16) for i in (1, 3, 5))
+    return "#fff" if (0.299 * r + 0.587 * g + 0.114 * b) < 150 else "#0f1d19"
 
 
 def build_colours():
+    data = json.loads((HERE / "data" / "colours.json").read_text(encoding="utf-8"))["colours"]
+    groups = {}
+    for c in data:
+        fam = "BS" if c["std"] == "BS" else c["code"][0]
+        tile = groups.setdefault(fam, {}).setdefault((c["std"], c["code"]), {"hex": c["hex"], "rows": []})
+        tile["rows"].append(c)
+    total = sum(len(t) for t in groups.values())
+
+    def family(key, name):
+        tiles = ""
+        for (std, code), t in sorted(groups[key].items(), key=lambda kv: kv[0][1]):
+            n = len(t["rows"])
+            span = 3 if n > 14 else 2 if n > 6 else 1   # long finish lists spread across columns
+            lines = "".join(f'<li><span>{esc(_finish_label(r))}</span><b>{esc(r["ref"])}</b></li>' for r in t["rows"])
+            tiles += (f'<div class="ct" style="grid-column:span {span}"><div class="sw" style="background:{t["hex"]};color:{_ink(t["hex"])}">'
+                      f'<span>{std}</span><b>{esc(code)}</b></div><ul style="column-count:{span}">{lines}</ul></div>')
+        n_col = len(groups[key])
+        return f'<section class="cfam"><h2>{name}<span>{n_col} colour{"" if n_col == 1 else "s"}</span></h2><div class="cgrid">{tiles}</div></section>'
+
+    # BS colours are few, so they sit on the cover page; the RAL families flow after it
+    sections = "".join(family(k, n) for k, n in FAMILIES if k in groups and k != "BS")
+    bs_section = family("BS", dict(FAMILIES)["BS"]) if "BS" in groups else ""
+
+    body = f"""<section class="page cpage-cover">
+<header class="cv cv-short"><div class="leaf leaf-edge"></div><div class="leaf leaf-panel"></div>
+<div class="fan">{"".join(f'<i style="background:{h};transform:rotate({-28 + i * 7}deg)"></i>' for i, h in enumerate(["#c1121c", "#e25303", "#f3a505", "#3b83bd", "#0E6551", "#41BDD6", "#7d7f7d", "#1e1e1e", "#f4f4f4"]))}</div>
+<img class="logo" src="{LOGO}" alt="Design &amp; Supply"><div class="est">{EST}</div>
+<div class="tt"><div class="kick">Colour chart</div><h1>Standard<br><em>colours.</em></h1><div class="ref">{total} colours · {len(data)} finishes · Version {VERSION} · {DATE}</div></div></header>
+<div class="cb"><p class="lead">Our standard powder-coat range, finished in-house. Each colour lists the finishes we stock it in and the product reference to quote when ordering.</p>
+<div class="note"><b>Please note</b><p>All colours and finishes are available, but options outside of this list may incur additional cost or an extended lead time. Printed and on-screen colours are a guide only — please check critical colour matches with our team.</p></div>
+<div class="toc c-toc"><h2>Contents</h2><ol>{"".join(f"<li><b>{n}</b><span>{len(groups[k])} colour{'' if len(groups[k]) == 1 else 's'}</span></li>" for k, n in FAMILIES if k in groups and k != "BS")}</ol></div>
+<div class="c-bs">{bs_section}</div></div>
+<footer class="ft"><div class="l"><b>Contact us today</b><span>To discuss any colours outside of this range.</span></div><div class="r"><b>{PHONE}</b><span>{CONTACT}</span></div></footer>
+</section>
+<main class="cbody">{sections}</main>"""
+    out = HTML / "Design-and-Supply-Standard-Colours.html"
+    out.write_text(page_html("Standard Colours — Design & Supply", f'<style>@page {{ size: 210mm 297mm; margin: 0; }}</style>{body}'), encoding="utf-8")
+
+    # Like the manual: Edge prints the flowing body with page margins, then a
+    # header/folio overlay is stamped on each body page.
     import fitz
-    parts = {}
-    for name, body in (("colours-header", COLOURS_HEAD), ("colours-footer", COLOURS_FOOT)):
-        h = HTML / f"{name}.html"
-        h.write_text(page_html(name, body), encoding="utf-8")
-        render(h, HTML / f"{name}.pdf")
-        parts[name] = fitz.open(HTML / f"{name}.pdf")
-    doc = fitz.open(COLOURS_SRC)
-    for pg in doc:
-        for r in (HEAD_R, FOOT_R):
-            pg.add_redact_annot(fitz.Rect(r), fill=(1, 1, 1))
-        pg.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
-        pg.show_pdf_page(fitz.Rect(HEAD_R), parts["colours-header"], 0)
-        pg.show_pdf_page(fitz.Rect(FOOT_R), parts["colours-footer"], 0)
+    cover_pdf, body_pdf, ov_pdf = HTML / "colours-cover.pdf", HTML / "colours-body.pdf", HTML / "colours-overlay.pdf"
+    cov = HTML / "colours-cover.html"
+    cov.write_text(page_html("Standard Colours", body.split("<main")[0]), encoding="utf-8")
+    render(cov, cover_pdf)
+    bod = HTML / "colours-body.html"
+    bod.write_text(page_html("Standard Colours", '<style>@page { size: 210mm 297mm; margin: 25mm 13mm 19mm; }</style><main class="cbody">' + sections + "</main>"), encoding="utf-8")
+    render(bod, body_pdf)
+    bdoc = fitz.open(body_pdf)
+    n = bdoc.page_count + 1
+    ov = HTML / "colours-overlay.html"
+    ov.write_text(page_html("Standard Colours", "<style>@page { size: 210mm 297mm; margin: 0; } html, body { background: transparent; }</style>" + "".join(
+        f'<section class="ov"><div class="hb"><img src="{LOGO}" alt=""><div class="t">Standard colours</div></div>'
+        f'<div class="folio"><span><b>Design &amp; Supply Ltd</b> · Colours outside this list may incur additional cost or lead time · {PHONE}</span><span class="pn">{i} / {n}</span></div></section>'
+        for i in range(2, n + 1))), encoding="utf-8")
+    render(ov, ov_pdf)
+    odoc = fitz.open(ov_pdf)
+    for i, pg in enumerate(bdoc):
+        pg.show_pdf_page(pg.rect, odoc, i, overlay=True)
+    doc = fitz.open(cover_pdf)
+    doc.insert_pdf(bdoc)
     doc.set_metadata({"title": "Design & Supply — Standard Colours", "author": "Design & Supply Ltd",
                       "subject": "Standard powder-coat colour range", "creator": "Design & Supply Ltd", "producer": "Design & Supply Ltd"})
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="ds-colours-")) / "out.pdf"
     doc.save(tmp, garbage=4, deflate=True)
     shutil.copyfile(tmp, FILES / "DS_All_Standard_Colours.pdf")
-    print(f"  DS_All_Standard_Colours.pdf  {doc.page_count} pages  {round((FILES / 'DS_All_Standard_Colours.pdf').stat().st_size / 1024)} KB")
+    print(f"  DS_All_Standard_Colours.pdf  {doc.page_count} pages  {total} colours / {len(data)} finishes  {round((FILES / 'DS_All_Standard_Colours.pdf').stat().st_size / 1024)} KB")
 
 
 # ---------------------------------------------------------------- manual --
@@ -480,7 +523,7 @@ def build_manual():
     cover_html = f"""<section class="page">
 <header class="cv"><div class="leaf leaf-edge"></div><div class="leaf leaf-panel"></div>
 <img class="m-door" src="{(ASSETS / 'door-fire.png').as_uri()}" alt="">
-<img class="logo" src="{LOGO}" alt="Design &amp; Supply">
+<img class="logo" src="{LOGO}" alt="Design &amp; Supply"><div class="est">{EST}</div>
 <div class="tt"><div class="kick">O&amp;M manual</div><h1 class="m-h1">Installation,<br>operation &amp;<br><em>maintenance.</em></h1><div class="ref">{esc(ref)} · Version {esc(ver)} · {esc(m['date'])}</div></div></header>
 <div class="cb"><p class="lead">{_inline(m['strapline'])}</p>
 <div class="toc m-toc"><h2>Contents</h2><ol>{toc}</ol></div></div>

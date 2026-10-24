@@ -200,3 +200,30 @@ p { margin: 0 0 3mm; }
 .m-help p { color: #cfe3dd; }
 .cv .est { position: absolute; left: var(--gutter); top: 37mm; font-family: 'Barlow Condensed'; font-weight: 600; font-size: 9pt; letter-spacing: 1.6pt; text-transform: uppercase; color: #a9c5bd; }
 .apps-note { font-size: 8.4pt !important; color: var(--slate); margin: -2mm 0 4mm !important; }
+
+/* ---------- colour chart ---------- */
+.cv-short { height: 116mm; }
+.cv .fan { position: absolute; right: 30mm; top: 26mm; width: 40mm; height: 76mm; }
+.cv .fan i { position: absolute; left: 14mm; bottom: 0; width: 13mm; height: 72mm; border-radius: 2mm; transform-origin: 50% 92%; box-shadow: 0 1mm 2.5mm rgba(0,0,0,.35); border: .3mm solid rgba(255,255,255,.18); }
+.cbody { font-size: 7.4pt; }
+.cfam { margin-bottom: 5mm; }
+.cfam h2 { font-size: 17pt; color: var(--green); display: flex; align-items: baseline; justify-content: space-between; border-bottom: .5mm solid var(--cyan); padding-bottom: 1.4mm; margin: 0 0 3mm; break-after: avoid; }
+.cfam h2 span { font-family: Inter; font-weight: 600; font-size: 8pt; letter-spacing: .3pt; text-transform: none; color: var(--slate); }
+.cgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2.4mm; align-items: start; }
+.ct { break-inside: avoid; border: .25mm solid var(--line); border-radius: 1.6mm; overflow: hidden; background: #fff; }
+.ct .sw { height: 12.5mm; padding: 1.6mm 2mm; display: flex; flex-direction: column; justify-content: flex-end; border-bottom: .25mm solid rgba(0,0,0,.08); }
+.ct .sw span { font-family: 'Barlow Condensed'; font-weight: 600; font-size: 7pt; letter-spacing: 1pt; opacity: .85; line-height: 1; }
+.ct .sw b { font-family: 'Barlow Condensed'; font-weight: 800; font-size: 13pt; line-height: 1; letter-spacing: .3pt; }
+.ct ul { list-style: none; margin: 0; padding: 1mm 1.8mm 1.2mm; }
+.ct li { display: flex; justify-content: space-between; gap: 1.5mm; padding: .55mm 0; border-top: .2mm solid var(--line); font-size: 6.5pt; line-height: 1.2; }
+.ct li:first-child { border-top: 0; }
+.ct li span { color: var(--slate); }
+.ct li b { font-weight: 700; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ct ul { column-gap: 3mm; }
+.ct li { break-inside: avoid; }
+.c-toc ol { grid-template-columns: 1fr 1fr 1fr; }
+.c-toc li { padding: 1.5mm 0; font-size: 8.8pt; }
+.c-bs { margin-top: 5mm; }
+.c-bs .cfam h2 { font-size: 14pt; }
+.cpage-cover .note { margin-bottom: 5mm; }
+.cpage-cover .lead { margin-bottom: 4mm; }
