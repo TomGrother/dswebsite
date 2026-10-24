@@ -268,11 +268,55 @@ PHOTOS = HERE / "source" / "photos"   # each sheet's own photo, from the origina
 SR_WORD = {1: "one", 2: "two", 3: "three", 4: "four"}
 
 
+def cutout_from_black(src, name, threshold=14):
+    """Studio shot on pure black -> transparent cutout with a soft shadow, sized
+    like brochure/make-assets.py's door cutouts (door inset 10% on every side).
+    Only black connected to the image border is removed, so dark parts of the
+    door itself stay solid."""
+    from collections import deque
+    from PIL import ImageFilter
+    dst = ART / f"{name}.png"
+    if dst.exists() and dst.stat().st_mtime >= pathlib.Path(src).stat().st_mtime:
+        return dst
+    im = Image.open(src).convert("RGB")
+    w, h = im.size
+    lum = im.convert("L").load()
+    bg = bytearray(w * h)
+    q = deque()
+    for x in range(w):
+        q.extend(((x, 0), (x, h - 1)))
+    for y in range(h):
+        q.extend(((0, y), (w - 1, y)))
+    while q:
+        x, y = q.popleft()
+        i = y * w + x
+        if bg[i] or lum[x, y] > threshold:
+            continue
+        bg[i] = 1
+        if x > 0: q.append((x - 1, y))
+        if x < w - 1: q.append((x + 1, y))
+        if y > 0: q.append((x, y - 1))
+        if y < h - 1: q.append((x, y + 1))
+    alpha = Image.frombytes("L", (w, h), bytes(0 if b else 255 for b in bg)).filter(ImageFilter.GaussianBlur(0.6))
+    door = im.convert("RGBA")
+    door.putalpha(alpha)
+    door = door.crop(alpha.point(lambda a: 255 if a > 20 else 0).getbbox())
+    p = round(door.height * 0.10)
+    canvas = Image.new("RGBA", (door.width + 2 * p, door.height + 2 * p), (0, 0, 0, 0))
+    shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    shadow.paste(Image.new("RGBA", door.size, (0, 0, 0, 255)), (p, p + round(door.height * 0.035)), door.getchannel("A").point(lambda v: int(v * 0.55)))
+    canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(round(door.height * 0.03))))
+    canvas.alpha_composite(door, (p, p))
+    canvas.save(dst, optimize=True)
+    return dst
+
+
 def _sr(n):
     cfg = dict(src=f"Design-and-Supply-Data-Sheet-Steel-Security-Rated-SR{n}.pdf", title=f"Security door<br><em>level {SR_WORD[n]}.</em>",
                tag=f"LPS 1175 · SR{n}", sub="Fortifying spaces", photo=PHOTOS / f"sr{n}.jpg")
-    if n == 2:  # studio shot on black: show the whole door rather than crop it
-        cfg.update(fit="contain", photo_bg="#000")
+    if n == 2:  # the original SR2 photo is a studio shot on black: cut the door out
+        del cfg["photo"]
+        cfg["cutout"] = cutout_from_black(PHOTOS / "sr2.jpg", "sr2-door")
     return cfg
 
 
@@ -282,7 +326,7 @@ SHEETS = [
          tag="EN 1634-1", sub="Dependable fire compartmentation", cutout=ASSETS / "door-fire.png"),
     dict(src="Design-and-Supply-Data-Sheet-Multi-Storey-Car-Park.pdf", title="Car park<br><em>doors.</em>",
          tag="Fire rated · EN 1634-1", sub="Fire-rated steel doorsets", photo=IMG / "news" / "carpark.png"),
-    dict(src="Design-and-Supply-Data-Sheet-Steel-Flood-Rated.pdf", title="Flood<br><em>doors.</em>",
+    dict(src="Design-and-Supply-Data-Sheet-Steel-Flood-Rated.pdf", title="Flood-Line<br><em>doors.</em>",
          tag="Flood defence", sub="Defend, protect, prevail", cutout=ASSETS / "door-flood.png"),
     dict(src="Design-and-Supply-Data-Sheet-Steel-Thermal-Doors.pdf", title="Therma-Line<br><em>doors.</em>",
          tag="U-value as low as 1.3 W/m²K", sub="Thermally efficient steel doorsets", cutout=ASSETS / "door-thermal.png"),
@@ -298,6 +342,13 @@ SOON = '<svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="3.6" fill="none" strok
 
 # notes in the extraction that describe the sheet rather than appear on it
 NOT_SHEET_TEXT = ("Table key", "Specification table key", "This is the only", "Personnel Hardware and Fully Glazed are marked")
+
+
+def _nb(html_text):
+    """Keep hyphenated range names (Flood-Line, Therma-Line) from breaking across lines."""
+    for name in ("Flood-Line", "Therma-Line"):
+        html_text = html_text.replace(name, f'<span style="white-space:nowrap">{name}</span>')
+    return html_text
 
 
 def size_label(label):
@@ -355,8 +406,8 @@ def build_sheet(cfg, s):
 <img class="logo" src="{LOGO}" alt="Design &amp; Supply">
 <div class="tt"><div><span class="kick">Product data sheet</span><span class="chip">{tag}</span></div><h1>{cfg["title"]}</h1><div class="sub">{esc(cfg["sub"])}</div></div></header>
 <section class="ds-bd"><div>
-<h3>Product overview</h3><p>{esc(s["overview"])}</p>
-<h3>Key applications</h3><ul class="apps">{apps}</ul>{f'<p class="apps-note">{esc(apps_note)}</p>' if apps_note else ""}
+<h3>Product overview</h3><p>{_nb(esc(s["overview"]))}</p>
+<h3>Key applications</h3><ul class="apps">{apps}</ul>{f'<p class="apps-note">{_nb(esc(apps_note))}</p>' if apps_note else ""}
 <h3>Key benefits</h3><ul class="ben">{bens}</ul>
 </div><aside><div class="sizes"><h4>Sizes (w × h)</h4>{sizes}</div>
 <div class="order"><b>Ordering</b>Handings and sizes must be confirmed when ordering.</div></aside></section>
@@ -571,6 +622,172 @@ def build_manual():
     print(f"  {target.name}  {total} pages  {round(target.stat().st_size / 1024)} KB")
 
 
+# -------------------------------------------------------------- warranty --
+# Text is the original "Design and Supply Ltd. Steel Door and Slimline Products
+# Warranty" (docs-src/source/Design-and-Supply-Warranty-original.pdf). The
+# only changes are housekeeping, not terms: spelling/typos (labor, download
+# able, in anyway, "within the two business days", "one (1) years"), the
+# garbled "claimed effect in our no performance" read as "claimed defect in,
+# or non-performance of", the dead technical-downloads.php link replaced by
+# the O&M manual's address, and the contact details updated to the current
+# ones (the fax line is dropped). Anything that changes what is warranted is
+# Tom's call — see the open questions listed in the commit that added this.
+
+WARRANTY = {
+    "term": "One (1) year from date of manufacture",
+    "ours": [
+        "We warrant that our products conform to our standard specifications, also that they shall be free from defects in material and workmanship. This warranty is not intended to supplement normal inspection; care and service of the products covered hereunder by the purchaser, and shall not obligate us to provide free service during the warranty period to correct breakage, maladjustments, inadequate maintenance, building subsidence or improper installation.",
+        "Our liability for defective material shall not exceed the actual cost of material furnished. Inspection shall, at our option, be performed at our plant or at such other place as we may designate and in such event, freight for returning equipment to our plant (or such other place as may be designated by us) for inspection shall be paid by purchaser.",
+        "The steel doors and slimline products manufactured by Design and Supply Ltd, are warranted for a period of one (1) year from the date of completion against rust damage, when installed and finish painted to customer recommendations. Rust damage and finish paint warranties are null and void should the product be subject to highly corrosive conditions caused by cleaning solutions, chemical or corrosive atmospheres.",
+        "This warranty shall not apply to products which, in the opinion of Design and Supply Ltd, have been modified, altered or repaired in any way without the express written consent of this company.",
+        "We shall under no circumstances be liable for any special, indirect, incidental or consequential damages or losses whatsoever arising out of or in any way relating to, any breach of express or implied warranty or claimed defect in, or non-performance of, our products.",
+    ],
+    "assist": "If you have a problem with your Design and Supply products, immediately upon discovery, contact us directly. We can respond quickly and efficiently if you provide the following:",
+    "assist_items": ["date and location of purchase", "how to contact you", "the address where the product can be inspected",
+                     "a description of the problem and the product (photographs are helpful)", "order number and door number"],
+    "will_do": "Upon receiving your notification, we will send out an acknowledgment within two business days to the contact, which you have provided. We will investigate your claim and will take appropriate action as soon as possible after receipt of notification. If it is determined that the product does not have a defect covered by the warranty, we may charge an inspection fee for an on-site inspection that is required or requested by you. If we determine that there is in fact a defect we will repair the door, ship a replacement door in the same specification as the original door sold or credit the original purchase price paid to us. This warranty gives you specific legal rights.",
+    "not_covered": [
+        "Normal wear and tear, and natural weathering of surfaces.",
+        "Problems due to misuse or abuse; failure to follow the care and maintenance instructions; or as a result of any cause beyond our control (e.g. fire, flood, earthquake, other acts of nature, and acts of third parties outside of our control).",
+        "Problems related to water and/or air infiltration due to improper assembly; installation errors or flaws in the building.",
+        "Damage or poor product performance resulting from installation into a condition that exceeds product design standards and/or certified performance specifications and/or does not comply with applicable building codes.",
+        "Cost for labour, installation or finishing of the replacement door.",
+        "Incidental or consequential damage.",
+        "Failure to produce and display the Operation and Maintenance Manual, downloadable from designandsupply.co.uk/installation-guides.",
+    ],
+    "legal": "This Warranty sets forth our maximum liability for our products. We shall not be liable for special, indirect, consequential, or incidental damages. Your sole and exclusive remedy with respect to any and all losses or damages resulting from any cause whatsoever shall be as specified herein. We make no other warranty or guarantee, either express or implied, including implied warranties of merchantability and fitness for a particular purpose to the original purchaser or to any subsequent user of the product, except as expressly contained herein.",
+}
+
+
+def _qr(url):
+    """QR code for url as an SVG file URI (cached in docs-src/art/)."""
+    import hashlib
+    import segno
+    out = ART / f"qr-{hashlib.md5(url.encode()).hexdigest()[:8]}.svg"
+    if not out.exists():
+        segno.make(url, error="m").save(out, scale=4, border=0, dark="#0f1d19")
+    return out.as_uri()
+
+
+def build_warranty():
+    w = WARRANTY
+    paras = "".join(f"<p>{esc(p)}</p>" for p in w["ours"])
+    items = "".join(f"<li><b>{chr(97 + i)})</b><span>{esc(t)}</span></li>" for i, t in enumerate(w["assist_items"]))
+    excl = "".join(f"<li>{esc(t)}</li>" for t in w["not_covered"])
+    body = f"""<section class="page ds wty">
+<header class="ds-hd wty-hd"><div class="leaf leaf-edge"></div><div class="leaf leaf-panel"></div>
+<svg class="wty-seal" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l7.5 3.2v5.6c0 4.8-3.2 8.9-7.5 10.7-4.3-1.8-7.5-5.9-7.5-10.7V5.7z"/><path d="M8.4 12.2l2.5 2.5 4.8-5"/></svg>
+<img class="logo" src="{LOGO}" alt="Design &amp; Supply">
+<div class="tt"><div><span class="kick">Product warranty</span><span class="chip">{esc(w["term"])}</span></div><h1>Our warranty<br><em>to you.</em></h1><div class="sub">Steel door and Slimline products</div></div></header>
+<section class="wty-bd">
+<div class="wty-main"><h3>Our warranty to you</h3>{paras}</div>
+<aside class="wty-side">
+<div class="wty-box"><h3>How to get assistance</h3><p>{esc(w["assist"])}</p><ol>{items}</ol>
+<div class="wty-contact"><div><b>Phone</b><span>{PHONE}</span></div><div><b>Email</b><span>sales@designandsupply.co.uk</span></div><div><b>Mail</b><span>Design and Supply Ltd, 13 Pant Industrial Estate, Merthyr Tydfil, CF48 2SR</span></div></div></div>
+<h3>What we will do</h3><p>{esc(w["will_do"])}</p>
+</aside></section>
+<div class="folio"><span><b>Design &amp; Supply Ltd</b> · Product warranty · Steel door and Slimline products</span><span class="pn">1 / 2</span></div>
+</section>
+<section class="page ds wty">
+<div class="hb"><img src="{LOGO}" alt="Design &amp; Supply"><div class="t">Product warranty</div></div>
+<section class="wty-bd wty-p2">
+<div><h3>What this warranty does not cover</h3><ul class="wty-x">{excl}</ul></div>
+<div><h3>Important legal information</h3><p class="wty-legal">{esc(w["legal"])}</p></div>
+</section>
+<section class="wty-keep">
+<div class="wty-valid"><div><h3>Care and maintenance instructions</h3>
+<p>The care and maintenance instructions this warranty refers to are in our Operation and Maintenance Manual. Read it online or download it at:</p>
+<p class="wty-url">designandsupply.co.uk/installation-guides</p></div>
+<img class="wty-qr" src="{_qr('https://designandsupply.co.uk/installation-guides')}" alt=""></div>
+<div class="wty-rec"><h3>For your records</h3><p>Keep these details with this warranty — we will ask for them if you need to make a claim.</p>
+<div class="wty-lines">{"".join(f'<div class="{c}"><b>{x}</b><span></span></div>' for x, c in (("Order number", ""), ("Door number(s)", ""), ("Date and place of purchase", "wide"), ("Installation address", "wide tall"), ("Installed by", ""), ("Date installed", "")))}</div></div>
+</section>
+<footer class="ft"><div class="l"><b>Questions about your warranty?</b><span>Contact us immediately upon discovering a problem.</span></div><div class="r"><b>{PHONE}</b><span>{CONTACT}</span><i>Product warranty · Steel door and Slimline products · 2 / 2</i></div></footer>
+</section>"""
+    out = HTML / "Design-and-Supply-Warranty.html"
+    out.write_text(page_html("Product Warranty — Design & Supply", body), encoding="utf-8")
+    render(out, FILES / "Design-and-Supply-Warranty.pdf")
+
+
+# --------------------------------------------------------- modern slavery --
+# Text is the original policy (docs-src/source/Modern_Slavery_Statement-original.pdf,
+# June 2017) word for word; the one change is the typo "senior member or staff"
+# -> "senior member of staff". Re-approved October 2026 by the directors after
+# the management buy-out (Tom's instruction; the 2017 original was approved by
+# Kevin Edwards and Chris Weed).
+
+SLAVERY = [
+    ("Policy statement", [
+        ("1.1", "Modern slavery is a crime and a violation of fundamental human rights. It takes various forms, such as slavery, servitude, forced and compulsory labour and human trafficking, all of which have in common the deprivation of a person's liberty by another in order to exploit them for personal or commercial gain. We have a zero-tolerance approach to modern slavery and we are committed to acting ethically and with integrity in all our business dealings and relationships and to implementing and enforcing effective systems and controls to ensure modern slavery is not taking place anywhere in our business."),
+        ("1.2", "We are also committed to ensuring there is transparency in our own business and in our approach to tackling modern slavery throughout our supply chains, consistent with our disclosure obligations under the Modern Slavery Act 2015. We expect the same high standards from all of our contractors, suppliers and other business partners, and as part of our contracting processes, we include specific prohibitions against the use of forced, compulsory or trafficked labour, or anyone held in slavery or servitude, whether adults or children, and we expect that our suppliers will hold their own suppliers to the same high standards."),
+        ("1.3", "This policy applies to all persons working for us or on our behalf in any capacity, including employees at all levels, directors, officers, agency workers, seconded workers, volunteers, interns, agents, contractors, external consultants, third-party representatives and business partners."),
+        ("", "This policy does not form part of any employee's contract of employment and we may amend it at any time."),
+    ]),
+    ("Responsibility for the policy", [
+        ("2.1", "The Managing Director has overall responsibility for ensuring this policy complies with our legal and ethical obligations, and that all those under our control comply with it."),
+        ("2.2", "The Managing Director has primary and day-to-day responsibility for implementing this policy, monitoring its use and effectiveness, dealing with any queries about it, and auditing internal control systems and procedures to ensure they are effective in countering modern slavery."),
+        ("2.3", "Management at all levels are responsible for ensuring those reporting to them understand and comply with this policy and are given adequate and regular training on it and the issue of modern slavery."),
+        ("2.4", "You are invited to comment on this policy and suggest ways in which it might be improved. Comments, suggestions and queries are encouraged and should be addressed to your Manager."),
+    ]),
+    ("Compliance with the policy", [
+        ("3.1", "You must ensure that you read, understand and comply with this policy."),
+        ("3.2", "The prevention, detection and reporting of modern slavery in any part of our business or supply chains is the responsibility of all those working for us or under our control. You are required to avoid any activity that might lead to, or suggest, a breach of this policy."),
+        ("3.3", "You must notify your Manager or the Managing Director as soon as possible if you believe or suspect that a conflict with this policy has occurred, or may occur in the future."),
+        ("3.4", "You are encouraged to raise concerns about any issue or suspicion of modern slavery in any parts of our business or supply chains of any supplier tier at the earliest possible stage."),
+        ("3.5", "If you believe or suspect a breach of this policy has occurred or that it may occur, you must report it in accordance with our Whistleblowing Policy as soon as possible. You should note that where appropriate, and with the welfare and safety of local workers as a priority, we will give support and guidance to our suppliers to help them address coercive, abusive and exploitative work practices in their own business and supply chains."),
+        ("3.6", "If you are unsure about whether a particular act, the treatment of workers more generally, or their working conditions within any tier of our supply chains constitutes any of the various forms of modern slavery, raise it with your Manager or the Managing Director."),
+        ("3.7", "We aim to encourage openness and will support anyone who raises genuine concerns in good faith under this policy, even if they turn out to be mistaken. We are committed to ensuring no one suffers any detrimental treatment as a result of reporting in good faith their suspicion that modern slavery of whatever form is or may be taking place in any part of our own business or in any of our supply chains. Detrimental treatment includes dismissal, disciplinary action, threats or other unfavourable treatment connected with raising a concern. If you believe that you have suffered any such treatment, you should inform your Manager or an alternative senior member of staff immediately. If the matter is not remedied, and you are an employee, you should raise it formally using our Grievance Procedure, which can be found in the Company handbook."),
+    ]),
+    ("Communication and awareness of this policy", [
+        ("4.1", "Training on this policy, and on the risk our business faces from modern slavery in its supply chains, forms part of the induction process for all individuals who work for us, and regular training will be provided as necessary."),
+        ("4.2", "Our zero-tolerance approach to modern slavery must be communicated to all suppliers, contractors and business partners at the outset of our business relationship with them and reinforced as appropriate thereafter."),
+    ]),
+    ("Breaches of this policy", [
+        ("5.1", "Any employee who breaches this policy will face disciplinary action, which could result in dismissal for misconduct or gross misconduct."),
+        ("5.2", "We may terminate our relationship with other individuals and organisations working on our behalf if they breach this policy."),
+    ]),
+]
+SLAVERY_APPROVAL = {"people": [("Tom Grother", "Director"), ("Damian Regis", "Director"), ("Scott Davies", "Director")], "date": "October 2026"}
+
+
+def build_slavery():
+    import fitz
+    secs = ""
+    for i, (title, clauses) in enumerate(SLAVERY):
+        rows = "".join(f'<div class="cl"><span class="no">{n}</span><p>{esc(t)}</p></div>' for n, t in clauses)
+        secs += f'<section class="ms-sec"><h2><span class="num">{i + 1}.</span>{esc(title)}</h2>{rows}</section>'
+    people = "".join(f"<div><span>Name</span><b>{n}</b><span>Position</span><b>{p}</b></div>" for n, p in SLAVERY_APPROVAL["people"])
+    body = f"""<style>@page {{ size: 210mm 297mm; margin: 27mm 0 22mm; }} @page :first {{ margin-top: 0; }}</style>
+<header class="ms-hd"><div class="leaf leaf-edge"></div><div class="leaf leaf-panel"></div>
+<svg class="ms-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><circle cx="17.2" cy="9" r="2.7"/><path d="M15.6 14.4A5.2 5.2 0 0 1 21.4 20"/></svg>
+<img class="logo" src="{LOGO}" alt="Design &amp; Supply"><div class="est">{EST}</div>
+<div class="tt"><div class="kick">Company policy</div><h1>Modern slavery<br><em>policy.</em></h1></div></header>
+<main class="ms-body">{secs}
+<section class="ms-approval"><h3>Approval for this statement</h3><div class="ms-people">{people}</div><div class="ms-date"><span>Date</span><b>{SLAVERY_APPROVAL["date"]}</b></div></section>
+</main>"""
+    src = HTML / "Modern_Slavery_Statement.html"
+    src.write_text(page_html("Modern Slavery Policy — Design & Supply", body), encoding="utf-8")
+    render(src, HTML / "slavery-body.pdf")
+    bdoc = fitz.open(HTML / "slavery-body.pdf")
+    n = bdoc.page_count
+    ov = HTML / "slavery-overlay.html"
+    ov.write_text(page_html("Modern Slavery Policy", "<style>@page { size: 210mm 297mm; margin: 0; } html, body { background: transparent; }</style>" + "".join(
+        f'<section class="ov">{"" if i == 1 else f"<div class=\"hb\"><img src=\"{LOGO}\" alt=\"\"><div class=\"t\">Modern slavery policy</div></div>"}'
+        f'<div class="folio"><span><b>Design &amp; Supply Ltd</b> · Modern slavery policy · {PHONE}</span><span class="pn">{i} / {n}</span></div></section>'
+        for i in range(1, n + 1))), encoding="utf-8")
+    render(ov, HTML / "slavery-overlay.pdf")
+    odoc = fitz.open(HTML / "slavery-overlay.pdf")
+    assert odoc.page_count == n
+    for i, pg in enumerate(bdoc):
+        pg.show_pdf_page(pg.rect, odoc, i, overlay=True)
+    bdoc.set_metadata({"title": "Design & Supply — Modern Slavery Policy", "author": "Design & Supply Ltd",
+                       "subject": "Modern slavery policy", "creator": "Design & Supply Ltd", "producer": "Design & Supply Ltd"})
+    tmp = pathlib.Path(tempfile.mkdtemp(prefix="ds-slavery-")) / "out.pdf"
+    bdoc.save(tmp, garbage=4, deflate=True)
+    shutil.copyfile(tmp, FILES / "Modern_Slavery_Statement.pdf")
+    print(f"  Modern_Slavery_Statement.pdf  {n} pages  {round((FILES / 'Modern_Slavery_Statement.pdf').stat().st_size / 1024)} KB")
+
+
 # ------------------------------------------------------------- downloads --
 # Thumbnails (public/images/docs/) and the document cards on /downloads, which
 # are regenerated between the <!--DOCS--> markers in public/downloads.html so
@@ -588,23 +805,46 @@ DOC_SECTIONS = [
         (f"{DS}Steel-Security-Rated-SR4.pdf", "Data sheet", "Security Rated Doors — SR4", "LPCB-certified LPS 1175 SR4 steel doorsets: sizes, applications and options."),
         (f"{DS}Steel-Fire-Rated-Doors.pdf", "Data sheet", "Fire Rated Doors", "Steel doorsets tested to EN 1634-1 as complete assemblies."),
         (f"{DS}Multi-Storey-Car-Park.pdf", "Data sheet", "Car Park Doors", "EN 1634-1 fire rated doorsets for multi-storey and underground car parks."),
-        (f"{DS}Steel-Flood-Rated.pdf", "Data sheet", "Flood Doors", "Steel flood doors: sizes, applications and options."),
+        (f"{DS}Steel-Flood-Rated.pdf", "Data sheet", "Flood-Line Doors", "Flood-Line steel flood doors: sizes, applications and options."),
         (f"{DS}Steel-Thermal-Doors.pdf", "Data sheet", "Therma-Line Thermal Doors", "Thermally efficient doorsets with U-values as low as 1.3 W/m²K."),
         (f"{DS}Streamline-Door.pdf", "Data sheet", "Streamline Doors", "Bespoke steel doors for commercial and industrial applications."),
         (f"{DS}Slimline.pdf", "Data sheet", "Slimline Glazed Doors", "Glazed security doors to LPS 1175 SR2 and LPS 2081."),
     ]),
-    ("installation", False, "Installation, operation &amp; maintenance", "Install it right. <em>Keep it right.</em>",
-     "Site safety, pre-installation checks, fire and security requirements, handover, inspection schedules and troubleshooting — for installers and building managers.", [
+    # Certificates are published as supplied (public/files/Design-and-Supply-<scheme>*.pdf).
+    # When one is renewed, replace the file under the same name and update its dates here.
+    ("certificates", False, "Certificates &amp; approvals", "Independently <em>verified.</em>",
+     "Our certificates, memberships and thermal performance summaries. Status can change — check LPCB listings on the Red Book "
+     "(redbooklive.com) and memberships on each scheme’s own platform.", [
+        ("Design-and-Supply-ISO9001-Certificate-694.pdf", "ISO 9001", "ISO 9001:2015 — Certificate 694",
+         "Quality management certified by BRE Global for the design, manufacture and installation of steel hinged doors. Valid to 12 June 2027."),
+        ("Design-and-Supply-LPCB-Certificate-694b-LPS1175-SR1-SR3.pdf", "LPCB certificate", "Certificate <span style=\"text-transform:none\">694b</span> — LPS 1175 SR1 to SR3",
+         "Desray 1, Desray 2 and DS3 hinged security doorsets (LPS 1175 Issue 7), with the approved locking configurations."),
+        ("Design-and-Supply-LPCB-Certificate-694d-LPS1175-SR4.pdf", "LPCB certificate", "Certificate <span style=\"text-transform:none\">694d</span> — LPS 1175 SR4",
+         "DS4 hinged security doorsets, certified to LPS 1175 Issue 8."),
+        ("Design-and-Supply-Thermal-Summary-WIL552590.pdf", "Thermal summary", "U-value Summary — WIL 552590",
+         "1.3 W/m²K for single and double steel doorsets, inward and outward opening, calculated to BS EN ISO 10077-1 by Element Materials Technology. Full report on request."),
+        ("Design-and-Supply-Thermal-Summary-Glazed-WIL557206.pdf", "Thermal summary", "Glazed U-value Summary — WIL 557206",
+         "1.3 W/m²K for glazed single and double steel doorsets, outward opening, calculated to BS EN ISO 10077-1. Full report on request."),
+        ("Design-and-Supply-Constructionline-Gold.pdf", "Membership", "Constructionline Gold",
+         "Gold member, registration 144277. Certificate issued 25 September 2026."),
+        ("Design-and-Supply-SSIP-Certificate.pdf", "Health &amp; safety", "SSIP — Once For All",
+         "SSIP health &amp; safety certificate. Assessed 11 September 2026, valid to 11 September 2027."),
+        ("Design-and-Supply-Achilles-Network-Certificate.pdf", "Membership", "Achilles Network",
+         "Registered supplier on the Achilles Network, Achilles ID 00181136."),
+    ]),
+    ("installation", True, "Installation, operation &amp; maintenance", "Install it right. <em>Keep it right.</em>",
+     "Site safety, pre-installation checks, fire and security requirements, handover, inspection schedules and troubleshooting — for installers and building managers — with our product warranty.", [
         (MANUAL, "O&amp;M manual", "Installation, Operation &amp; Maintenance Manual", "The full manual as a PDF, for your O&amp;M handover pack."),
         ("/installation-guides", "Read online", "The Manual Online", "The same manual as a web page — easy to search and share on site."),
+        ("Design-and-Supply-Warranty.pdf", "Warranty", "Product Warranty", "Our warranty on steel door and Slimline products — what’s covered, what isn’t, and how to make a claim."),
     ]),
-    ("technical", True, "Technical information", "Cills, handing <em>and colours.</em>",
+    ("technical", False, "Technical information", "Cills, handing <em>and colours.</em>",
      "Confirm the cill type, handing and colour when you order. If you don’t specify a cill, the H type is supplied as standard.", [
         ("Design-and-Supply-Cill-Types.pdf", "Technical", "Cill Types", "Cill profiles A to J — what each is for and when to choose it."),
         ("Design-and-Supply-Door-Handing-Diagrams.pdf", "Technical", "Door Handing Diagrams", "Single, standard astragal and lipped flush doorsets, left and right handed."),
         ("DS_All_Standard_Colours.pdf", "Colour chart", "Standard Colours", "Our standard powder-coat colours. Talk to us about colours outside the range."),
     ]),
-    ("company", False, "Company documents", "Policies.", "", [
+    ("company", True, "Company documents", "Policies.", "", [
         ("Modern_Slavery_Statement.pdf", "Policy", "Modern Slavery Statement", "Our modern slavery policy."),
     ]),
 ]
@@ -626,6 +866,13 @@ def _thumb(pdf, out, page=0, square=False):
     im.save(out, quality=84, optimize=True, progressive=True)
 
 
+def _ver(path):
+    """Content fingerprint for cache-busting. Cloudflare caches images for a week
+    and PDFs for hours, so an updated file needs a new URL to show up at once."""
+    import hashlib
+    return hashlib.md5(pathlib.Path(path).read_bytes()).hexdigest()[:10]
+
+
 def _meta(path):
     import fitz
     kb = path.stat().st_size / 1024
@@ -642,12 +889,12 @@ def build_downloads():
     html_out = f"""<section class="section">
   <div class="container">
     <div class="split brochure-feature">
-      <a class="brochure-cover reveal" href="/files/{BROCHURE}" target="_blank" rel="noopener"><img width="720" height="720" src="/images/docs/{BROCHURE.replace('.pdf', '.jpg')}" alt="Cover of the Design &amp; Supply company brochure" loading="lazy" decoding="async"></a>
+      <a class="brochure-cover reveal" href="/files/{BROCHURE}?v={_ver(FILES / BROCHURE)}" target="_blank" rel="noopener"><img width="720" height="720" src="/images/docs/{BROCHURE.replace('.pdf', '.jpg')}?v={_ver(thumbs / BROCHURE.replace('.pdf', '.jpg'))}" alt="Cover of the Design &amp; Supply company brochure" loading="lazy" decoding="async"></a>
       <div class="reveal">
         <span class="kicker">Company brochure</span>
         <h2>The Design &amp; Supply <em>brochure.</em></h2>
         <p>Who we are and what we make — security, fire, thermal, flood and acoustic doorsets, Stock and Streamline doors and Slimline architectural glazing — with our accreditations, the sectors we serve and recent projects.</p>
-        <div class="doc-links"><a class="btn btn-primary" href="/files/{BROCHURE}" target="_blank" rel="noopener">Download the brochure</a></div>
+        <div class="doc-links"><a class="btn btn-primary" href="/files/{BROCHURE}?v={_ver(FILES / BROCHURE)}" target="_blank" rel="noopener">Download the brochure</a></div>
         <p class="doc-note">{bmeta}</p>
       </div>
     </div>
@@ -665,11 +912,11 @@ def build_downloads():
             else:
                 thumb = target.replace(".pdf", ".jpg")
                 _thumb(FILES / target, thumbs / thumb)
-                href, (meta, _), icon = f"/files/{target}", _meta(FILES / target), PDF_ICON
+                href, (meta, _), icon = f"/files/{target}?v={_ver(FILES / target)}", _meta(FILES / target), PDF_ICON
                 attrs = ' target="_blank" rel="noopener"'
             cards += f"""
       <a class="doc-card reveal" href="{href}"{attrs}>
-        <span class="doc-thumb"><img width="640" height="480" src="/images/docs/{thumb}" alt="" loading="lazy" decoding="async"></span>
+        <span class="doc-thumb"><img width="640" height="480" src="/images/docs/{thumb}?v={_ver(thumbs / thumb)}" alt="" loading="lazy" decoding="async"></span>
         <span class="doc-body">
           <span class="doc-kicker">{dkick}</span>
           <h3>{title}</h3>
@@ -700,7 +947,7 @@ def build_downloads():
 # ------------------------------------------------------------------ main --
 
 BUILDERS = {"cill": build_cill, "handing": build_handing, "sheets": build_sheets, "colours": build_colours,
-            "manual": build_manual, "downloads": build_downloads}
+            "manual": build_manual, "warranty": build_warranty, "slavery": build_slavery, "downloads": build_downloads}
 
 if __name__ == "__main__":
     wanted = sys.argv[1:] or list(BUILDERS)

@@ -75,6 +75,8 @@ const LEGACY_REDIRECTS = {
   "/general-payment-terms-conditions/general-payment-terms-conditions": "/terms",
   "/cart": "/stock-doors",
   "/my-account": "/stock-doors",
+  // Printed warranties issued before October 2026 point O&M readers here.
+  "/technical-downloads.php": "/downloads",
   // The scanned legacy O&M manual was retired in favour of the current one.
   "/files/Fitting_Instructions_OM_MANUAL.pdf": "/files/Design-and-Supply-Installation-Operation-Maintenance-Manual.pdf",
 };

@@ -94,6 +94,24 @@ function toIsoDate(value) {
   if (n) console.log(`Normalised published_at on ${n} post(s).`);
 }
 
+// Product renames inside CMS articles. The live articles sit in the volume's
+// database, so they are corrected here rather than in a local copy. Exact
+// phrases only (generic uses of the word stay as written); idempotent.
+{
+  const RENAMES = [
+    // Oct 2026: the flood door range is named Flood-Line.
+    ["flood-doors-protecting-uk-property", "Design &amp; Supply's flood-rated steel doors", "Design &amp; Supply's Flood-Line steel doors"],
+    ["flood-doors-protecting-uk-property", "Design &amp; Supply Flood-Rated Doors", "Design &amp; Supply Flood-Line Doors"],
+    ["flood-doors-protecting-uk-property", "Our flood-rated doors are built", "Our Flood-Line doors are built"],
+  ];
+  const get = db.prepare("SELECT id, body FROM posts WHERE slug = ?");
+  const put = db.prepare("UPDATE posts SET body = ? WHERE id = ?");
+  for (const [slug, from, to] of RENAMES) {
+    const row = get.get(slug);
+    if (row && row.body && row.body.includes(from)) put.run(row.body.split(from).join(to), row.id);
+  }
+}
+
 function slugify(text) {
   return String(text)
     .toLowerCase()

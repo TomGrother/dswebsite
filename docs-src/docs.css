@@ -227,3 +227,64 @@ p { margin: 0 0 3mm; }
 .c-bs .cfam h2 { font-size: 14pt; }
 .cpage-cover .note { margin-bottom: 5mm; }
 .cpage-cover .lead { margin-bottom: 4mm; }
+
+/* ---------- warranty ---------- */
+.wty-hd { height: 84mm; }
+.wty-hd .leaf-edge, .wty-hd .leaf-panel { height: 84mm; }
+.wty-hd .tt { bottom: 10mm; }
+.wty-seal { position: absolute; right: 18mm; top: 17mm; width: 42mm; height: 50mm; fill: none; stroke: #fff; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; opacity: .95; }
+.wty-bd { display: grid; grid-template-columns: 1fr 78mm; gap: 8mm; padding: 7mm var(--gutter) 0; }
+.wty p { font-size: 8.8pt; line-height: 1.55; margin: 0 0 3mm; }
+.wty-bd { padding-top: 9mm !important; }
+.wty-p2 { grid-template-columns: 1fr 1fr !important; gap: 10mm !important; padding-top: 8mm !important; }
+.wty-p2 .wty-x { font-size: 8.8pt; }
+.wty-p2 .wty-legal { font-size: 8.8pt !important; }
+.wty h3 { margin-top: 1mm; }
+.wty-legal { font-size: 8.8pt !important; color: var(--ink); font-weight: 600; border: .4mm solid var(--green); border-radius: 1.6mm; padding: 3.5mm 4mm; }
+.wty-box { background: var(--mist); border-top: 1mm solid var(--green); border-radius: 2mm; padding: 3.6mm 4mm; margin-bottom: 4mm; }
+.wty-box ol { list-style: none; margin: 0 0 3mm; padding: 0; font-size: 8pt; }
+.wty-box ol li { padding: .7mm 0; display: grid; grid-template-columns: 5mm 1fr; }
+.wty-box ol li b { color: var(--green); margin-right: 1mm; }
+.wty-contact { border-top: .25mm solid var(--line); padding-top: 2.4mm; font-size: 8pt; display: grid; gap: 1.2mm; }
+.wty-contact div { display: grid; grid-template-columns: 13mm 1fr; }
+.wty-contact b { display: inline-block; width: 12mm; font-family: 'Barlow Condensed'; font-weight: 700; letter-spacing: .6pt; text-transform: uppercase; color: var(--teal); }
+.wty-x { list-style: none; margin: 0; padding: 0; display: block !important; font-size: 8pt; }
+.wty-x li { position: relative; padding: 0 0 2mm 5.4mm; line-height: 1.45; }
+.wty-x li::before { content: ""; position: absolute; left: 0; top: 1.4mm; width: 2.4mm; height: 2.4mm; border-radius: 50%; background: #fff; border: .3mm solid #c8d6d1; }
+.wty-x li::after { content: ""; position: absolute; left: .75mm; top: 2.6mm; width: 1.2mm; height: .3mm; background: #8aa29b; }
+.wty-keep { padding: 2mm var(--gutter) 0; display: grid; gap: 4mm; }
+.wty-valid { display: grid; grid-template-columns: 1fr 24mm; gap: 7mm; align-items: center; background: var(--mist); border-left: 1.4mm solid var(--green); padding: 4mm 6mm; }
+.wty-valid p { margin-bottom: 2mm; }
+.wty-url { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 11pt !important; letter-spacing: .4pt; color: var(--teal); margin: 0 !important; }
+.wty-qr { width: 24mm; height: 24mm; }
+.wty-rec { border: .3mm solid var(--line); border-radius: 2mm; padding: 3.5mm 6mm 4mm; }
+.wty-rec p { color: var(--slate); }
+.wty-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10mm; margin-top: 1mm; }
+.wty-lines div { display: flex; flex-direction: column; justify-content: space-between; height: 10.5mm; border-bottom: .3mm solid #b9c9c4; padding: 1.2mm 0 0; }
+.wty-lines div.wide { grid-column: 1 / -1; }
+.wty-lines div.tall { height: 14mm; }
+.wty-lines b { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 9pt; letter-spacing: .6pt; text-transform: uppercase; color: var(--green); white-space: nowrap; }
+
+/* ---------- modern slavery policy (flowing, first page full-bleed band) ---------- */
+.ms-hd { position: relative; height: 86mm; margin: 0 0 8mm; background: radial-gradient(120mm 90mm at 80% 10%, rgba(65,189,214,.2), transparent 70%), linear-gradient(180deg, #082a23, #061f1a 70%, #04150f); color: #fff; overflow: hidden; }
+.ms-hd::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.2mm; background: var(--cyan); }
+.ms-hd .leaf-edge { right: 0; top: 0; width: 72mm; height: 86mm; background: var(--cyan); }
+.ms-hd .leaf-panel { right: 0; top: 0; width: 70.2mm; height: 86mm; background: linear-gradient(160deg, #0f7a62, #0E6551 45%, #0a4c3d); }
+.ms-mark { position: absolute; right: 16mm; top: 20mm; width: 40mm; height: 44mm; fill: none; stroke: #fff; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; opacity: .95; }
+.ms-hd .logo { position: absolute; left: 15mm; top: 13mm; width: 50mm; }
+.ms-hd .est { position: absolute; left: 15mm; top: 34mm; font-family: 'Barlow Condensed'; font-weight: 600; font-size: 9pt; letter-spacing: 1.6pt; text-transform: uppercase; color: #a9c5bd; }
+.ms-hd .tt { position: absolute; left: 15mm; bottom: 9mm; }
+.ms-hd h1 { font-size: 36pt; color: #fff; }
+.ms-body { font-size: 9pt; line-height: 1.5; padding: 0 15mm; }
+.ms-sec { margin-bottom: 4.5mm; }
+.ms-sec h2 { font-size: 17pt; color: var(--green); display: flex; align-items: baseline; gap: 3mm; padding-bottom: 1.6mm; margin: 0 0 3mm; border-bottom: .5mm solid var(--cyan); break-after: avoid; }
+.ms-sec h2 .num { color: var(--cyan); }
+.cl { display: grid; grid-template-columns: 11mm 1fr; gap: 2mm; margin-bottom: 2mm; break-inside: avoid; }
+.cl .no { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 11pt; color: var(--teal); line-height: 1.45; }
+.cl p { margin: 0; }
+.ms-approval { break-inside: avoid; margin-top: 5mm; background: var(--mist); border-left: 1.4mm solid var(--green); padding: 5mm 6mm; }
+.ms-approval h3 { margin: 0 0 3mm; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 13pt; letter-spacing: .8pt; text-transform: uppercase; color: var(--green); }
+.ms-people { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm 8mm; }
+.ms-people div, .ms-date { display: grid; grid-template-columns: 18mm 1fr; row-gap: 1mm; font-size: 9.4pt; }
+.ms-people span, .ms-date span { font-family: 'Barlow Condensed'; font-weight: 700; letter-spacing: .6pt; text-transform: uppercase; color: var(--teal); font-size: 9pt; }
+.ms-date { margin-top: 3mm; }
