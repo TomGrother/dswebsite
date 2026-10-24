@@ -1,0 +1,120 @@
+/* Design & Supply company brochure — 210 x 210 mm square pages.
+   Brand device: the open-door leaf from the logo (a panel whose free edge
+   swings away in perspective), used for photo masks and colour blocks. */
+
+@page { size: 210mm 210mm; margin: 0; }
+
+:root {
+  --green: #0E6551;
+  --green-mid: #0b5244;
+  --green-deep: #08332a;
+  --night: #061f1a;
+  --teal: #0F7E98;
+  --cyan: #41BDD6;
+  --cyan-soft: #e3f5f9;
+  --ink: #0f1d19;
+  --slate: #4a5d57;
+  --mist: #f2f7f5;
+  --line: #dfe8e5;
+  --white: #ffffff;
+  --gutter: 14mm;
+}
+
+* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+html, body { margin: 0; padding: 0; }
+body { font-family: Inter, Arial, Helvetica, sans-serif; color: var(--ink); font-size: 8.6pt; line-height: 1.5; }
+img { display: block; }
+
+.page { width: 210mm; height: 210mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; background: var(--white); }
+.page:last-child { page-break-after: auto; break-after: auto; }
+.dark { background: var(--night); color: var(--white); }
+.green { background: var(--green); color: var(--white); }
+.mist { background: var(--mist); }
+
+/* ---- type ---- */
+.display, h1, h2, h3, .kicker, .stat b, .num, .feature b, .label {
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+}
+h1, h2 { margin: 0; text-transform: uppercase; font-weight: 800; letter-spacing: .2pt; line-height: .9; }
+h1 { font-size: 46pt; }
+h2 { font-size: 34pt; }
+h3 { margin: 0; font-size: 13.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: .3pt; line-height: 1.05; }
+h1 em, h2 em, h3 em { font-style: normal; color: var(--cyan); }
+.green h2 em, .green h1 em { color: #8fe0ef; }
+.kicker { display: inline-flex; align-items: center; gap: 2.2mm; font-size: 9.5pt; font-weight: 700; letter-spacing: 1.6pt; text-transform: uppercase; color: var(--teal); margin-bottom: 3mm; }
+.dark .kicker, .green .kicker { color: var(--cyan); }
+.kicker::before { content: ""; width: 3.2mm; height: 4.4mm; border: .55mm solid currentColor; border-right-width: 0; clip-path: polygon(0 0, 100% 12%, 100% 88%, 0 100%); background: linear-gradient(90deg, currentColor 0 .55mm, transparent .55mm); }
+p { margin: 0 0 2.6mm; }
+.lead { font-size: 10.2pt; line-height: 1.5; color: var(--slate); }
+.dark .lead, .green .lead { color: #cfe3dd; }
+.small { font-size: 7.4pt; color: var(--slate); }
+.dark .small, .green .small { color: #a9c5bd; }
+
+/* ---- door-leaf device ---- */
+.leaf { position: absolute; clip-path: polygon(0 0, 100% 7%, 100% 93%, 0 100%); }
+.leaf.flip { clip-path: polygon(0 7%, 100% 0, 100% 100%, 0 93%); }
+.leaf-photo { position: absolute; overflow: hidden; clip-path: polygon(0 0, 100% 7%, 100% 93%, 0 100%); }
+.leaf-photo.flip { clip-path: polygon(0 7%, 100% 0, 100% 100%, 0 93%); }
+.leaf-photo img { width: 100%; height: 100%; object-fit: cover; }
+.jamb { position: absolute; width: 2.2mm; background: var(--cyan); }
+
+/* floating product cutouts */
+/* door cutouts carry a baked-in shadow and a 10% transparent margin (see make-assets.py) */
+.cutout { position: absolute; }
+
+/* ---- folio (inner pages) ---- */
+.folio { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 7mm; display: flex; justify-content: space-between; align-items: center;
+  font-size: 6.6pt; letter-spacing: .4pt; color: var(--slate); border-top: .25mm solid var(--line); padding-top: 2.2mm; }
+.folio b { color: var(--green); font-weight: 700; }
+.dark .folio, .green .folio { color: #a9c5bd; border-top-color: rgba(255,255,255,.18); }
+.dark .folio b, .green .folio b { color: var(--white); }
+.folio .pn { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 9pt; color: var(--green); }
+.dark .folio .pn, .green .folio .pn { color: var(--cyan); }
+
+/* ---- stats ---- */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.stat { padding: 3.2mm 3mm 3mm 0; border-top: .5mm solid var(--cyan); }
+.stat b { display: block; font-size: 25pt; font-weight: 800; line-height: 1; color: var(--white); letter-spacing: .2pt; }
+.stat span { display: block; margin-top: 1.2mm; font-size: 7.2pt; line-height: 1.35; color: #cfe3dd; }
+
+/* ---- key features list (product pages) ---- */
+.features { list-style: none; margin: 0; padding: 0; }
+.feature { display: grid; grid-template-columns: 8.5mm 1fr; gap: 2.6mm; align-items: center; padding: 1.85mm 0; border-bottom: .25mm solid var(--line); }
+.feature:last-child { border-bottom: 0; }
+.feature .ic { width: 8.5mm; height: 8.5mm; border-radius: 1.6mm; background: var(--cyan-soft); color: var(--green); display: grid; place-items: center; }
+.feature .ic svg { width: 5mm; height: 5mm; }
+.feature b { display: block; font-size: 9.6pt; font-weight: 700; text-transform: uppercase; letter-spacing: .5pt; color: var(--green); line-height: 1.1; }
+.feature span { display: block; font-size: 7.7pt; line-height: 1.35; color: var(--ink); }
+.dark .feature, .green .feature { border-bottom-color: rgba(255,255,255,.14); }
+.dark .feature .ic, .green .feature .ic { background: rgba(65,189,214,.16); color: var(--cyan); }
+.dark .feature b, .green .feature b { color: var(--cyan); }
+.dark .feature span, .green .feature span { color: #e6f1ee; }
+
+.badge { display: inline-block; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 8pt; letter-spacing: 1pt; text-transform: uppercase;
+  padding: .9mm 2.4mm; border-radius: 1mm; background: var(--cyan); color: var(--night); }
+.badge.outline { background: transparent; color: var(--cyan); border: .3mm solid var(--cyan); }
+.badge.green { background: var(--green); color: var(--white); }
+
+.sheet-link { display: flex; align-items: center; gap: 2.4mm; font-size: 7.2pt; color: var(--slate); }
+.sheet-link .pill { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 8pt; letter-spacing: .8pt; text-transform: uppercase; background: var(--green); color: var(--white); border-radius: 5mm; padding: 1.2mm 3.4mm; white-space: nowrap; }
+.dark .sheet-link, .green .sheet-link { color: #a9c5bd; }
+.dark .sheet-link .pill, .green .sheet-link .pill { background: var(--cyan); color: var(--night); }
+
+/* ---- numbered blocks ---- */
+.num { font-size: 40pt; font-weight: 800; line-height: .8; color: var(--cyan); }
+.num.ghost { color: transparent; -webkit-text-stroke: .35mm var(--cyan); }
+
+/* ---- tables ---- */
+table.grid { width: 100%; border-collapse: collapse; font-size: 7.6pt; }
+table.grid th { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 8.4pt; letter-spacing: .6pt; text-transform: uppercase; text-align: left; color: var(--white); background: var(--green); padding: 1.8mm 2.2mm; }
+table.grid td { padding: 1.8mm 2.2mm; border-bottom: .25mm solid var(--line); vertical-align: top; }
+table.grid tr:nth-child(even) td { background: var(--mist); }
+table.grid td:first-child { font-family: 'Barlow Condensed'; font-weight: 800; font-size: 11pt; color: var(--green); white-space: nowrap; }
+
+/* ---- photo frames ---- */
+.photo { position: absolute; overflow: hidden; background: var(--line); }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo .cap { position: absolute; left: 0; bottom: 0; right: 0; padding: 1.6mm 2.4mm; font-size: 6.6pt; color: var(--white); background: linear-gradient(transparent, rgba(6,31,26,.85)); }
+
+/* ---- icons ---- */
+svg.i { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }

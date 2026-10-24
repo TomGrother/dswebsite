@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Design &amp; Supply — Company Brochure</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=block" rel="stylesheet">
+<link rel="stylesheet" href="brochure.css">
+<script src="icons.js"></script>
+<style>
+/* ---------------- page-specific layout ---------------- */
+
+/* COVER */
+.cover .glow { position: absolute; inset: 0; background: radial-gradient(120mm 90mm at 128mm 132mm, rgba(65,189,214,.22), transparent 70%), linear-gradient(180deg, #082a23 0%, #061f1a 60%, #04150f 100%); }
+.cover .leaf-big { left: 70mm; top: 0; width: 140mm; height: 172mm; background: linear-gradient(160deg, #0f7a62 0%, #0E6551 45%, #0a4c3d 100%); }
+.cover .leaf-edge { left: 68.2mm; top: 0; width: 1.8mm; height: 174mm; background: var(--cyan); clip-path: none; }
+.cover .floor { position: absolute; left: 0; right: 0; top: 166mm; height: 44mm; background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,0) 70%); }
+.cover .floor-line { position: absolute; left: 0; right: 0; top: 166mm; height: .3mm; background: rgba(65,189,214,.45); }
+.cover .lineup img { position: absolute; }
+.cover .reflect { position: absolute; transform: scaleY(-1); transform-origin: bottom; opacity: .13; -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0) 22%); mask-image: linear-gradient(to top, #000, transparent 22%); }
+.cover .logo { position: absolute; left: var(--gutter); top: 13mm; width: 50mm; }
+.cover .edition { position: absolute; right: var(--gutter); top: 15mm; text-align: right; font-family: 'Barlow Condensed'; font-weight: 600; font-size: 9pt; letter-spacing: 1.8pt; text-transform: uppercase; color: #a9c5bd; }
+.cover .edition b { display: block; color: var(--white); font-size: 15pt; letter-spacing: .6pt; font-weight: 700; }
+.cover h1 { position: absolute; left: var(--gutter); top: 50mm; font-size: 37pt; line-height: .92; }
+.cover .tagline { position: absolute; left: var(--gutter); bottom: 15mm; right: var(--gutter); display: flex; justify-content: space-between; align-items: flex-end; }
+.cover .ranges { font-family: 'Barlow Condensed'; font-weight: 600; font-size: 10.5pt; letter-spacing: 1.4pt; text-transform: uppercase; color: #cfe3dd; line-height: 1.5; }
+.cover .ranges i { font-style: normal; color: var(--cyan); padding: 0 1.6mm; }
+.cover .since { font-family: 'Barlow Condensed'; text-align: right; color: var(--white); }
+.cover .since b { display: block; font-size: 30pt; font-weight: 800; line-height: .9; color: var(--cyan); }
+.cover .since span { font-size: 8.5pt; letter-spacing: 1.6pt; text-transform: uppercase; color: #a9c5bd; }
+
+/* STORY */
+.story .photo-leaf { right: 0; top: 14mm; width: 88mm; height: 88mm; }
+.story .photo-leaf img { object-position: 50% 60%; }
+.story .jamb { right: 88mm; top: 14mm; height: 88mm; }
+.story .text { position: absolute; left: var(--gutter); top: 16mm; width: 96mm; }
+.story .text p { font-size: 8.2pt; }
+.story .cap { position: absolute; right: var(--gutter); top: 104mm; width: 74mm; font-size: 6.6pt; color: var(--slate); }
+.quote { position: absolute; right: var(--gutter); top: 118mm; width: 74mm; }
+.quote .mark { font-family: 'Barlow Condensed'; font-weight: 800; font-size: 46pt; line-height: .5; color: var(--cyan); display: block; height: 7mm; }
+.quote p { font-size: 9.6pt; line-height: 1.45; font-weight: 500; color: var(--green); margin-bottom: 2mm; }
+.quote cite { font-style: normal; font-size: 7.4pt; color: var(--slate); }
+.quote cite b { color: var(--ink); }
+.timeline { position: absolute; left: var(--gutter); top: 150mm; width: 104mm; }
+.timeline ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm 3.5mm; }
+.timeline li { border-left: .5mm solid var(--cyan); padding-left: 2.2mm; }
+.timeline li b { display: block; font-family: 'Barlow Condensed'; font-weight: 800; font-size: 13pt; line-height: 1; color: var(--green); }
+.timeline li span { display: block; font-size: 6.9pt; line-height: 1.3; color: var(--slate); margin-top: .6mm; }
+
+/* WHY */
+.why .bg-leaf { right: -20mm; top: 0; width: 120mm; height: 210mm; background: rgba(255,255,255,.04); }
+.why .head { position: absolute; left: var(--gutter); top: 15mm; width: 120mm; }
+.why .usps { position: absolute; left: var(--gutter); right: var(--gutter); top: 50mm; display: grid; grid-template-columns: 1fr 1fr; gap: 6.5mm 9mm; }
+.usp { display: grid; grid-template-columns: 14mm 1fr; gap: 1mm; }
+.usp .num { font-size: 30pt; }
+.usp h3 { font-size: 12pt; margin: .4mm 0 1.2mm; color: var(--white); }
+.usp p { font-size: 7.9pt; line-height: 1.45; color: #d6e8e3; margin: 0; }
+.why .stats { position: absolute; left: var(--gutter); right: var(--gutter); top: 152mm; }
+
+/* PROCESS */
+.process .head { position: absolute; left: var(--gutter); top: 15mm; width: 128mm; }
+.process .steps { position: absolute; left: var(--gutter); right: var(--gutter); top: 64mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15mm 8mm; }
+.step { position: relative; padding-top: 16mm; }
+.step .ic { position: absolute; left: 0; top: 0; width: 12.5mm; height: 12.5mm; border-radius: 50%; background: var(--green); color: var(--white); display: grid; place-items: center; }
+.step .ic svg { width: 6.6mm; height: 6.6mm; }
+.step .n { position: absolute; right: 0; top: -1mm; font-family: 'Barlow Condensed'; font-weight: 800; font-size: 28pt; color: transparent; -webkit-text-stroke: .3mm var(--cyan); line-height: 1; }
+.step h3 { font-size: 13pt; color: var(--green); margin-bottom: 1.8mm; }
+.step p { font-size: 8.3pt; line-height: 1.5; color: var(--slate); margin: 0; }
+.step::after { content: ""; position: absolute; left: 15mm; right: 12mm; top: 6.2mm; height: .3mm; background: var(--line); }
+.process .strip { position: absolute; left: 0; right: 0; bottom: 18mm; height: 26mm; background: var(--mist); }
+.process .strip .inner { position: absolute; left: var(--gutter); right: var(--gutter); top: 0; bottom: 0; display: flex; align-items: center; gap: 6mm; }
+.process .strip .big { font-family: 'Barlow Condensed'; font-weight: 800; font-size: 20pt; color: var(--green); line-height: .95; text-transform: uppercase; white-space: nowrap; }
+.process .strip p { margin: 0; font-size: 7.9pt; color: var(--slate); }
+
+/* RANGE OVERVIEW */
+.range .head { position: absolute; left: var(--gutter); top: 15mm; width: 150mm; }
+.range .grid { position: absolute; left: var(--gutter); right: var(--gutter); top: 52mm; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; }
+.card { position: relative; height: 66mm; background: var(--white); border-radius: 2mm; overflow: hidden; box-shadow: 0 .6mm 2mm rgba(8,51,42,.08); }
+.card .swatch { position: absolute; left: 0; top: 0; right: 0; height: 36mm; clip-path: polygon(0 0, 100% 0, 100% 84%, 0 100%); }
+.card img { position: absolute; left: 50%; transform: translateX(-50%); bottom: 27.9mm; height: 37.2mm; }
+.card .t { position: absolute; left: 3.2mm; right: 3mm; top: 39mm; }
+.card h3 { font-size: 10.5pt; color: var(--green); margin-bottom: .8mm; }
+.card p { font-size: 6.8pt; line-height: 1.35; color: var(--slate); margin: 0; }
+.card .pg { position: absolute; right: 2.6mm; bottom: 2.2mm; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 7.5pt; color: var(--teal); letter-spacing: .6pt; }
+.card.combine { background: var(--green); color: var(--white); }
+.card.combine .t { top: 15mm; }
+.card.combine h3 { color: var(--white); font-size: 12pt; }
+.card.combine p { color: #d6e8e3; font-size: 7pt; margin-bottom: 1.6mm; }
+.card.combine .ic2 { position: absolute; left: 3.2mm; top: 4mm; width: 8.5mm; height: 8.5mm; color: var(--cyan); }
+
+/* PRODUCT PAGE */
+.product .panel-edge { left: 0; top: 0; width: 95mm; height: 210mm; background: var(--cyan); }
+.product .panel { left: 0; top: 0; width: 93.2mm; height: 210mm; }
+.product .bignum { position: absolute; left: 10mm; top: 9mm; font-family: 'Barlow Condensed'; font-weight: 800; font-size: 44pt; line-height: .9; color: transparent; -webkit-text-stroke: .35mm rgba(255,255,255,.55); }
+.product .vlabel { position: absolute; left: 11mm; bottom: 16mm; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 9pt; letter-spacing: 2pt; text-transform: uppercase; color: rgba(255,255,255,.8); }
+.product .shadow { position: absolute; height: 9mm; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.45), rgba(0,0,0,0)); }
+.product .col { position: absolute; left: 103mm; right: var(--gutter); top: 14mm; }
+.product h2 { font-size: 27pt; color: var(--green); }
+.product .tag { font-family: 'Barlow Condensed'; font-weight: 600; font-size: 12.5pt; line-height: 1.12; color: var(--teal); margin: 2.4mm 0 3mm; }
+.product .intro { font-size: 7.9pt; line-height: 1.5; color: var(--ink); margin-bottom: 3mm; }
+.product .kf { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 10pt; letter-spacing: 1.2pt; text-transform: uppercase; color: var(--ink); display: flex; align-items: center; gap: 2mm; margin-bottom: .6mm; }
+.product .kf::after { content: ""; flex: 1; height: .3mm; background: var(--cyan); }
+.product .feature { padding: 1.45mm 0; }
+.product .foot { margin-top: 2.6mm; display: flex; justify-content: space-between; align-items: center; gap: 3mm; }
+.product .note { font-size: 6.6pt; color: var(--slate); margin-top: 1.6mm; line-height: 1.35; }
+.product .folio { left: 103mm; }
+.product .badge-float { position: absolute; left: 10mm; top: 30mm; }
+
+/* SR TABLE */
+.srt .head { position: absolute; left: var(--gutter); top: 15mm; width: 150mm; }
+.srt .tbl { position: absolute; left: var(--gutter); right: var(--gutter); top: 50mm; }
+.srt table.grid td { font-size: 7.4pt; line-height: 1.38; }
+.srt table.grid td:first-child { font-size: 15pt; width: 17mm; }
+.srt .callouts { position: absolute; left: var(--gutter); right: var(--gutter); top: 140mm; display: grid; grid-template-columns: 1.15fr 1fr; gap: 6mm; }
+.callout { background: var(--mist); border-left: 1.2mm solid var(--green); padding: 3.2mm 4mm; }
+.callout h3 { font-size: 10.5pt; color: var(--green); margin-bottom: 1.2mm; }
+.callout p { font-size: 7.4pt; line-height: 1.45; margin: 0; color: var(--ink); }
+.srt .ph { position: relative; height: 100%; min-height: 40mm; }
+
+/* SLIMLINE */
+.slim .hero { left: 0; top: 0; width: 210mm; height: 92mm; clip-path: polygon(0 0, 100% 0, 100% 86%, 0 100%); }
+.slim .hero img { object-position: 50% 55%; }
+.slim .hero-shade { position: absolute; left: 0; top: 0; width: 210mm; height: 92mm; background: linear-gradient(90deg, rgba(6,31,26,.86) 0%, rgba(6,31,26,.55) 45%, rgba(6,31,26,0) 75%); clip-path: polygon(0 0, 100% 0, 100% 86%, 0 100%); }
+.slim .hero-text { position: absolute; left: var(--gutter); top: 16mm; width: 100mm; color: var(--white); }
+.slim .hero-text h2 { color: var(--white); font-size: 31pt; }
+.slim .hero-text .kicker { color: var(--cyan); }
+.slim .hero-text .tag { color: var(--cyan); font-family: 'Barlow Condensed'; font-weight: 600; font-size: 12.5pt; margin-top: 2.4mm; line-height: 1.12; }
+.slim .systems-logos { position: absolute; right: var(--gutter); top: 15mm; display: flex; gap: 2mm; }
+.slim .systems-logos span { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 8.5pt; letter-spacing: 1.2pt; text-transform: uppercase; color: var(--white); border: .3mm solid rgba(255,255,255,.6); border-radius: 1mm; padding: .8mm 2.2mm; background: rgba(6,31,26,.35); }
+.slim .body { position: absolute; left: var(--gutter); right: var(--gutter); top: 98mm; display: grid; grid-template-columns: 1fr 1fr; gap: 9mm; }
+.slim .body .intro { font-size: 8pt; line-height: 1.5; }
+
+.slim2 .head { position: absolute; left: var(--gutter); top: 15mm; width: 150mm; }
+.slim2 .photos { position: absolute; left: var(--gutter); right: var(--gutter); top: 53mm; height: 58mm; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
+.slim2 .photos .photo { position: relative; height: 58mm; }
+.slim2 .cols { position: absolute; left: var(--gutter); right: var(--gutter); top: 118mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; }
+.sys h3 { font-size: 11.5pt; color: var(--white); background: var(--green); padding: 1.8mm 3mm; margin: 0; }
+.sys.fire h3 { background: var(--green-deep); }
+.sys.nr h3 { background: var(--teal); }
+.sys ul { list-style: none; margin: 0; padding: 0; }
+.sys li { padding: 1.9mm 3mm; border-bottom: .25mm solid var(--line); font-size: 7.6pt; }
+.sys li b { display: block; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 10.5pt; color: var(--ink); line-height: 1.05; }
+.sys li span { color: var(--slate); font-size: 7pt; }
+
+/* SECTORS */
+.sectors .head { position: absolute; left: var(--gutter); top: 15mm; width: 130mm; }
+.sectors .grid { position: absolute; left: var(--gutter); right: var(--gutter); top: 70mm; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: .3mm solid rgba(255,255,255,.16); border-left: .3mm solid rgba(255,255,255,.16); }
+.sector { height: 25mm; border-right: .3mm solid rgba(255,255,255,.16); border-bottom: .3mm solid rgba(255,255,255,.16); padding: 3.6mm 3.4mm; }
+.sector svg { width: 7mm; height: 7mm; color: var(--cyan); }
+.sector b { display: block; margin-top: 1.8mm; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 10.5pt; line-height: 1.05; text-transform: uppercase; letter-spacing: .4pt; color: var(--white); }
+.sectors .projects { position: absolute; left: var(--gutter); right: var(--gutter); top: 155mm; }
+.sectors .projects ul { list-style: none; margin: 1.5mm 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.6mm 6mm; }
+.sectors .projects li { font-size: 7.8pt; color: #e6f1ee; padding-left: 3.4mm; position: relative; }
+.sectors .projects li::before { content: ""; position: absolute; left: 0; top: 1.4mm; width: 1.6mm; height: 1.6mm; background: var(--cyan); clip-path: polygon(0 0, 100% 15%, 100% 85%, 0 100%); }
+
+/* ACCREDITATIONS */
+.accr .head { position: absolute; left: var(--gutter); top: 15mm; width: 150mm; }
+.accr .key { position: absolute; left: var(--gutter); right: var(--gutter); top: 51mm; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; }
+.kcert { background: var(--green); color: var(--white); padding: 4mm; border-radius: 1.6mm; min-height: 38mm; position: relative; }
+.kcert .ic { width: 8mm; height: 8mm; color: var(--cyan); }
+.kcert h3 { font-size: 13pt; margin: 2mm 0 1.2mm; color: var(--white); }
+.kcert p { font-size: 7.2pt; line-height: 1.4; color: #d6e8e3; margin: 0; }
+.kcert.alt { background: var(--night); }
+.accr .logos { position: absolute; left: var(--gutter); right: var(--gutter); top: 98mm; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3.5mm; }
+.ltile { border: .3mm solid var(--line); border-radius: 1.6mm; padding: 2.6mm 3mm 2.8mm; height: 34mm; display: grid; grid-template-rows: 15mm 1fr; }
+.ltile .lg { display: flex; align-items: center; justify-content: center; }
+.ltile .lg img { max-height: 13mm; max-width: 34mm; }
+.ltile b { display: block; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 9.5pt; line-height: 1.05; color: var(--green); text-transform: uppercase; letter-spacing: .3pt; margin-top: 1.6mm; }
+.ltile span { display: block; font-size: 6.6pt; line-height: 1.3; color: var(--slate); }
+
+/* CASE STUDIES */
+.cases .head { position: absolute; left: var(--gutter); top: 14mm; right: var(--gutter); display: flex; justify-content: space-between; align-items: flex-end; }
+.cs { position: absolute; }
+.cs .loc { font-family: 'Barlow Condensed'; font-weight: 600; font-size: 8.4pt; letter-spacing: 1.2pt; text-transform: uppercase; color: var(--teal); }
+.cs h3 { font-size: 15pt; color: var(--green); margin: .6mm 0 1.8mm; }
+.cs p { font-size: 7.7pt; line-height: 1.48; }
+.cs ul { list-style: none; margin: 0; padding: 0; }
+.cs li { font-size: 7.4pt; padding: 1.1mm 0 1.1mm 4.6mm; position: relative; border-bottom: .25mm solid var(--line); }
+.cs li::before { content: ""; position: absolute; left: 0; top: 2mm; width: 2.4mm; height: 2.4mm; background: var(--cyan); clip-path: polygon(0 0, 100% 15%, 100% 85%, 0 100%); }
+.cs .credit { font-size: 6pt; color: var(--slate); margin-top: 1mm; }
+.cs-stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm; margin: 2mm 0 2.6mm; }
+.cs-stat div { background: var(--mist); padding: 2.2mm 2.4mm; border-top: .6mm solid var(--cyan); }
+.cs-stat b { display: block; font-family: 'Barlow Condensed'; font-weight: 800; font-size: 16pt; color: var(--green); line-height: 1; }
+.cs-stat span { font-size: 6.4pt; color: var(--slate); line-height: 1.25; display: block; margin-top: .6mm; }
+
+/* PORTAL / DOWNLOADS */
+.portal .left { position: absolute; left: 0; top: 0; width: 105mm; height: 210mm; }
+.portal .left .in { position: absolute; left: var(--gutter); right: 10mm; top: 15mm; }
+.stages { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 6mm; }
+.stage { display: grid; grid-template-columns: 9mm 1fr; align-items: center; gap: 3mm; padding: 2.1mm 0; border-bottom: .3mm solid rgba(255,255,255,.14); }
+.stage i { width: 9mm; height: 9mm; border-radius: 50%; border: .4mm solid var(--cyan); display: grid; place-items: center; font-style: normal; font-family: 'Barlow Condensed'; font-weight: 800; font-size: 11pt; color: var(--cyan); }
+.stage b { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 12pt; letter-spacing: .6pt; text-transform: uppercase; color: var(--white); }
+.stage.done i { background: var(--cyan); color: var(--night); }
+.portal .right { position: absolute; left: 115mm; right: var(--gutter); top: 15mm; }
+.dl { display: grid; grid-template-columns: 8mm 1fr; gap: 2.6mm; align-items: start; padding: 2.4mm 0; border-bottom: .25mm solid var(--line); }
+.dl .ic { width: 8mm; height: 8mm; border-radius: 1.6mm; background: var(--cyan-soft); color: var(--green); display: grid; place-items: center; }
+.dl .ic svg { width: 4.6mm; height: 4.6mm; }
+.dl b { display: block; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 10.5pt; text-transform: uppercase; letter-spacing: .4pt; color: var(--green); line-height: 1.1; }
+.dl span { font-size: 7.1pt; color: var(--slate); line-height: 1.35; display: block; }
+.qrbox { display: flex; gap: 3.5mm; align-items: center; margin-top: 5mm; background: var(--mist); padding: 3mm; border-radius: 1.6mm; }
+.qrbox img { width: 21mm; height: 21mm; }
+.qrbox b { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 11pt; text-transform: uppercase; color: var(--green); display: block; line-height: 1.05; }
+.qrbox span { font-size: 7.2pt; color: var(--slate); }
+
+/* BACK COVER */
+.back .glow { position: absolute; inset: 0; background: radial-gradient(110mm 90mm at 150mm 40mm, rgba(65,189,214,.16), transparent 70%), linear-gradient(180deg, #082a23, #04150f); }
+.back .leaf-big { right: 0; top: 0; width: 92mm; height: 210mm; clip-path: polygon(0 7%, 100% 0, 100% 100%, 0 93%); background: linear-gradient(170deg, #0f7a62, #0a4c3d); }
+.back .logo { position: absolute; left: var(--gutter); top: 15mm; width: 58mm; }
+.back .cta { position: absolute; left: var(--gutter); top: 50mm; width: 100mm; }
+.back .cta h2 { font-size: 30pt; color: var(--white); }
+.back .cta p { color: #cfe3dd; font-size: 8.6pt; margin-top: 3mm; }
+.back .contacts { position: absolute; left: var(--gutter); top: 104mm; width: 102mm; }
+.back .c { display: grid; grid-template-columns: 9mm 1fr; gap: 3mm; align-items: center; padding: 2.2mm 0; border-bottom: .3mm solid rgba(255,255,255,.13); }
+.back .c .ic { width: 9mm; height: 9mm; border-radius: 50%; background: rgba(65,189,214,.15); color: var(--cyan); display: grid; place-items: center; }
+.back .c .ic svg { width: 4.8mm; height: 4.8mm; }
+.back .c b { display: block; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 14pt; color: var(--white); letter-spacing: .3pt; line-height: 1.05; }
+.back .c span { font-size: 7.4pt; color: #a9c5bd; }
+.back .qr { position: absolute; right: 18mm; top: 108mm; width: 56mm; text-align: center; }
+.back .qr .box { background: var(--white); padding: 4mm; border-radius: 2mm; width: 40mm; margin: 0 auto; }
+.back .qr .box img { width: 32mm; height: 32mm; }
+.back .qr p { margin-top: 2.6mm; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 10.5pt; letter-spacing: 1pt; text-transform: uppercase; color: var(--white); }
+.back .qr span { display: block; font-family: Inter; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 7pt; color: #cfe3dd; }
+.back .legal { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 9mm; display: flex; justify-content: space-between; font-size: 6.4pt; color: #86a69d; border-top: .3mm solid rgba(255,255,255,.12); padding-top: 2.4mm; }
+.back .socials { display: flex; gap: 4mm; }
+</style>
+</head>
+<body>
+
+<!-- ============================== 1  COVER ============================== -->
+<section class="page dark cover">
+  <div class="glow"></div>
+  <div class="leaf leaf-big"></div>
+  <div class="floor"></div>
+  <div class="floor-line"></div>
+  <div class="lineup" id="lineup"></div>
+  <img class="logo" src="assets/logo-reversed.png" alt="Design &amp; Supply — Door Specialists">
+  <div class="edition">Company brochure<b>2026</b></div>
+  <h1 style="color:#fff">Certified<br>steel<br>doorsets.<br><em>Made in<br>Wales.</em></h1>
+  <div class="tagline">
+    <div class="ranges">Security<i>/</i>Fire<i>/</i>Thermal<i>/</i>Flood<br>Acoustic<i>/</i>Stock<i>/</i>Slimline glazing</div>
+    <div class="since"><b>Since 1986</b><span>Merthyr Tydfil · South Wales</span></div>
+  </div>
+</section>
+
+<!-- ============================== 2  STORY ============================== -->
+<section class="page story">
+  <div class="leaf-photo photo-leaf flip"><img src="../public/images/news/mbo.jpg" alt=""></div>
+  <div class="jamb" style="clip-path:polygon(0 7%,100% 7%,100% 93%,0 93%)"></div>
+  <div class="cap">Members of our management team outside the factory at Pant Industrial Estate, Merthyr Tydfil.</div>
+  <div class="text">
+    <div class="kicker">About Design &amp; Supply</div>
+    <h2 style="color:var(--green)">The door<br>specialists.<br><em>Since 1986.</em></h2>
+    <p class="lead" style="margin-top:4mm">We design, manufacture, finish and install certified steel doorsets and slimline glazing — all from our own factory in Merthyr Tydfil.</p>
+    <p>Design &amp; Supply was founded in 1986 by Terry Stares, in leased premises with rented equipment. We moved to Merthyr Tydfil in 1990 and to Pant Industrial Estate in 1997, where our steel door business began.</p>
+    <p>Today we manufacture LPCB-certified LPS 1175 security doorsets from SR1 to SR4, CE-marked fire doorsets tested to EN 1634-1 with certification up to 4 hours, and thermal, flood and acoustic doorsets. Our Slimline division, launched in 2017, fabricates Schüco, Jansen and Forster glazed doors, screens and façades.</p>
+    <p>Survey, CAD design, fabrication and powder coating all happen in-house, and our accredited fitters install nationwide. In 2026 a management buy-out put the business in the hands of Tom Grother, Damian Regis and Scott Davies.</p>
+  </div>
+  <div class="timeline">
+    <div class="kicker" style="margin-bottom:2.4mm">Milestones</div>
+    <ol>
+      <li><b>1986</b><span>Founded by Terry Stares</span></li>
+      <li><b>1997</b><span>Steel door business begins at Pant Industrial Estate</span></li>
+      <li><b>2003</b><span>Fire certification obtained</span></li>
+      <li><b>2004</b><span>Security certification earned</span></li>
+      <li><b>2017</b><span>Slimline division launched</span></li>
+      <li><b>2026</b><span>Management buy-out</span></li>
+    </ol>
+  </div>
+  <div class="quote">
+    <span class="mark">&ldquo;</span>
+    <p>We’re proud to continue the legacy built over nearly four decades and remain committed to investing in the future of the business here in Wales.</p>
+    <cite><b>Tom Grother</b> · Director</cite>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · About us</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">02</span></div>
+</section>
+
+<!-- ============================== 3  WHY D&S ============================== -->
+<section class="page green why">
+  <div class="leaf bg-leaf"></div>
+  <div class="head">
+    <div class="kicker">Why Design &amp; Supply</div>
+    <h2>One manufacturer.<br><em>Start to finish.</em></h2>
+  </div>
+  <div class="usps">
+    <div class="usp"><div class="num">01</div><div><h3>Made in Merthyr Tydfil</h3><p>Every made-to-order doorset is designed, fabricated and powder coated in-house at our own factory, so quality is controlled at every stage of manufacture.</p></div></div>
+    <div class="usp"><div class="num">02</div><div><h3>Independently certified</h3><p>LPCB-certified to LPS 1175 SR1–SR4. CE-marked fire doorsets tested to EN 1634-1, certified up to 4 hours. The first steel door manufacturer to join UKTC Ensure.</p></div></div>
+    <div class="usp"><div class="num">03</div><div><h3>In-house powder coating</h3><p>Our own powder-coating plant finishes our made-to-order doorsets in hundreds of RAL and BS colours. Stock doors come etch primed, with powder coating available.</p></div></div>
+    <div class="usp"><div class="num">04</div><div><h3>One accountable partner</h3><p>Survey, CAD design, fabrication, finishing, installation and aftercare — one manufacturer responsible from first measurement onwards.</p></div></div>
+    <div class="usp"><div class="num">05</div><div><h3>Price match. Trade &amp; public.</h3><p>Every quotation is free and without obligation, and we price match any genuine like-for-like quote from a UK manufacturer.</p></div></div>
+    <div class="usp"><div class="num">06</div><div><h3>Fast when you need it</h3><p>Stock doors are typically delivered in 3–5 working days, subject to availability. Streamline doorsets are prioritised through manufacture.</p></div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>1986</b><span>Established</span></div>
+    <div class="stat"><b>SR1–SR4</b><span>LPCB-certified LPS 1175 security ratings</span></div>
+    <div class="stat"><b>4 hrs</b><span>Fire certification, tested to EN 1634-1</span></div>
+    <div class="stat"><b>350+</b><span>RAL &amp; BS powder-coat colours</span></div>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · Why D&amp;S</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">03</span></div>
+</section>
+
+<!-- ============================== 4  PROCESS ============================== -->
+<section class="page process">
+  <div class="head">
+    <div class="kicker">How we work</div>
+    <h2 style="color:var(--green)">From survey<br><em>to aftercare.</em></h2>
+    <p class="lead" style="margin-top:3mm">Every stage is handled by our own team — so there’s one point of contact and one company accountable for the result.</p>
+  </div>
+  <div class="steps" id="steps"></div>
+  <div class="strip"><div class="inner">
+    <div class="big">Installed to<br>DHF TS 005</div>
+    <p>Where we install, our work follows DHF TS 005, the Door &amp; Hardware Federation’s standard for the installation of doors and shutters — including installation records and completion certificates. We are a DHF member.</p>
+  </div></div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · How we work</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">04</span></div>
+</section>
+
+<!-- ============================== 5  RANGE ============================== -->
+<section class="page mist range">
+  <div class="head">
+    <div class="kicker">The range</div>
+    <h2 style="color:var(--green)">Doorsets for every<br><em>opening and threat.</em></h2>
+  </div>
+  <div class="grid" id="rangegrid"></div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · The range</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">05</span></div>
+</section>
+
+<!-- product pages 6, 8–12 and SR table 7 are inserted here by the script -->
+<div id="products"></div>
+
+<!-- ============================== 13  SLIMLINE ============================== -->
+<section class="page slim">
+  <div class="leaf-photo hero"><img src="assets/slim-janisol.jpg" alt=""></div>
+  <div class="hero-shade"></div>
+  <div class="hero-text">
+    <div class="kicker">07 · Slimline</div>
+    <h2>Slimline<br>architectural<br><em>glazing.</em></h2>
+    <div class="tag">Narrow steel profiles. Maximum daylight.<br>Certified performance.</div>
+  </div>
+  <div class="systems-logos"><span>Schüco</span><span>Jansen</span><span>Forster</span></div>
+  <div class="body">
+    <div>
+      <p class="intro">Slimline brings narrow steel sightlines to doors, screens, windows and façades. We fabricate Schüco, Jansen and Forster systems at our factory in Merthyr Tydfil, with in-house CAD support, fabrication and powder coating.</p>
+      <p class="intro">Janisol glazed doorsets are certified to LPS 1175 and LPS 2081. Four fire-rated systems run from E30 to EI90, with Jansen Economy to E120, and five non-rated systems cover everything from internal partitions to full façades.</p>
+      <div class="sheet-link" style="margin-top:3mm"><span class="pill">Data sheet</span>Slimline data sheet at designandsupply.co.uk/downloads</div>
+    </div>
+    <div>
+      <div class="kf" style="font-family:'Barlow Condensed';font-weight:700;font-size:10pt;letter-spacing:1.2pt;text-transform:uppercase;display:flex;align-items:center;gap:2mm;margin-bottom:.6mm">Key features<span style="flex:1;height:.3mm;background:var(--cyan)"></span></div>
+      <ul class="features" id="slimfeatures"></ul>
+    </div>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · Slimline glazing</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">13</span></div>
+</section>
+
+<!-- ============================== 14  SLIMLINE SYSTEMS ============================== -->
+<section class="page slim2">
+  <div class="head">
+    <div class="kicker">Slimline systems</div>
+    <h2 style="color:var(--green)">From partitions<br><em>to full façades.</em></h2>
+  </div>
+  <div class="photos">
+    <div class="photo"><img src="assets/slim-viss.jpg" alt=""><div class="cap">Jansen VISS</div></div>
+    <div class="photo"><img src="assets/slim-arte15.jpg" alt=""><div class="cap">Jansen Arte 15</div></div>
+    <div class="photo"><img src="assets/slim-c4.jpg" alt=""><div class="cap">Janisol C4</div></div>
+    <div class="photo"><img src="assets/slim-viss-fire.jpg" alt=""><div class="cap">Janisol VISS Fire</div></div>
+  </div>
+  <div class="cols">
+    <div class="sys"><h3>Security</h3><ul>
+      <li><b>Janisol — LPS 1175</b><span>B3 (SR2) · LPCB certificate 694e</span></li>
+      <li><b>Janisol — LPS 2081</b><span>Rating B · LPCB certificate 694c</span></li>
+      <li><b>Janisol C4</b><span>Security features with EI60–EI90 fire protection</span></li>
+    </ul></div>
+    <div class="sys fire"><h3>Fire rated</h3><ul>
+      <li><b>Janisol 2</b><span>EI30 · doors and fixed glazing</span></li>
+      <li><b>Janisol C4</b><span>EI60–EI90 · doors and fixed glazing</span></li>
+      <li><b>Jansen Economy</b><span>E30–E120 · internal doors and glazing</span></li>
+      <li><b>Janisol VISS Fire</b><span>E30–EI90 · façade system</span></li>
+    </ul></div>
+    <div class="sys nr"><h3>Non-rated</h3><ul>
+      <li><b>Janisol</b><span>Thermally broken doors and glazing</span></li>
+      <li><b>Jansen Arte 15</b><span>Internal partitions and doors</span></li>
+      <li><b>Jansen Arte 2.0</b><span>Thermally broken windows</span></li>
+      <li><b>Jansen Economy</b><span>Internal doors and glazing</span></li>
+      <li><b>Jansen VISS</b><span>Thermally improved façades</span></li>
+    </ul></div>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · Slimline systems</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">14</span></div>
+</section>
+
+<!-- ============================== 15  SECTORS ============================== -->
+<section class="page dark sectors">
+  <div class="head">
+    <div class="kicker">Sectors</div>
+    <h2 style="color:#fff">Trusted where<br><em>performance matters.</em></h2>
+    <p class="lead" style="margin-top:3mm">Trade customers, main contractors, architects and specifiers rely on our doorsets across commercial, public-sector, infrastructure and residential projects.</p>
+  </div>
+  <div class="grid" id="sectorgrid"></div>
+  <div class="projects">
+    <div class="kicker">Selected projects</div>
+    <ul>
+      <li>Silverstone Race Circuit</li>
+      <li>University of Bristol — TQEC Research Hub</li>
+      <li>Fish Island Village, London</li>
+      <li>Watling Gardens, London</li>
+      <li>Mermaid Quay car park, Cardiff Bay</li>
+      <li>Celtic Manor Hotel</li>
+    </ul>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · Sectors</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">15</span></div>
+</section>
+
+<!-- ============================== 16  ACCREDITATIONS ============================== -->
+<section class="page accr">
+  <div class="head">
+    <div class="kicker">Accreditations</div>
+    <h2 style="color:var(--green)">Independently tested.<br><em>Independently certified.</em></h2>
+  </div>
+  <div class="key">
+    <div class="kcert"><div class="ic" id="ic-shield"></div><h3>LPCB · LPS 1175</h3><p>Security doorsets certified by the Loss Prevention Certification Board from SR1 to SR4 and listed in the LPCB Red Book. Janisol slimline doorsets are also certified to LPS 2081.</p></div>
+    <div class="kcert alt"><div class="ic" id="ic-flame"></div><h3>CE marked · EN 1634-1</h3><p>Fire doorsets tested as complete assemblies to EN 1634-1, with certification up to 4 hours, and CE marked.</p></div>
+    <div class="kcert"><div class="ic" id="ic-cert"></div><h3>UKTC Ensure</h3><p>UKAS-accredited third-party fire door certification. We were the first steel door manufacturer to join the scheme.</p></div>
+  </div>
+  <div class="logos">
+    <div class="ltile"><div class="lg"><img src="../public/images/accreditations/secured-by-design.webp" alt=""></div><div><b>Secured by Design</b><span>Police Preferred Specification options available</span></div></div>
+    <div class="ltile"><div class="lg"><img src="../public/images/accreditations/uktc-ensure.webp" alt=""></div><div><b>UKTC Ensure</b><span>Certified fire doorsets carry QR-coded labels</span></div></div>
+    <div class="ltile"><div class="lg"><img src="../public/images/accreditations/dhf.webp" alt=""></div><div><b>DHF member</b><span>Installations follow DHF TS 005</span></div></div>
+    <div class="ltile"><div class="lg"><img src="../public/images/accreditations/constructionline-gold.webp" alt=""></div><div><b>Constructionline Gold</b><span>Pre-qualified supplier</span></div></div>
+    <div class="ltile"><div class="lg"><img src="../public/images/accreditations/chas.webp" alt=""></div><div><b>CHAS</b><span>Health &amp; safety accredited</span></div></div>
+    <div class="ltile"><div class="lg"><img src="../public/images/accreditations/ssip.webp" alt=""></div><div><b>SSIP</b><span>Safety Schemes in Procurement</span></div></div>
+    <div class="ltile"><div class="lg"><img src="../public/images/accreditations/achilles-network.webp" alt=""></div><div><b>Achilles Network</b><span>Supply-chain member</span></div></div>
+    <div class="ltile"><div class="lg" style="gap:3mm;flex-direction:column"><img src="../public/images/accreditations/jansen.webp" alt="" style="max-height:5mm"><img src="../public/images/accreditations/forster.webp" alt="" style="max-height:6mm"></div><div><b>Systems partner</b><span>Jansen and Forster slimline systems</span></div></div>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · Accreditations</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">16</span></div>
+</section>
+
+<!-- ============================== 17  CASE STUDIES (slimline) ============================== -->
+<section class="page cases">
+  <div class="head"><div><div class="kicker">Case studies</div><h2 style="color:var(--green)">Projects<br><em>we’re proud of.</em></h2></div><span class="badge green">Slimline glazing</span></div>
+  <div class="leaf-photo flip" style="right:0;top:47mm;width:100mm;height:86mm"><img src="../public/images/cases/tqec.jpg" alt=""></div>
+  <div class="cs" style="left:var(--gutter);top:48mm;width:84mm">
+    <div class="loc">Higher education · Bristol</div>
+    <h3>TQEC Research Hub</h3>
+    <p>The first phase of the University of Bristol’s Temple Quarter Enterprise Campus. We delivered the bespoke glazing package for two 19th-century industrial buildings in a conservation area — the Retort House (1821) and the Coal Shed (1885).</p>
+    <ul>
+      <li>Arched Janisol screens matched to the original stonework</li>
+      <li>Jansen Economy 60 and Janisol 2 partitions and fire-rated doors</li>
+      <li>VISS curtain walling, curved louvres and spandrel panels</li>
+      <li>A single 3m × 2m pane weighing over 500 kg</li>
+    </ul>
+    <span class="badge" style="margin-top:2.6mm">Shortlisted · Schüco Excellence Awards 2025</span>
+  </div>
+  <div style="position:absolute;left:0;right:0;top:140mm;height:52mm;background:var(--mist)"></div>
+  <div class="photo" style="left:var(--gutter);top:144mm;width:44mm;height:44mm"><img src="../public/images/cases/fish-island.jpg" alt=""></div>
+  <div class="cs" style="left:64mm;top:145mm;width:132mm">
+    <div class="loc">Residential · London</div>
+    <h3>Fish Island Village</h3>
+    <p>We supplied and installed all the external doors, screens and curtain walling. Entrance doors used our LPS 2081 product, certified within Secured by Design, and louvres in selected screens solved ventilation without altering the architect’s design.</p>
+    <div class="cs-stat" style="margin-bottom:0"><div style="background:#fff"><b>£545k</b><span>doors, screens &amp; curtain walling</span></div><div style="background:#fff"><b>1.0</b><span>W/m²K — U-values from 1.0 across the package</span></div><div style="background:#fff"><b>2022</b><span>completed August</span></div></div>
+    <div class="credit">Photo © Fred Howarth</div>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · Case studies</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">17</span></div>
+</section>
+
+<!-- ============================== 18  CASE STUDIES (steel) ============================== -->
+<section class="page cases">
+  <div class="head"><div><div class="kicker">Case studies</div><h2 style="color:var(--green)">Security &amp; fire<br><em>in the real world.</em></h2></div><span class="badge green">Steel doorsets</span></div>
+  <div class="leaf-photo" style="left:0;top:48mm;width:92mm;height:76mm"><img src="../public/images/cases/watling.jpeg" alt=""></div>
+  <div class="cs" style="left:100mm;top:49mm;width:96mm">
+    <div class="loc">Residential · Cricklewood, London</div>
+    <h3>Watling Gardens</h3>
+    <p>125 affordable homes across three new blocks designed by Pollard Thomas Edwards Architects, including 45 independent-living homes for Brent Council. We manufactured 21 bespoke LPS 1175 SR2 doorsets with louvre panels and a precision-engineered perforated design, plus 3 SR2 glazed doorsets in Jansen Janisol. Completed 2025.</p>
+    <div class="cs-stat"><div><b>21</b><span>SR2 steel doorsets</span></div><div><b>3</b><span>SR2 glazed doorsets</span></div><div><b>125</b><span>new homes</span></div></div>
+  </div>
+  <div class="cs" style="left:var(--gutter);top:131mm;width:88mm">
+    <div class="loc">Car park · Cardiff Bay</div>
+    <h3>Mermaid Quay</h3>
+    <p>Over 40 FD60 steel doorsets manufactured, supplied and installed for the new 679-space multi-storey car park. Tested and certified to EN 1634-1 for 60 minutes’ fire resistance, and built for heavy daily use in semi-exposed locations. Completed 2026.</p>
+    <div class="cs-stat"><div><b>40+</b><span>FD60 doorsets</span></div><div><b>60</b><span>minutes’ fire resistance</span></div><div><b>679</b><span>parking spaces</span></div></div>
+  </div>
+  <div class="photo" style="left:108mm;top:131mm;width:30mm;height:46mm"><img src="../public/images/cases/ebbw-vale.png" alt=""></div>
+  <div class="cs" style="left:142mm;top:131mm;width:54mm">
+    <div class="loc">Public sector · Ebbw Vale</div>
+    <h3 style="font-size:12.5pt">Ebbw Vale car park</h3>
+    <p style="font-size:7.1pt">Working with Blaenau Gwent County Borough Council, we delivered and installed enhanced anti-vandal steel doors and heavy-duty security grilles for a high-traffic, open-access site — with minimal disruption to car park operations. Completed November 2024.</p>
+  </div>
+  <div class="folio"><span><b>Design &amp; Supply</b> · Case studies</span><span>01685 350 114 · designandsupply.co.uk</span><span class="pn">18</span></div>
+</section>
+
+<!-- ============================== 19  PORTAL + DOWNLOADS ============================== -->
+<section class="page portal">
+  <div class="left dark" style="background:var(--night)">
+    <div class="in">
+      <div class="kicker">Customer Portal</div>
+      <h2 style="color:#fff">Track every door<br><em>through the factory.</em></h2>
+      <p class="lead" style="margin-top:3mm">Our Customer Portal lets you follow each door on your order through every stage of manufacture — so you always know where your job is.</p>
+      <div class="stages" id="stages"></div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="kicker">Technical support</div>
+    <h2 style="color:var(--green);font-size:25pt">Everything you need<br><em>to specify.</em></h2>
+    <p style="margin-top:3mm;font-size:7.9pt;color:var(--slate)">Free to download — no forms, no sign-up.</p>
+    <div id="dls"></div>
+    <div class="qrbox"><img src="assets/qr-downloads.svg" alt=""><div><b>Scan for downloads</b><span>designandsupply.co.uk/downloads</span></div></div>
+  </div>
+  <div class="folio" style="left:115mm"><span><b>Design &amp; Supply</b> · Support</span><span class="pn">19</span></div>
+</section>
+
+<!-- ============================== 20  BACK COVER ============================== -->
+<section class="page dark back">
+  <div class="glow"></div>
+  <div class="leaf leaf-big"></div>
+  <img class="logo" src="assets/logo-reversed.png" alt="Design &amp; Supply">
+  <div class="cta">
+    <div class="kicker">Get in touch</div>
+    <h2>Free quotation.<br><em>No obligation.</em></h2>
+    <p>Tell us about your project — from a single stock door to a full security, fire or glazing package. Open to trade and public, and we price match any genuine like-for-like UK manufacturer quote.</p>
+  </div>
+  <div class="contacts" id="contacts"></div>
+  <div class="qr"><div class="box"><img src="assets/qr-contact.svg" alt=""></div><p>Request a quote<span>designandsupply.co.uk/contact</span></p></div>
+  <div class="legal"><span>Design &amp; Supply Limited · Company No. 02897610 · 13 Pant Industrial Estate, Merthyr Tydfil, CF48 2SR</span><span class="socials">Instagram · Facebook · YouTube · LinkedIn</span></div>
+</section>
+
+<script>
+/* =================== CONTENT (every figure is from designandsupply.co.uk) =================== */
+
+var PRODUCTS = [
+  { n: '01', id: 'security', kicker: 'Security rated', name: 'Security<br>steel <em>doors</em>', img: 'assets/door-security.png', h: 104, panel: 'linear-gradient(165deg,#0a3d32,#061f1a)',
+    tag: 'LPCB-certified security, from SR1 to SR4.',
+    intro: 'Steel hinged security doorsets, independently tested and certified by the Loss Prevention Certification Board to LPS 1175 Security Ratings 1, 2, 3 and 4. Single and double leaf, outward opening, for internal or external openings — each rating matched to a threat level, from opportunist attack with basic tools (SR1) to sustained, experienced attack (SR4).',
+    features: [
+      ['shield', 'LPCB certified', 'LPS 1175 SR1–SR3 (certificate 694b) and SR4 / D10 (certificate 694d)'],
+      ['key', 'Attack resistance', 'Tool category A (SR1) through to category D (SR4)'],
+      ['doubled', 'Configuration', 'Single or double leaf, outward opening, internal or external'],
+      ['lock', 'Locking', 'Manual and electronic options, with access control at SR2 and SR4'],
+      ['louvre', 'Panels', 'Louvres SR2–SR4 · vision panels SR2 · overpanels SR1–SR3'],
+      ['flame', 'Fire + security', 'SR2 available with an optional EN 1634 fire rating'],
+      ['spray', 'Finish', 'Pre-treated, primed and powder coated in-house'],
+    ],
+    sheet: 'SR1, SR2, SR3 and SR4 data sheets' },
+  { n: '02', id: 'fire', kicker: 'Fire rated', name: 'Fire rated<br>steel <em>doorsets</em>', img: 'assets/door-fire.png', h: 116, panel: 'linear-gradient(165deg,#13806a,#0a4c3d)',
+    tag: 'Certified up to 4 hours. Tested as complete doorsets.',
+    intro: 'Our fire rated steel doorsets are tested as complete assemblies to EN 1634-1, with certification up to 4 hours. They are CE marked and third-party certified under the UKTC Ensure scheme. Built around a dense mineral core, they protect escape routes in warehouses, flat entrances, server rooms, schools, data centres, retail, public buildings and offices.',
+    features: [
+      ['flame', 'Fire rating', 'Certification up to 4 hours'],
+      ['check', 'Tested', 'EN 1634-1, as complete doorset assemblies'],
+      ['cert', 'Certified', 'CE marked; third-party certified under UKTC Ensure'],
+      ['layers', 'Construction', '1.5mm galvanised steel, double-skinned, dense mineral core'],
+      ['ruler', 'Standard sizes', 'Single up to 1250 × 2650mm · double up to 2800 × 2650mm; larger subject to limits'],
+      ['vision', 'Options', 'Vision panels, louvres and access control on selected doorsets; louvres rule out a smoke rating'],
+      ['shield', 'Fire + security', 'Optional EN 1634 fire rating on LPS 1175 SR2 doorsets'],
+    ],
+    badge: 'UKTC Ensure certified',
+    sheet: 'Fire rated doors data sheet' },
+  { n: '03', id: 'thermal', kicker: 'Thermal rated', name: 'Therma-Line<br>thermal <em>doors</em>', img: 'assets/door-thermal.png', h: 118, panel: 'linear-gradient(165deg,#0F7E98,#0a4c5c)',
+    tag: 'U-values as low as 1.3 W/m²K, without giving up strength.',
+    intro: 'Therma-Line is our range of thermally efficient steel doorsets. A double-skinned galvanised steel leaf and frame surrounds a bonded mineral wool core, so thermal performance comes without compromising strength, durability or security. Designed for Part L, Therma-Line suits new-build and refurbishment projects across commercial, industrial and public-sector buildings.',
+    features: [
+      ['thermo', 'U-value', 'As low as 1.3 W/m²K at tested sizes (±25%); otherwise estimated'],
+      ['check', 'Part L', 'Designed for Part L of the Building Regulations'],
+      ['layers', 'Insulated core', 'Double-skinned leaf, interlocking edges, bonded mineral wool core'],
+      ['door', 'Steel', '1.5mm galvanised steel leaf and frame · 54mm leaf'],
+      ['doubled', 'Configuration', 'Single and double doorsets, inward or outward opening'],
+      ['ruler', 'Size range', 'Single up to 1410 × 2950mm · double up to 2820 × 2950mm'],
+      ['spray', 'Finish', 'Powder coated in-house, including coastal grades'],
+    ],
+    sheet: 'Thermal rated doors data sheet' },
+  { n: '04', id: 'flood', kicker: 'Flood defence', name: 'Flood<br>defence <em>doors</em>', img: 'assets/door-flood.png', h: 100, panel: 'linear-gradient(165deg,#0a3d32,#061f1a)',
+    tag: 'Up to 900mm of water protection in a steel doorset.',
+    intro: 'Our flood defence doors keep rising water out with steel-lined, high-grade seals, giving up to 900mm of water protection. A 45mm galvanised steel leaf, a minimum of five reinforced fixing points per side and Grade 13 stainless steel hinges provide the strength. Single and double doorsets are manufactured in Merthyr Tydfil and installed UK-wide.',
+    features: [
+      ['water', 'Flood height', 'Up to 900mm water protection'],
+      ['drop', 'Seals', 'Steel-lined, high-grade seals to prevent water ingress'],
+      ['layers', 'Construction', '45mm leaf, 1.5mm galvanised steel, mineral core'],
+      ['hinge', 'Strength', 'Min. 5 reinforced fixing points per side · Grade 13 hinges'],
+      ['ruler', 'Maximum sizes', 'Single 1408 × 3000mm · double 2800 × 3000mm'],
+      ['wrench', 'Site testing', 'Flood tested on installation; annual retest visits available'],
+      ['spray', 'Finish', 'Powder coated in-house'],
+    ],
+    note: 'Our flood defence doors are not LPS 1175 rated. Where a certified security rating is needed, specify an LPS 1175 security doorset.',
+    sheet: 'Flood rated doors data sheet' },
+  { n: '05', id: 'acoustic', kicker: 'Acoustic rated', name: 'Acoustic<br>steel <em>doors</em>', img: 'assets/door-acoustic.png', h: 116, panel: 'linear-gradient(165deg,#13806a,#0a4c3d)',
+    tag: 'Engineered around your target sound reduction.',
+    intro: 'Our acoustic steel doorsets give an estimated 38–51 dB of sound reduction, adapted to door size and application, with acoustic seals customised to your target rating. A double-skinned galvanised steel leaf is built around a dense mineral core. They suit recording and broadcast studios, police interview rooms, medical centres, offices and residential entrances.',
+    features: [
+      ['sound', 'Sound reduction', '38–51 dB (estimated), adapted to size and application'],
+      ['check', 'Acoustic seals', 'Customised to your target dB rating'],
+      ['door', 'Door leaf', 'Double-skinned 1.5mm galvanised steel, 48–55mm thick'],
+      ['layers', 'Core', 'Dense mineral core; plasterboard or e-coustiquilt options'],
+      ['frame', 'Frame', '1.5mm galvanised Zintec steel, single or double rebate'],
+      ['wrench', 'Fixings', 'Minimum 5 per side, plus 2 on the head for doubles'],
+      ['spray', 'Finish', 'Powder coated in-house'],
+    ],
+    sheet: 'Specification on request' },
+  { n: '06', id: 'stock', kicker: 'General purpose', name: 'Stock &amp;<br>Streamline <em>doors</em>', img: 'assets/door-gp.png', h: 96, panel: 'linear-gradient(165deg,#0F7E98,#0a4c5c)', img2: 'assets/door-stock.png',
+    tag: 'General purpose doors for programmes that can’t wait.',
+    intro: 'Stock Doors come in two standard structural opening sizes and are typically delivered within 3–5 working days, subject to availability. Streamline doorsets are precision-engineered in galvanised steel for commercial and industrial applications, and prioritised through manufacture to a rapid lead time. Both suit offices, retail, education, healthcare and hospitality.',
+    features: [
+      ['truck', 'Stock delivery', 'Typically 3–5 working days, subject to availability'],
+      ['ruler', 'Stock sizes', '900 × 2100mm and 1000 × 2100mm structural openings'],
+      ['wrench', 'Ready to fit', 'Hinges, fixings, threshold, jacking screws and brick fixings included'],
+      ['clock', 'Streamline', 'Prioritised through manufacture to a rapid lead time'],
+      ['ruler', 'Streamline sizes', 'Up to 1440 × 3050mm single · 2900 × 3050mm double'],
+      ['louvre', 'Streamline options', 'Side, over, louvred and vision panels; open in or out'],
+      ['spray', 'Finish', 'Stock: etch primed, powder coat optional · Streamline: galvanised steel'],
+    ],
+    sheet: 'Streamline data sheet' },
+];
+
+var SR = [
+  ['SR1', 'Opportunist attack using basic tools (LPS 1175 tool category A).', 'Certified entry-level protection — the entry point to the range.', 'Overpanels'],
+  ['SR2', 'Determined attack with a wider tool set, including levers and cutting tools (category B).', 'Our most specified rating — most commercial, education, healthcare and residential-communal projects.', 'Louvres, vision panels, overpanels, access control, optional EN 1634 fire rating'],
+  ['SR3', 'Deliberate forced entry with heavier tools — crowbars, short axes and cordless drills (category C).', 'Vaults, critical infrastructure and high-value stores.', 'Louvres, overpanels'],
+  ['SR4', 'Sustained, experienced attack with serious cutting and levering tools (category D).', 'Data centres, utility substations and high-security facilities.', 'Louvres, access control'],
+];
+
+var STEPS = [
+  ['survey', 'Free quote &amp; site survey', 'A free, no-obligation quotation, with site surveys available — we measure each opening and confirm the specification before anything is made.'],
+  ['pencil', 'CAD design', 'Our in-house design team details every doorset and issues drawings for your approval before fabrication begins.'],
+  ['factory', 'Fabrication', 'Every doorset is made in Merthyr Tydfil — programmed, punched, bent and welded by our own team.'],
+  ['spray', 'Powder coating', 'Made-to-order doorsets are finished in our own powder-coating plant, in your choice of RAL or BS colour.'],
+  ['truck', 'Nationwide installation', 'Accredited fitters install across the UK — standard sizes in as little as 10 days.'],
+  ['heart', 'Handover &amp; aftercare', 'O&amp;M documentation at handover, with maintenance and repair services to keep doorsets performing.'],
+];
+
+var SECTORS = [
+  ['bolt', 'Utilities &amp; substations'], ['school', 'Schools &amp; universities'], ['health', 'Healthcare'], ['home', 'Residential &amp; housing'],
+  ['car', 'Car parks'], ['server', 'Data centres &amp; server rooms'], ['shop', 'Retail'], ['factory', 'Industrial &amp; warehousing'],
+  ['office', 'Offices &amp; public buildings'], ['sound', 'Studios &amp; broadcast'], ['star', 'Sport &amp; leisure'], ['key', 'Cash rooms &amp; finance'],
+];
+
+var DOWNLOADS = [
+  ['download', 'Data sheets', 'Security SR1–SR4, fire, thermal, flood, car park, Streamline and Slimline.'],
+  ['survey', 'O&amp;M manual', 'Installation, operation and maintenance — site safety, checks, handover, inspection schedules and troubleshooting.'],
+  ['ruler', 'Cill types', 'Every cill profile, A to J, with section dimensions.'],
+  ['doubled', 'Door handing diagrams', 'Single doorsets, standard astragal doubles and lipped flush doors.'],
+  ['palette', 'Colour chart', 'Our standard powder-coat colours.'],
+];
+
+var CONTACTS = [
+  ['phone', '01685 350 114', 'Talk to our sales team'],
+  ['mail', 'sales@designandsupply.co.uk', 'Send drawings, schedules or photos'],
+  ['globe', 'designandsupply.co.uk', 'Products, data sheets and case studies'],
+  ['pin', '13 Pant Industrial Estate', 'Merthyr Tydfil, Mid Glamorgan, CF48 2SR'],
+];
+
+/* =================== RENDER =================== */
+function folio(section, pn, compact) {
+  return '<div class="folio"><span><b>Design &amp; Supply</b> · ' + section + '</span>' + (compact ? '' : '<span>01685 350 114 · designandsupply.co.uk</span>') + '<span class="pn">' + pn + '</span></div>';
+}
+
+function productPage(p, pn) {
+  var feats = p.features.map(function (f) {
+    return '<li class="feature"><div class="ic">' + icon(f[0]) + '</div><div><b>' + f[1] + '</b><span>' + f[2] + '</span></div></li>';
+  }).join('');
+  var doorW = 0; // computed from aspect after load; centre via CSS
+  var second = p.img2 ? '<img class="cutout" src="' + p.img2 + '" style="' + pad(62, 47, 27) + '">' : '';
+  var mainLeft = p.img2 ? '9mm' : 'calc(46.6mm - var(--w) / 2)';
+  return '<section class="page product">' +
+    '<div class="leaf panel-edge"></div>' +
+    '<div class="leaf panel" style="background:' + p.panel + '"></div>' +
+    '<div class="bignum">' + p.n + '</div>' +
+    (p.badge ? '<div class="badge-float"><span class="badge">' + p.badge + '</span></div>' : '') +
+    '<div class="shadow" style="left:8mm;width:78mm;bottom:22mm"></div>' +
+    '<img class="cutout door-main" data-h="' + p.h + '" src="' + p.img + '" style="height:' + (p.h * 1.2).toFixed(1) + 'mm;bottom:' + (26 - p.h * 0.1).toFixed(1) + 'mm">' + second +
+    '<div class="vlabel">' + p.kicker + '</div>' +
+    '<div class="col">' +
+      '<div class="kicker">' + p.n + ' · ' + p.kicker + '</div>' +
+      '<h2>' + p.name + '</h2>' +
+      '<div class="tag">' + p.tag + '</div>' +
+      '<p class="intro">' + p.intro + '</p>' +
+      '<div class="kf">Key features</div>' +
+      '<ul class="features">' + feats + '</ul>' +
+      (p.note ? '<div class="note">' + p.note + '</div>' : '') +
+      '<div class="foot"><div class="sheet-link"><span class="pill">Data sheet</span>' + p.sheet + '</div></div>' +
+    '</div>' +
+    folio(p.kicker.charAt(0).toUpperCase() + p.kicker.slice(1), pn, true) +
+  '</section>';
+}
+
+function srPage(pn) {
+  var rows = SR.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('');
+  return '<section class="page srt">' +
+    '<div class="head"><div class="kicker">01 · Security rated</div><h2 style="color:var(--green)">SR1 to SR4<br><em>at a glance.</em></h2></div>' +
+    '<div class="tbl"><table class="grid"><thead><tr><th>Rating</th><th>Tested resistance</th><th>Typical use</th><th>Options</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="callouts">' +
+      '<div class="callout"><h3>Choosing a rating</h3><p>Choose SR2 where a risk assessment anticipates determined attack with a wider tool set, or where an insurer, police adviser or specification calls for certified security beyond entry level. Step up to SR3 for a prepared intruder with serious tools, and to SR4 for sustained, experienced attack. Our team will help you match the rating to the risk.</p></div>' +
+      '<div class="callout" style="border-left-color:var(--cyan)"><h3>Check our certification</h3><p>Our security doorsets are listed in the LPCB Red Book — certificates 694b (LPS 1175 Issue 7: SR1, SR2 and SR3) and 694d (LPS 1175 Issue 8: D10 / SR4). Specifiers can check any listing on the Red Book.</p></div>' +
+    '</div>' +
+    folio('Security rated', pn) +
+  '</section>';
+}
+
+// a cutout's door is h mm tall; its image is 1.2h with the door inset 0.1h on every side
+function pad(h, left, bottom) {
+  return 'height:' + (h * 1.2).toFixed(1) + 'mm;left:' + (left - h * 0.1).toFixed(1) + 'mm;bottom:' + (bottom - h * 0.1).toFixed(1) + 'mm';
+}
+
+(function render() {
+  // cover line-up: security (green), fire (grey), flood (blue), stock (red)
+  var lu = document.getElementById('lineup');
+  // [image, height mm, left mm] — back to front
+  var doors = [
+    ['assets/door-flood.png', 100, 86],
+    ['assets/door-fire.png', 112, 128],
+  ];
+  doors.forEach(function (d) {
+    lu.insertAdjacentHTML('beforeend',
+      '<img class="reflect" src="' + d[0] + '" style="' + pad(d[1], d[2], 44) + '">' +
+      '<img src="' + d[0] + '" style="' + pad(d[1], d[2], 44) + '">');
+  });
+
+  document.getElementById('steps').innerHTML = STEPS.map(function (s, i) {
+    return '<div class="step"><div class="ic">' + icon(s[0]) + '</div><div class="n">0' + (i + 1) + '</div><h3>' + s[1] + '</h3><p>' + s[2] + '</p></div>';
+  }).join('');
+
+  var grid = PRODUCTS.map(function (p, i) {
+    var pages = { security: '06–07', fire: '08', thermal: '09', flood: '10', acoustic: '11', stock: '12' };
+    return '<div class="card"><div class="swatch" style="background:' + p.panel + '"></div><img src="' + p.img + '"><div class="t"><h3>' + p.name.replace(/<br>/g, ' ').replace(/<\/?em>/g, '') + '</h3><p>' + p.tag + '</p></div><div class="pg">P. ' + pages[p.id] + '</div></div>';
+  }).join('');
+  grid += '<div class="card"><div class="swatch" style="background:linear-gradient(165deg,#0a3d32,#061f1a)"></div><img src="assets/slim-janisol.jpg" style="height:30mm;width:30mm;object-fit:cover;bottom:32mm;clip-path:polygon(0 0,100% 7%,100% 93%,0 100%);filter:none"><div class="t"><h3>Slimline glazing</h3><p>Schüco, Jansen and Forster systems — security, fire and non-rated.</p></div><div class="pg">P. 13–14</div></div>';
+  grid += '<div class="card combine"><div class="ic2">' + icon('layers') + '</div><div class="t"><h3>Need more than<br>one rating?</h3><p>SR2 security doorsets are available with an optional EN 1634 fire rating.</p><p>Janisol C4 slimline combines security features with EI60–EI90 fire protection.</p><p>Louvre and vision panel options on selected doorsets — options may affect ratings.</p></div></div>';
+  document.getElementById('rangegrid').innerHTML = grid;
+
+  var out = '';
+  out += productPage(PRODUCTS[0], '06');
+  out += srPage('07');
+  PRODUCTS.slice(1).forEach(function (p, i) { out += productPage(p, String(8 + i).padStart(2, '0')); });
+  document.getElementById('products').outerHTML = out;
+
+  document.getElementById('slimfeatures').innerHTML = [
+    ['factory', 'Systems', 'Schüco, Jansen and Forster, fabricated in Merthyr Tydfil'],
+    ['shield', 'Security', 'Janisol doorsets certified to LPS 1175 (B3 / SR2) and LPS 2081'],
+    ['flame', 'Fire rated', 'E30 to EI90 across four systems; Jansen Economy to E120'],
+    ['thermo', 'Thermal', 'Thermally broken Janisol and Arte 2.0; thermally improved VISS'],
+    ['glass', 'Applications', 'Internal doors and partitions to external doors, windows and façades'],
+    ['pencil', 'In-house service', 'CAD, fabrication and powder coating in-house; installation by accredited fitters nationwide'],
+  ].map(function (f) { return '<li class="feature"><div class="ic">' + icon(f[0]) + '</div><div><b>' + f[1] + '</b><span>' + f[2] + '</span></div></li>'; }).join('');
+
+  document.getElementById('sectorgrid').innerHTML = SECTORS.map(function (s) { return '<div class="sector">' + icon(s[0]) + '<b>' + s[1] + '</b></div>'; }).join('');
+
+  ['shield', 'flame', 'cert'].forEach(function (n) { document.getElementById('ic-' + n).innerHTML = icon(n); });
+
+  var st = ['Programming', 'Punching', 'Bending', 'Welding', 'Painting', 'Packing'];
+  document.getElementById('stages').innerHTML = st.map(function (s, i) { return '<div class="stage' + (i < 4 ? ' done' : '') + '"><i>' + (i + 1) + '</i><b>' + s + '</b></div>'; }).join('');
+
+  document.getElementById('dls').innerHTML = DOWNLOADS.map(function (d) { return '<div class="dl"><div class="ic">' + icon(d[0]) + '</div><div><b>' + d[1] + '</b><span>' + d[2] + '</span></div></div>'; }).join('');
+
+  document.getElementById('contacts').innerHTML = CONTACTS.map(function (c) { return '<div class="c"><div class="ic">' + icon(c[0]) + '</div><div><b>' + c[1] + '</b><span>' + c[2] + '</span></div></div>'; }).join('');
+
+  // centre each single product cutout on its panel once its width is known
+  document.querySelectorAll('img.door-main').forEach(function (im) {
+    function place() {
+      var hmm = parseFloat(im.getAttribute('data-h')) * 1.2;
+      var wmm = hmm * im.naturalWidth / im.naturalHeight;
+      var hasSecond = im.parentNode.querySelectorAll('img.cutout').length > 1;
+      im.style.left = (hasSecond ? 6 - hmm / 12 : 46.6 - wmm / 2) + 'mm';
+    }
+    if (im.complete) place(); else im.onload = place;
+  });
+})();
+</script>
+</body>
+</html>
