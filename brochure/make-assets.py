@@ -40,6 +40,8 @@ from PIL import ImageFilter
 IMG = os.path.join(ROOT, "public", "images")
 MAX_H = 900           # px — ~195 dpi at the largest use (118 mm); sources top out ~270 dpi
 PAD = 0.10            # shadow margin, as a fraction of the door height
+# outer edge of the steel frame (left, top, right, bottom) in the source image
+FRAME_RECT = {"door-security": (171, 48, 874, 1291)}
 for name, src in {
     "door-security": "doors/cat-security.png",
     "door-fire": "doors/cat-fire.png",
@@ -50,8 +52,15 @@ for name, src in {
     "door-stock": "shop/IMG_3560-Cutout-600x800.png",
 }.items():
     im = Image.open(os.path.join(IMG, src)).convert("RGBA")
-    bbox = im.getchannel("A").point(lambda a: 255 if a > 12 else 0).getbbox()
-    im = im.crop(bbox)
+    if name in FRAME_RECT:
+        # The website cutout keeps slivers of the original photo (brick down
+        # one side, the lintel shadow, the threshold). The door is shot
+        # square-on, so a crisp rectangle at the frame edges is the clean cut.
+        im = im.crop(FRAME_RECT[name])
+        im.putalpha(255)
+    else:
+        bbox = im.getchannel("A").point(lambda a: 255 if a > 12 else 0).getbbox()
+        im = im.crop(bbox)
     if im.height > MAX_H:
         im = im.resize((round(im.width * MAX_H / im.height), MAX_H), Image.LANCZOS)
     # bake a soft shadow below/behind the door
