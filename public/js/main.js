@@ -126,5 +126,45 @@
         });
       });
     }
+
+    // Specification pack (downloads page) — posts to /api/spec-pack (see specpack.js)
+    var pack = document.getElementById("specPackForm");
+    if (pack) {
+      pack.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var msg = document.getElementById("specPackMessage");
+        var btn = pack.querySelector("button[type=submit]");
+        var val = function (n) { var el = pack.elements[n]; return el ? String(el.value || "").trim() : ""; };
+        var say = function (text, ok) { msg.textContent = text; msg.className = "spec-msg " + (ok ? "ok" : "err"); };
+        if (!val("name")) return say("Please enter your name.");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val("email"))) return say("Please enter a valid email address.");
+        btn.disabled = true;
+        say("Sending…", true);
+        fetch("/api/spec-pack", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: val("name"),
+            email: val("email"),
+            company: val("company"),
+            website: val("website"),
+            marketing: pack.elements.marketing && pack.elements.marketing.checked ? "yes" : "",
+            // same DesignForce reference fallback as the contact form
+            df_ref: val("df_ref") || (function () {
+              var m = document.cookie.match(/(?:^|;\s*)df_t=([A-Za-z0-9_-]{1,64})(?:;|$)/);
+              return m ? "DFREF-" + m[1] : "";
+            })()
+          })
+        }).then(function (r) {
+          return r.json().then(function (j) { return { ok: r.ok && j.ok, j: j }; });
+        }).then(function (res) {
+          if (!res.ok) throw new Error(res.j && res.j.error);
+          say("Sent — check your inbox for your specification pack.", true);
+          pack.reset();
+        }).catch(function (err) {
+          say((err && err.message) || "Sorry, something went wrong. Every document is on this page to download, or email sales@designandsupply.co.uk.");
+        }).then(function () { btn.disabled = false; });
+      });
+    }
   });
 })();

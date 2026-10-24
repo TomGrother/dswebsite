@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=67eb838ba5">
+<link rel="stylesheet" href="/css/style.css?v=9ac6461f88">
 <link rel="icon" href="/images/favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
@@ -126,6 +126,29 @@
         <p class="doc-note">PDF · 5.3 MB · 20 pages</p>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="section section-dark spec-pack" id="spec-pack">
+  <div class="container spec-pack-inner">
+    <div class="reveal">
+      <span class="kicker">Specification pack</span>
+      <h2>Everything, <em>in one email.</em></h2>
+      <p>Every data sheet and certificate, the installation manual, warranty, cill types, handing diagrams, colour chart and our company brochure — sent to your inbox as one set of links, ready to forward to your team. The links always open the latest versions.</p>
+    </div>
+    <form class="spec-form reveal" id="specPackForm" novalidate>
+      <div class="hp" aria-hidden="true"><label for="sp-website">Website (leave blank)</label><input type="text" id="sp-website" name="website" tabindex="-1" autocomplete="off"></div>
+      <input type="hidden" name="df_ref" id="df_ref">
+      <div class="spec-row">
+        <div><label for="sp-name">Name</label><input type="text" id="sp-name" name="name" required autocomplete="name" placeholder="Your name"></div>
+        <div><label for="sp-email">Email</label><input type="email" id="sp-email" name="email" required autocomplete="email" placeholder="you@company.co.uk"></div>
+      </div>
+      <div><label for="sp-company">Company <span>(optional)</span></label><input type="text" id="sp-company" name="company" autocomplete="organization" placeholder="Company name"></div>
+      <label class="spec-consent"><input type="checkbox" name="marketing" value="yes"> <span>Yes, send me occasional product news and updates from Design &amp; Supply. You can unsubscribe at any time.</span></label>
+      <button class="btn btn-primary" type="submit">Email me the pack</button>
+      <p class="spec-small">We’ll use your details to send the pack and to follow up on your request. See our <a href="/privacy-policy">privacy policy</a>.</p>
+      <p class="spec-msg" id="specPackMessage" role="status" aria-live="polite"></p>
+    </form>
   </div>
 </section>
 
@@ -523,7 +546,7 @@
 }
 </script>
 <!--/FOOTER-->
-<script src="/js/main.js?v=34143971df"></script>
+<script src="/js/main.js?v=37aaee64bb"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://designandsupply.co.uk/"},{"@type":"ListItem","position":2,"name":"Downloads"}]}</script>
 </body>
 </html>

@@ -458,4 +458,6 @@ function startDigestScheduler() {
   console.log("[digest] per-customer email scheduler enabled.");
 }
 
-module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, renderWelcomeEmail, sendWelcome, renderEnquiryEmail, sendEnquiry, renderAccessRequestEmail, sendAccessRequest, isEnabled, EVENT_LABELS };
+module.exports = { runDigest, runOrdersBroadcast, sendDigestToUser, sendSnapshotToUser, startDigestScheduler, renderDigestEmail, renderOrdersEmail, renderResetEmail, sendPasswordReset, renderWelcomeEmail, sendWelcome, renderEnquiryEmail, sendEnquiry, renderAccessRequestEmail, sendAccessRequest, isEnabled, EVENT_LABELS,
+  // shared with specpack.js (website specification-pack emails)
+  emailShell, emailButton, sendViaResend };

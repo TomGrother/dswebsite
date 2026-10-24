@@ -1675,3 +1675,25 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .doc-note { margin-top: 10px; font-size: 13px; color: var(--slate); }
 .doc-links { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 22px; }
 @media (max-width: 860px) { .brochure-feature { grid-template-columns: 1fr; gap: 32px; } }
+
+/* ---------- Downloads: specification pack request ---------- */
+.spec-pack-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.spec-pack h2 { font-size: clamp(30px, 3.6vw, 44px); margin-bottom: 16px; color: #fff; }
+.spec-pack h2 em { font-style: normal; color: var(--cyan); }
+.spec-pack p { color: #c3d4cd; }
+.spec-form { background: #fff; color: var(--ink); border-radius: var(--radius); padding: 26px 26px 20px; box-shadow: var(--shadow-lg); display: grid; gap: 14px; }
+.spec-form label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+.spec-form label span { font-weight: 400; color: var(--slate); }
+.spec-form input[type=text], .spec-form input[type=email] { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px; font: inherit; font-size: 15px; color: var(--ink); background: #fff; }
+.spec-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.spec-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.spec-form .spec-consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; font-size: 14px; line-height: 1.45; color: var(--slate); margin: 2px 0 0; cursor: pointer; }
+.spec-form .spec-consent input { margin-top: 3px; width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+.spec-form .btn { justify-self: start; }
+.spec-form .btn:disabled { opacity: .6; cursor: default; transform: none; }
+.spec-pack .spec-form p.spec-small { font-size: 12.5px; color: var(--slate); margin: 0; }
+.spec-pack .spec-form p.spec-small a { color: var(--accent); }
+.spec-pack .spec-form p.spec-msg { margin: 0; font-size: 14px; font-weight: 600; min-height: 1px; }
+.spec-pack .spec-form p.spec-msg.ok { color: var(--accent); }
+.spec-pack .spec-form p.spec-msg.err { color: #b00; }
+@media (max-width: 860px) { .spec-pack-inner { grid-template-columns: 1fr; gap: 28px; } .spec-row { grid-template-columns: 1fr; } }

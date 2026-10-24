@@ -55,6 +55,24 @@ db.exec(`
   );
 `);
 
+// Specification-pack requests from /downloads. marketing_consent is only ever
+// set from the unticked-by-default opt-in box; consent_text records the exact
+// wording the person agreed to, for the consent record.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS spec_pack_request (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    name              TEXT NOT NULL,
+    email             TEXT NOT NULL,
+    company           TEXT,
+    marketing_consent INTEGER NOT NULL DEFAULT 0,
+    consent_text      TEXT,
+    df_ref            TEXT,
+    emailed_at        TEXT,
+    error             TEXT,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
 // Existing databases predate the df_ref column (DesignForce email-tracking ref).
 if (!db.prepare("SELECT 1 FROM pragma_table_info('enquiry') WHERE name = 'df_ref'").get()) {
   db.exec("ALTER TABLE enquiry ADD COLUMN df_ref TEXT");
@@ -172,6 +190,27 @@ module.exports = {
     db.prepare("UPDATE enquiry SET error = ? WHERE id = ?").run(String(error || "").slice(0, 500), id),
   recentEnquiries: (n = 50) =>
     db.prepare("SELECT * FROM enquiry ORDER BY id DESC LIMIT ?").all(n),
+
+  // ---- specification-pack requests ----------------------------------------
+  saveSpecPackRequest(r) {
+    return db
+      .prepare(
+        "INSERT INTO spec_pack_request (name, email, company, marketing_consent, consent_text, df_ref) VALUES (@name, @email, @company, @marketing_consent, @consent_text, @df_ref)"
+      )
+      .run({
+        name: r.name,
+        email: r.email,
+        company: r.company || null,
+        marketing_consent: r.marketing_consent ? 1 : 0,
+        consent_text: r.marketing_consent ? r.consent_text : null,
+        df_ref: r.df_ref || null,
+      }).lastInsertRowid;
+  },
+  markSpecPackEmailed: (id) =>
+    db.prepare("UPDATE spec_pack_request SET emailed_at = datetime('now'), error = NULL WHERE id = ?").run(id),
+  markSpecPackFailed: (id, error) =>
+    db.prepare("UPDATE spec_pack_request SET error = ? WHERE id = ?").run(String(error || "").slice(0, 500), id),
+  specPackRequests: () => db.prepare("SELECT * FROM spec_pack_request ORDER BY id DESC").all(),
 
   // Save a base64 data-URL image onto the volume; returns its public /uploads/ path.
   saveUpload(dataUrl) {

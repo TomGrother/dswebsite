@@ -75,7 +75,7 @@ function page(title, body) {
 <link rel="icon" href="/images/favicon.png">
 </head><body>
 <div class="admin-bar"><div class="container">
-  <div><a href="/admin">Dashboard</a><a href="/admin/new/news">+ News</a><a href="/admin/new/case-study">+ Case Study</a></div>
+  <div><a href="/admin">Dashboard</a><a href="/admin/new/news">+ News</a><a href="/admin/new/case-study">+ Case Study</a><a href="/admin/spec-pack">Spec pack requests</a></div>
   <div><a href="/" target="_blank" rel="noopener">View site</a><a href="/admin/logout">Log out</a></div>
 </div></div>
 <section class="section" style="padding:44px 0"><div class="container">${body}</div></section>
@@ -145,6 +145,32 @@ router.post("/upload", (req, res) => {
   } catch (e) {
     res.status(400).json({ ok: false, error: e.message });
   }
+});
+
+// ---- specification-pack requests (downloads page) ---------------------------
+router.get("/spec-pack", (req, res) => {
+  const all = store.specPackRequests();
+  const opted = all.filter((r) => r.marketing_consent).length;
+  const rowsHtml = all.length
+    ? all.map((r) => `<tr>
+        <td style="white-space:nowrap">${esc(r.created_at)}</td>
+        <td><b>${esc(r.name)}</b><br><a href="mailto:${esc(r.email)}">${esc(r.email)}</a></td>
+        <td>${esc(r.company || "—")}</td>
+        <td><span class="pill ${r.marketing_consent ? "pill-live" : "pill-draft"}">${r.marketing_consent ? "Opted in" : "No"}</span></td>
+        <td>${r.emailed_at ? "Sent" : r.error ? `<span style="color:#b00" title="${esc(r.error)}">Failed</span>` : "—"}</td>
+        <td style="font-size:13px;color:var(--slate)">${esc(r.df_ref || "")}</td></tr>`).join("")
+    : `<tr><td colspan="6" style="color:var(--slate)">No requests yet.</td></tr>`;
+  res.send(page("Spec pack requests", `<h1>Spec pack <em style="font-style:normal;color:var(--accent)">requests</em></h1>
+    <p style="color:var(--slate);max-width:760px">People who asked for the specification pack on the downloads page. Only those marked <b>Opted in</b> ticked the box for product news, so only they should go into marketing campaigns. The CSV includes the consent wording each person agreed to.</p>
+    <p style="margin:18px 0 24px"><a class="btn btn-primary" href="/admin/spec-pack.csv">Download CSV</a> <span style="margin-left:12px;color:var(--slate)">${all.length} requests · ${opted} opted in</span></p>
+    <table class="admin-table"><tr><th>Requested</th><th>Name</th><th>Company</th><th>Marketing</th><th>Pack email</th><th>Ref</th></tr>${rowsHtml}</table>`));
+});
+
+router.get("/spec-pack.csv", (req, res) => {
+  const csv = require("./specpack").toCsv(store.specPackRequests());
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="spec-pack-requests-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send("﻿" + csv); // BOM so Excel opens it as UTF-8
 });
 
 const TYPE_LABEL = { news: "News", "case-study": "Case Study" };

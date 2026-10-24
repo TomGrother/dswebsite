@@ -903,6 +903,7 @@ def build_downloads():
   </div>
 </section>
 """
+    html_out += SPEC_PACK_FORM
     for sid, alt, kicker, h2, intro, docs in DOC_SECTIONS:
         cards = ""
         for target, dkick, title, blurb in docs:
@@ -944,6 +945,58 @@ def build_downloads():
     a, b = s.index("<!--DOCS-->") + len("<!--DOCS-->"), s.index("<!--/DOCS-->")
     page.write_text(s[:a] + "\n" + html_out + s[b:], encoding="utf-8")
     print(f"  downloads.html: {sum(len(d[5]) for d in DOC_SECTIONS) + 1} documents, thumbnails in public/images/docs/")
+    write_spec_pack_manifest()
+
+
+# Specification pack: the request form on /downloads and the document list the
+# server emails (content/spec-pack.json, read by specpack.js). The opt-in box is
+# unticked by default and the pack is sent whether or not it is ticked.
+SPEC_PACK_CONSENT = "Yes, send me occasional product news and updates from Design & Supply. You can unsubscribe at any time."
+SITE = "https://designandsupply.co.uk"
+
+SPEC_PACK_FORM = f"""
+<section class="section section-dark spec-pack" id="spec-pack">
+  <div class="container spec-pack-inner">
+    <div class="reveal">
+      <span class="kicker">Specification pack</span>
+      <h2>Everything, <em>in one email.</em></h2>
+      <p>Every data sheet and certificate, the installation manual, warranty, cill types, handing diagrams, colour chart and our company brochure — sent to your inbox as one set of links, ready to forward to your team. The links always open the latest versions.</p>
+    </div>
+    <form class="spec-form reveal" id="specPackForm" novalidate>
+      <div class="hp" aria-hidden="true"><label for="sp-website">Website (leave blank)</label><input type="text" id="sp-website" name="website" tabindex="-1" autocomplete="off"></div>
+      <input type="hidden" name="df_ref" id="df_ref">
+      <div class="spec-row">
+        <div><label for="sp-name">Name</label><input type="text" id="sp-name" name="name" required autocomplete="name" placeholder="Your name"></div>
+        <div><label for="sp-email">Email</label><input type="email" id="sp-email" name="email" required autocomplete="email" placeholder="you@company.co.uk"></div>
+      </div>
+      <div><label for="sp-company">Company <span>(optional)</span></label><input type="text" id="sp-company" name="company" autocomplete="organization" placeholder="Company name"></div>
+      <label class="spec-consent"><input type="checkbox" name="marketing" value="yes"> <span>{esc(SPEC_PACK_CONSENT)}</span></label>
+      <button class="btn btn-primary" type="submit">Email me the pack</button>
+      <p class="spec-small">We’ll use your details to send the pack and to follow up on your request. See our <a href="/privacy-policy">privacy policy</a>.</p>
+      <p class="spec-msg" id="specPackMessage" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+"""
+
+
+def write_spec_pack_manifest():
+    import html as _html
+    import re as _re
+    plain = lambda s: _html.unescape(_re.sub(r"<[^>]+>", "", s))
+    sections = [{"title": "Company brochure", "docs": [
+        {"title": "Design & Supply company brochure", "url": f"{SITE}/files/{BROCHURE}", "meta": _meta(FILES / BROCHURE)[0]}]}]
+    for _sid, _alt, kicker, _h2, _intro, docs in DOC_SECTIONS:
+        items = []
+        for target, _dkick, title, _blurb in docs:
+            if target.startswith("/"):
+                items.append({"title": plain(title), "url": f"{SITE}{target}", "meta": "Web page"})
+            else:
+                items.append({"title": plain(title), "url": f"{SITE}/files/{target}", "meta": _meta(FILES / target)[0]})
+        sections.append({"title": plain(kicker), "docs": items})
+    out = ROOT / "content" / "spec-pack.json"
+    out.write_text(json.dumps({"consentText": SPEC_PACK_CONSENT, "sections": sections}, indent=1, ensure_ascii=False), encoding="utf-8")
+    print(f"  content/spec-pack.json: {sum(len(s['docs']) for s in sections)} documents in {len(sections)} sections")
 
 
 # ------------------------------------------------------------------ main --
