@@ -1,0 +1,1167 @@
+{
+ "sheets": [
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Steel-Security-Rated-SR1.pdf",
+   "product": "Security Door Level One",
+   "headline": "Security door level one: fortifying spaces",
+   "overview": "In an era where safety and security are of paramount importance, our Steel Hinged Security Rated Doors stand as a reliable solution, addressing the rising concerns surrounding unauthorised access and threats. These doors are certified by LPCB for LPS 1175 level 1, ensuring the utmost security for diverse applications. Our product line-up includes single and double doors with outward opening functionality, offering versatility without compromising on security.",
+   "applications": [
+    "Retail Outlets",
+    "Commercial Premises",
+    "Educational Institutions",
+    "Health Facilities",
+    "Hotel Entrances",
+    "Municipal Buildings"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1440mm x 2440mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2800mm x 2440mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Louvred",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Vision",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Sidepanels",
+     "available": false,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Certified Protection",
+    "Over 300 Colours Available",
+    "Thorough Testing",
+    "Interior and Exterior",
+    "Locking Flexibility"
+   ],
+   "notes": [
+    "Specification table key: X = Feature Not Available; • = Available Feature. No footnote markers (* or **) appear in the table or anywhere else on the sheet."
+   ],
+   "closingLine": "Contact us today: unrivalled protection, total peace of mind. Discover the ultimate solution in our steel hinged security rated doors!",
+   "extraSections": [
+    {
+     "heading": "Telephone",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Logo strapline",
+     "text": "Design & Supply: Steel Door Specialists"
+    }
+   ],
+   "conflicts": [
+    "Colour count: the sheet's benefit says 'Over 300 Colours Available', but the website says 350: security-doors-sr1.html:124 ('350+ RAL & BS colours') and security-doors-sr1.html:152 ('powder-coated — over 350 colours'); also security-doors.html:123 and :178. The sheet's '300' is kept."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Steel-Security-Rated-SR2.pdf",
+   "product": "Security Door Level Two",
+   "headline": "Security door level two: fortifying spaces",
+   "overview": "In an era where safety and security are of paramount importance, our Steel Hinged Security Rated Doors stand as a reliable solution, addressing the rising concerns surrounding unauthorised access and threats. These doors are certified by LPCB for LPS 1175 level 2, ensuring the utmost security for diverse applications. Our product line-up includes single and double doors with outward opening functionality, offering versatility without compromising on security.",
+   "applications": [
+    "Retail Outlets",
+    "Cash Rooms",
+    "Commercial Premises",
+    "Data Centres",
+    "Educational Institutions",
+    "Healthcare Facilities",
+    "Modular Buildings",
+    "Municipal Buildings",
+    "Warehouse"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1440mm x 3100mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2800mm x 3100mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Louvred",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Vision",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Sidepanels",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Fire Rating BS 476 / EN 1634",
+     "available": true,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Certified Protection",
+    "Unmatched Locking Options",
+    "Thorough Testing",
+    "Interior and Exterior",
+    "Flexibility of Configuration",
+    "Over 300 Colours Available"
+   ],
+   "notes": [
+    "Specification table key: X = Feature Not Available; • = Available Feature. No footnote markers (* or **) appear in the table or anywhere else on the sheet.",
+    "This is the only SR sheet with a 12th specification column. The sheet prints its header as 'Fire Rating BS-476 EN-1634', marked • (available)."
+   ],
+   "closingLine": "Contact us today: unrivalled protection, total peace of mind. Discover the ultimate solution in our steel hinged security rated doors!",
+   "extraSections": [
+    {
+     "heading": "Telephone",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Logo strapline",
+     "text": "Design & Supply: Steel Door Specialists"
+    }
+   ],
+   "conflicts": [
+    "Fire rating standard: the sheet's column reads 'Fire Rating BS-476 EN-1634', but the website cites only EN 1634 for the SR2 fire option and never mentions BS 476: security-doors-sr2.html:124 ('Fire Option — Tested to EN 1634'), :135 ('optional fire rating tested to EN 1634'), :151 ('Optional — fire tested to EN 1634') and :197. The sheet's 'BS 476 / EN 1634' is kept.",
+    "Fire rating availability: the sheet marks Fire Rating as an available feature with no qualifier, while the website calls it 'Optional' (security-doors-sr2.html:151, :197). These agree in substance; flagged only so the wording is checked.",
+    "Colour count: the sheet's benefit says 'Over 300 Colours Available', but the website says 350: security-doors-sr2.html:152 ('powder-coated — over 350 colours'); also security-doors.html:123 ('350+') and :178. The sheet's '300' is kept."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Steel-Security-Rated-SR3.pdf",
+   "product": "Security Door Level Three",
+   "headline": "Security door level three: fortifying spaces",
+   "overview": "In an era where safety and security are of paramount importance, our Steel Hinged Security Rated Doors stand as a reliable solution, addressing the rising concerns surrounding unauthorised access and threats. These doors are certified by LPCB for LPS 1175 level 3, ensuring the utmost security for diverse applications. Our product line-up includes single and double doors with outward opening functionality, offering versatility without compromising on security.",
+   "applications": [
+    "Vault Entrances",
+    "High-Security Areas",
+    "Data Centres",
+    "Healthcare Facilities",
+    "Municipal Buildings",
+    "Utility Substations",
+    "Warehouse"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1440mm x 3060mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2510mm x 3060mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Louvred",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Vision",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Sidepanels",
+     "available": false,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Certified Protection",
+    "Over 300 Colours Available",
+    "Thorough Testing",
+    "Interior and Exterior",
+    "Locking Flexibility"
+   ],
+   "notes": [
+    "Specification table key: X = Feature Not Available; • = Available Feature. No footnote markers (* or **) appear in the table or anywhere else on the sheet."
+   ],
+   "closingLine": "Contact us today: unrivalled protection, total peace of mind. Discover the ultimate solution in our steel hinged security rated doors!",
+   "extraSections": [
+    {
+     "heading": "Telephone",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Logo strapline",
+     "text": "Design & Supply: Steel Door Specialists"
+    }
+   ],
+   "conflicts": [
+    "Colour count: the sheet's benefit says 'Over 300 Colours Available', but the website says 350: security-doors-sr3.html:124 ('350+ RAL & BS colours') and :152 ('powder-coated — over 350 colours'). The sheet's '300' is kept.",
+    "Vision and access control: the sheet marks Access Control Hardware X and Vision X for SR3, but the SR1 page says they are available 'from SR2 upwards': security-doors-sr1.html:198 ('Vision panels, louvres and access-control hardware are available from SR2 upwards'), repeated in the FAQ schema at security-doors-sr1.html:334. The SR3 page itself agrees with the sheet: security-doors-sr3.html:149 says 'Personnel or panic hardware' and :151 says vision panels are 'Not available at SR3'. The sheet's X values are kept."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Steel-Security-Rated-SR4.pdf",
+   "product": "Security Door Level Four",
+   "headline": "Security door level four: fortifying spaces",
+   "overview": "In an era where safety and security are of paramount importance, our Steel Hinged Security Rated Doors stand as a reliable solution, addressing the rising concerns surrounding unauthorised access and threats. These doors are certified by LPCB for LPS 1175 level 4, ensuring the utmost security for diverse applications. Our product line-up includes single and double doors with outward opening functionality, offering versatility without compromising on security.",
+   "applications": [
+    "Data Centres",
+    "High-Security Areas",
+    "Healthcare Facilities",
+    "Utility Substations"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1284mm x 2752mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2492mm x 2752mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Louvred",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Vision",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Sidepanels",
+     "available": false,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Certified Protection",
+    "Over 300 Colours Available",
+    "Thorough Testing",
+    "Interior and Exterior",
+    "Locking Flexibility"
+   ],
+   "notes": [
+    "Specification table key: X = Feature Not Available; • = Available Feature. No footnote markers (* or **) appear in the table or anywhere else on the sheet."
+   ],
+   "closingLine": "Contact us today: unrivalled protection, total peace of mind. Discover the ultimate solution in our steel hinged security rated doors!",
+   "extraSections": [
+    {
+     "heading": "Telephone",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Logo strapline",
+     "text": "Design & Supply: Steel Door Specialists"
+    }
+   ],
+   "conflicts": [
+    "Colour count: the sheet's benefit says 'Over 300 Colours Available', but the website says 350: security-doors-sr4.html:124 ('350+ RAL & BS colours') and :152 ('powder-coated — over 350 colours'). The sheet's '300' is kept.",
+    "Vision: the sheet marks Vision X for SR4, but the SR1 page says vision panels are available 'from SR2 upwards': security-doors-sr1.html:198, repeated at :334. The SR4 page itself agrees with the sheet: security-doors-sr4.html:151 says vision panels and overpanels are 'Not available at SR4'. The sheet's X is kept.",
+    "Cash rooms: the SR4 sheet's applications are Data Centres, High-Security Areas, Healthcare Facilities and Utility Substations. Cash rooms appear only on the SR2 sheet. The website ties SR4 to cash rooms at security-doors.html:147 ('For cash rooms and critical infrastructure'), :185 ('Cash rooms & financial facilities — SR4-rated doors'), :209 and :351, and also at security-doors-sr4.html:165 ('High-security areas — cash rooms, secure stores...'). The sheet's application list is kept unchanged."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Steel-Fire-Rated-Doors.pdf",
+   "product": "Fire Rated Doors: EN 1634-1",
+   "headline": "Fire rated doors: EN 1634-1",
+   "overview": "Our premium fire-rated steel doorsets are designed, manufactured, and tested in accordance with EN 1634-1. Tested as complete doorset assemblies, our products are classified for fire integrity, helping to prevent the passage of flames and hot gases during a fire event. Our doorsets provide dependable fire compartmentation for commercial, industrial, and public-sector applications.",
+   "applications": [
+    "Offices",
+    "Public Sector Building",
+    "Retail Outlets",
+    "Data Centres",
+    "Flat Entrances",
+    "Warehouse"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1250mm (w) x 2650mm (h)"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2800mm (w) x 2650mm (h)"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": true,
+     "footnote": "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control."
+    },
+    {
+     "name": "Louvred",
+     "available": true,
+     "footnote": "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control."
+    },
+    {
+     "name": "Vision",
+     "available": true,
+     "footnote": "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control."
+    },
+    {
+     "name": "Overpanel",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Side Panel",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Smoke Rating",
+     "available": true,
+     "footnote": "**Please note: if louvres are specified, a smoke rating will not be available."
+    }
+   ],
+   "benefits": [
+    "Certified Fire Rating",
+    "Louvre Panels",
+    "Powder Coated Finish",
+    "Vision Panels",
+    "Double Skinned with Strengthening Seam",
+    "Access Control Hardware"
+   ],
+   "notes": [
+    "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control.",
+    "**Please note: if louvres are specified, a smoke rating will not be available.",
+    "Larger sizes are available, subject to square metre limitations. Contact our team for size and configuration guidance."
+   ],
+   "closingLine": "Contact us today to discuss how Design and Supply can enhance the safety and aesthetics of your space.",
+   "extraSections": [
+    {
+     "heading": "Specification table row label",
+     "text": "Fire Rated Doors (EN 1634-1). The sheet prints it as 'EN1634-1'. This is the only row. Its Max Size Single and Max Size Double cells hold the two dimensions above."
+    },
+    {
+     "heading": "Specification table key",
+     "text": "• Available Feature; X Feature Not Available. The * and ** markers sit beside the dots for Access Control Hardware, Louvred and Vision (*) and Smoke Rating (**)."
+    },
+    {
+     "heading": "Telephone",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Logo tagline",
+     "text": "Design & Supply – Steel Door Specialists"
+    },
+    {
+     "heading": "Photo (image, not text)",
+     "text": "Red single-leaf steel door in a white frame, set in a brick wall, with a lever handle."
+    }
+   ],
+   "conflicts": [
+    "Vision and louvre caveat: the sheet marks Vision and Louvred as available (*, on one of the two EN 1634-1 products). Its only performance caveat is that louvres remove the smoke rating (**). The website says vision AND louvre panels 'may affect the fire rating': fire-doors.html:153 ('Vision panels, and louvre panels for ventilation (both may affect the fire rating)') and fire-doors.html:196 (FAQ, same point). The sheet's wording has been kept.",
+    "Gap, not a contradiction. Do not add to the sheet: the website claims 'certification up to 4 hours', CE marking and the UKTC Ensure scheme at fire-doors.html:113, :120, :122, :136-138 and steel-doors.html:134 ('EN 1634-1 · Up to 4 hrs'). The sheet says only 'Certified Fire Rating' and 'tested in accordance with EN 1634-1', with no duration and no CE or UKTC. 'Certified' on the sheet agrees with the website's 'certification' wording, so it has been kept.",
+    "Gap: the website lists a leaf-and-half configuration (fire-doors.html:151). The sheet gives only Single and Double max sizes, and the sheet's values have been kept."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Multi-Storey-Car-Park.pdf",
+   "product": "Car Park Doors: Fire-Rated Steel Doorsets",
+   "headline": "Car park doors: fire-rated steel doorsets",
+   "overview": "Our fire-rated steel doorsets for car park applications are designed, manufactured, and tested in accordance with EN 1634-1. Tested as complete doorset assemblies, they are classified for fire integrity, helping to prevent the passage of flames and hot gases during a fire event. Designed for use in multi-storey and underground car parks, these doorsets combine dependable fire compartmentation with the durability required for exposed and high-use environments.",
+   "applications": [
+    "Multi-Storey Car Parks",
+    "Underground Car Parks",
+    "Stairwell & Escape Routes",
+    "Plant & Services Areas",
+    "Access & Maintenance Areas",
+    "Mixed-Use Developments"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1250mm (w) x 2650mm (h)"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2800mm (w) x 2650mm (h)"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": true,
+     "footnote": "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control."
+    },
+    {
+     "name": "Louvred",
+     "available": true,
+     "footnote": "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control."
+    },
+    {
+     "name": "Vision",
+     "available": true,
+     "footnote": "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control."
+    },
+    {
+     "name": "Overpanel",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Side Panel",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Smoke Rating",
+     "available": true,
+     "footnote": "**Please note: if louvres are specified, a smoke rating will not be available."
+    }
+   ],
+   "benefits": [
+    "Certified Fire Rating",
+    "Enhanced Security",
+    "Durable Architectural Finish",
+    "Vision Panels",
+    "Designed for High Traffic",
+    "Access Control Hardware Optional"
+   ],
+   "notes": [
+    "*We offer two EN 1634-1 compliant products. One product does not currently support louvres, vision panels, or access control hardware. The other product can accommodate louvres, vision panels, and access control.",
+    "**Please note: if louvres are specified, a smoke rating will not be available.",
+    "Larger sizes are available, subject to square metre limitations. Contact our team for size and configuration guidance."
+   ],
+   "closingLine": "Contact us today to discuss how Design and Supply can enhance the safety and aesthetics of your space.",
+   "extraSections": [
+    {
+     "heading": "Specification table row label",
+     "text": "Fire Rated Doors (EN 1634-1). The sheet prints it as 'EN1634-1'. This is the only row. Its Max Size Single and Max Size Double cells hold the two dimensions above."
+    },
+    {
+     "heading": "Specification table key",
+     "text": "• Available Feature; X Feature Not Available. The * and ** markers sit beside the dots for Access Control Hardware, Louvred and Vision (*) and Smoke Rating (**)."
+    },
+    {
+     "heading": "Telephone",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Logo tagline",
+     "text": "Design & Supply – Steel Door Specialists"
+    },
+    {
+     "heading": "Photo (image, not text)",
+     "text": "Dark grey single-leaf steel door against yellow walls, with a narrow vertical vision panel, a pull handle, an overhead closer and a kick plate."
+    }
+   ],
+   "conflicts": [
+    "No dedicated car-park product page exists on the website. The only references are the download link labelled 'Car Park Doors' (downloads.html:124) and a news card, 'Car Park Fire Doors: A Complete Guide to Compliant Steel Doorsets' (index.html:353). The comparison below therefore uses fire-doors.html. The sheet's table and footnotes are identical to the Fire Rated Doors sheet.",
+    "Vision and louvre caveat: the sheet marks Vision and Louvred as available (*), with only louvres removing the smoke rating (**). The website says vision and louvre panels 'may affect the fire rating' (fire-doors.html:153, :196). The sheet's wording has been kept.",
+    "'Enhanced Security' benefit: the website makes no security claim for fire doorsets. It reserves security ratings for the LPS1175 doorsets (e.g. fire-doors.html:207, 'LPCB certified to LPS1175 SR1–SR4'). The sheet does not claim an LPS rating, so it has been kept as written. It could be read as implying one.",
+    "Gap, not a contradiction. Do not add to the sheet: the website states 'certification up to 4 hours' and CE marking for fire doors (fire-doors.html:113, :120, :136; steel-doors.html:134). The sheet gives no duration."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Steel-Flood-Rated.pdf",
+   "product": "Flood Doors: Defend, Protect, Prevail",
+   "headline": "Flood doors: defend, protect, prevail",
+   "overview": "When it comes to safeguarding against the forces of nature and unauthorised access, our Flood Doors stand as the ultimate solution. Designed with an unwavering commitment to both flood resilience and security, our doors provide an unmatched sense of assurance. Whether facing rising water levels or the need to keep intruders at bay, our Flood Doors are your first line of defence.",
+   "applications": [
+    "Warehouse",
+    "Store Rooms",
+    "Electrical Substations",
+    "Retail Outlets",
+    "Educational Institutions",
+    "Healthcare Facilities"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1408mm x 3000mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2800mm x 3000mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Louvred",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Vision",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Sidepanels",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Fire Rating (BS 476)",
+     "available": true,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Dual Functionality",
+    "Tailored Solution",
+    "Internal and External"
+   ],
+   "notes": [],
+   "closingLine": "Contact us today to invest in the ultimate protection against flooding and unauthorised access!",
+   "extraSections": [
+    {
+     "heading": "Key applications (supporting sentence under the list)",
+     "text": "Our Flood Doors find their purpose in environments where the threat of floods looms large, and security is paramount."
+    },
+    {
+     "heading": "Dimensions box",
+     "text": "The sizes sit in a separate 'DIMENSIONS:' box beside the photo, not in the specification table. They are written without (w)/(h) labels: Max Size Single 1408mm x 3000mm; Max Size Double 2800mm x 3000mm."
+    },
+    {
+     "heading": "Specification table key",
+     "text": "• Available Feature; X Feature Not Available. The table has a single unlabelled row. There are no * footnote markers and no footnotes on this sheet."
+    },
+    {
+     "heading": "Telephone",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Logo tagline",
+     "text": "Design & Supply – Steel Door Specialists"
+    },
+    {
+     "heading": "Photo (image, not text)",
+     "text": "Blue double-leaf steel flood door with panic bars and a LOUVRED OVERPANEL, in a blockwork plant room."
+    },
+    {
+     "heading": "Extraction note",
+     "text": "Two overview lines and the applications sentence are missing from the PDF text layer. They were read from the rendered page image."
+    }
+   ],
+   "conflicts": [
+    "Louvred = X and Vision = X on the sheet. The website says both can be specified: flood-doors.html:139 ('Vision and louvre panels can both be specified, provided they sit above the 900mm flood level'), flood-doors.html:155 ('vision and louvre panels above the 900mm flood level') and flood-doors.html:182 (FAQ, 'Yes. Vision panels and louvre panels are both suitable...'). The sheet's own photo also shows a louvred overpanel, which contradicts its Louvred X. The sheet's X values have been kept.",
+    "'Fire Rating BS-476' is marked available (•) on the sheet. BS 476 appears nowhere on the website: a grep of public/*.html for BS.?476 finds nothing. The website's fire standard is EN 1634-1 (fire-doors.html:113, :136; index.html:171). The flood page (flood-doors.html:108-186) makes no fire-rating claim for flood doors at all. The sheet's value has been kept, as 'Fire Rating (BS 476)'.",
+    "Security wording is consistent with the website's 'dual protection against both flooding and unauthorised access' (flood-doors.html:113, :134, :137). However, the website adds a caveat the sheet does not state: 'our flood doors are not LPS1175 rated' (flood-doors.html:179). The sheet's security wording ('unauthorised access', 'keep intruders at bay', 'Dual Functionality', closing line) has been kept.",
+    "Gap, not a contradiction. Do not add to the sheet: the website claims 'up to 900mm of water protection' and a 2013 industry award (flood-doors.html:113, :120, :123, :136). The sheet states no flood height or performance figure."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Steel-Thermal-Doors.pdf",
+   "product": "Therma-Line Doors",
+   "headline": "Therma-Line doors",
+   "overview": "Therma-Line steel doorsets are designed to deliver reliable thermal efficiency with a U-value as low as 1.3 W/m²K. Engineered for commercial, industrial and residential environments, they combine durability with improved energy performance, making them suitable for both new-build and retrofit applications. They provide a secure solution where temperature control and long-term reliability are essential.",
+   "applications": [
+    "Commercial Entrances",
+    "Public Buildings",
+    "Residential Developments",
+    "Industrial Units",
+    "Plant Rooms and Service Areas",
+    "Refurbishment Projects"
+   ],
+   "dimensions": [
+    {
+     "label": "Single Doorsets – Minimum Size",
+     "value": "500mm (w) x 700mm (h)"
+    },
+    {
+     "label": "Single Doorsets – Maximum Size",
+     "value": "1410mm (w) x 2950mm (h)"
+    },
+    {
+     "label": "Double Doorsets – Minimum Size",
+     "value": "900mm (w) x 700mm (h)"
+    },
+    {
+     "label": "Double Doorsets – Maximum Size",
+     "value": "2820mm (w) x 2950mm (h)"
+    },
+    {
+     "label": "Leaf thickness",
+     "value": "54mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Inward Opening",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Outward Opening",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Louvres",
+     "available": false,
+     "footnote": "**Louvres are available but U-value performance will be affected – contact our team for more information."
+    },
+    {
+     "name": "Visions",
+     "available": true,
+     "footnote": "*Visions can be supplied using thermally rated glass; however, the U-value must still be considered an estimated performance at this time."
+    },
+    {
+     "name": "Overpanels",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Side Panels",
+     "available": false,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Enhanced Thermal Performance",
+    "Designed to Meet Part L Requirements of the Building Regulations",
+    "Improved Energy Savings"
+   ],
+   "notes": [
+    "Table key: X = Feature Not Available; • = Available Feature.",
+    "Please note that hardware components can affect overall U-value results and impact the minimum manufacture sizes.",
+    "*Visions can be supplied using thermally rated glass; however, the U-value must still be considered an estimated performance at this time.",
+    "**Louvres are available but U-value performance will be affected – contact our team for more information.",
+    "Note: The performance of the Therma-Line product was determined by analysing samples of 1230mm wide by 2180mm high (singles) and 2000mm wide by 2180mm high (doubles). The resulting U-value can be attributed to doorsets at that size and with a ±25% size variation. Any size specifications outside of this scope can only be considered an estimated performance."
+   ],
+   "closingLine": "Contact us today to discuss how Design and Supply can enhance the safety and aesthetics of your space.",
+   "extraSections": [
+    {
+     "heading": "Specification table layout",
+     "text": "Two rows, Single Doorsets and Double Doorsets, each with Minimum Size and Maximum Size columns followed by nine feature columns. Feature availability is identical in both rows (only the sizes differ): Louvres show X** and Visions show •* in both rows; Overpanels and Side Panels show X in both rows; Inward Opening, Outward Opening, Personnel, Panic and Access Control Hardware show • in both rows. Leaf thickness (54mm) is printed beside the table key."
+    },
+    {
+     "heading": "Contact",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Sheet artwork",
+     "text": "Header: Design & Supply 'Steel Door Specialists' logo (left) and the Therma-Line Doors product logo (right: door outline with three wave lines, 'THERMA-LINE' in dark green, 'DOORS' in light blue). Product photo: blue single steel door with lever handle and the Therma-Line logo on the leaf."
+    }
+   ],
+   "conflicts": [
+    "Part L wording: sheet benefit says 'Designed to Meet Part L Requirements of the Building Regulations'; the website says 'exceed' – thermal-doors.html:7 (meta: 'engineered to exceed Part L Building Regulations'), thermal-doors.html:121 ('Part L' / 'Engineered to exceed'), thermal-doors.html:133-134 ('Exceed Part L Compliance' / 'designed to exceed Part L of the Building Regulations'), thermal-doors.html:179 (FAQ 'designed to exceed Part L'). Sheet value kept ('meet').",
+    "Vision panels: sheet says visions in thermally rated glass must still be considered an estimated U-value performance (no exception); website says a 200 × 500mm vision panel in thermally rated glass holds the 1.3 W/m²K U-value and only other sizes are estimated – thermal-doors.html:138 and thermal-doors.html:180. Sheet value kept.",
+    "Louvres: sheet table marks Louvres X (Feature Not Available) in both rows, yet its ** footnote says 'Louvres are available but U-value performance will be affected' (internal inconsistency on the sheet; available kept as false to match the symbol, footnote kept). Website says louvre panels 'negate U-value performance – any U-value for a louvred door is an estimate only' – thermal-doors.html:139 and thermal-doors.html:180.",
+    "Hardware: sheet says hardware components can affect overall U-value results AND impact the minimum manufacture sizes; website softens this to 'Hardware choice could affect the U-value, though most options are fine' and omits the minimum-size impact – thermal-doors.html:140 and thermal-doors.html:180.",
+    "Configurations: sheet covers Single and Double doorsets only; website spec table lists 'Single, double and leaf-and-half' – thermal-doors.html:152."
+   ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Streamline-Door.pdf",
+   "product": "Streamline Bespoke Steel Doors",
+   "headline": "Built for strength, reliability and lasting performance.",
+   "overview": "Experience unmatched flexibility and functionality with our Streamline Doors. Designed for both commercial and industrial applications, these doors combine durability, security and efficiency in one streamlined package. With high-quality materials, precision engineering and essential features built in, they offer hassle-free installation and reliable performance, providing your business with the protection and convenience it needs.",
+   "applications": [
+    "Commercial Space",
+    "Retail Space",
+    "Educational Institutions",
+    "Healthcare Facilities",
+    "Hospitality Establishments"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1440mm x 3050mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2900mm x 3050mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Louvred",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Vision",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Side Panel",
+     "available": true,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Panic Hardware",
+    "Louvre Panels",
+    "Powder Coated Finish",
+    "Vision Panels",
+    "Double Skinned with Strengthening Seam",
+    "Access Control Hardware"
+   ],
+   "notes": [
+    "Table key: X = Feature Not Available; • = Available Feature. (No X appears in this sheet's table – every feature is marked available.)"
+   ],
+   "closingLine": "Contact us today to discuss how Design and Supply can enhance the safety and aesthetics of your space.",
+   "extraSections": [
+    {
+     "heading": "Specification table layout",
+     "text": "Single row: Max Size Single and Max Size Double columns, followed by eleven feature columns (Open In, Open Out, External Fit, Internal Fit, Personnel Hardware, Panic Hardware, Access Control Hardware, Louvred, Vision, Overpanel, Side Panel), all marked • available. The key is printed below the table. No minimum sizes are given."
+    },
+    {
+     "heading": "Contact",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Sheet artwork",
+     "text": "Header: 'STREAMLINE – Bespoke Steel Doors' logo panel on dark green (no Design & Supply logo appears on this sheet; the company is named only in the closing line). Header background and product photo: louvred steel doorset with a full-width louvred overpanel set in brickwork."
+    }
+   ],
+   "conflicts": []
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-Slimline.pdf",
+   "product": "Slimline: Glazed Security Doors",
+   "headline": "Slimline: glazed security doors",
+   "overview": "Slimline is a durable, thermally insulated steel profile system designed for high-security single and double-leaf doors. Perfect for outdoor areas, it offers stainless steel options ideal for coastal and industrial zones. With customisable security features and a low U-value, it ensures both strength and elegance in any setting. Trust Slimline for uncompromising security and style. SBD licence product under the LPS 1175 SR2 and LPS 2081.",
+   "applications": [
+    "Communal Entrances",
+    "Restricted Lift Lobby",
+    "Residential Blocks",
+    "Restricted Areas"
+   ],
+   "dimensions": [
+    {
+     "label": "Max Size Single",
+     "value": "1300mm x 3000mm"
+    },
+    {
+     "label": "Max Size Single Inc Panel",
+     "value": "Unlimited (w) x 4400mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2630mm x 2750mm"
+    },
+    {
+     "label": "Max Size Double Inc Panel",
+     "value": "Unlimited (w) x 4150mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": false,
+     "footnote": "* Coming Soon"
+    },
+    {
+     "name": "Panic Hardware",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Fully Glazed",
+     "available": false,
+     "footnote": "* Coming Soon"
+    },
+    {
+     "name": "Metal Panel",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Sidepanels",
+     "available": true,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Dual Functionality",
+    "Aesthetically Pleasing",
+    "Tailored Solution",
+    "Over 300 Colours Available",
+    "Internal and External"
+   ],
+   "notes": [
+    "Table key: X = Feature Not Available; • = Available Feature; * = Coming Soon.",
+    "Personnel Hardware and Fully Glazed are marked * (Coming Soon) – shown as not yet available; Panic Hardware is marked X (Feature Not Available)."
+   ],
+   "closingLine": "Contact us today to experience unmatched security and lasting peace of mind – elevate your security standards with Design and Supply!",
+   "extraSections": [
+    {
+     "heading": "Specification table layout",
+     "text": "Single row of eleven feature columns (no size columns; sizes are in a separate DIMENSIONS panel beside the photo): Open In •, Open Out •, External Fit •, Internal Fit •, Personnel Hardware *, Panic Hardware X, Access Control Hardware •, Fully Glazed *, Metal Panel •, Overpanel •, Sidepanels •."
+    },
+    {
+     "heading": "Page 2",
+     "text": "Logo-only page: the Design & Supply 'Steel Door Specialists' logo, centred. No other content."
+    },
+    {
+     "heading": "Contact",
+     "text": "Tel: 01685 350 114"
+    },
+    {
+     "heading": "Sheet artwork",
+     "text": "Header: Design & Supply 'Steel Door Specialists' logo (left) and a dark green banner image of glazed doors carrying the title 'SLIMLINE: GLAZED SECURITY DOORS'. Product photo: bronze-coloured glazed double doorset with glazed overpanel, set in brickwork; the DIMENSIONS table sits beneath the photo in a dark green panel."
+    }
+   ],
+   "conflicts": [
+    "Colour count: sheet benefit says 'Over 300 Colours Available'; website says 350+ – slimline-non-rated.html:114 (badge '350+ RAL & BS Colours'), slimline-non-rated.html:173 ('a choice of 350+ RAL and BS colours'), slimline-security.html:169 ('powder coating in 350+ RAL and BS colours'); also thermal-doors.html:123 ('350+' colours). Sheet value kept ('Over 300').",
+    "Security standard wording: sheet says 'SBD licence product under the LPS 1175 SR2 and LPS 2081' (names grade SR2 and a Secured by Design licence); website states slimline is 'certified' / 'independently tested' to LPS1175 and LPS2081 with no SR grade and no SBD mention – slimline-security.html:113 ('independently certified to LPS1175 and LPS2081'), slimline-security.html:114 (badges 'LPS1175 Certified', 'LPS2081 Certified'), slimline-security.html:147 ('independently tested to LPS1175 and LPS2081'), slimline-security.html:166, slimline.html:7 and slimline.html:113 ('security rated to LPS1175 and LPS2081'). SBD appears on the website only as a general accreditation (index.html:155, index.html:280). Sheet wording kept."
+   ]
+  }
+ ]
+}

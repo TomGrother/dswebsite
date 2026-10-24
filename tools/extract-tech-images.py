@@ -1,5 +1,5 @@
 # Extracts the drawing artwork from the legacy cill-type and door-handing PDFs
-# into PNGs under content/tech-docs/, for build-tech-docs.js to compose into
+# into PNGs under content/tech-docs/, for docs-src/build_docs.py to compose into
 # the branded "Cill Types" and "Door Handing Diagrams" documents.
 #
 # Run only when a source drawing in public/files/ changes:

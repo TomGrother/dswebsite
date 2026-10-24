@@ -1654,3 +1654,24 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   *, *::before, *::after { transition: none !important; animation: none !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ---------- Downloads: document cards with page thumbnails ---------- */
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px; }
+.doc-card { display: flex; flex-direction: column; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; color: inherit; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.doc-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--cyan); }
+.doc-thumb { display: block; aspect-ratio: 4 / 3; background: var(--mist); overflow: hidden; border-bottom: 1px solid var(--line); }
+.doc-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.doc-body { display: flex; flex-direction: column; gap: 6px; flex: 1; padding: 18px 20px 20px; }
+.doc-kicker { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.doc-card h3 { font-size: 20px; line-height: 1.15; margin: 0; }
+.doc-blurb { font-size: 14px; line-height: 1.5; color: var(--slate); }
+.doc-meta { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 10px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.doc-meta svg { width: 18px; height: 18px; stroke: var(--accent); flex-shrink: 0; }
+.doc-section + .doc-section { margin-top: 0; }
+.brochure-feature { align-items: center; }
+.brochure-cover { display: block; max-width: 520px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); transition: transform .25s ease; }
+.brochure-cover:hover { transform: translateY(-4px); }
+.brochure-cover img { width: 100%; height: auto; display: block; }
+.doc-note { margin-top: 10px; font-size: 13px; color: var(--slate); }
+.doc-links { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 22px; }
+@media (max-width: 860px) { .brochure-feature { grid-template-columns: 1fr; gap: 32px; } }
