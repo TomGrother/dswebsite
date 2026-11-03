@@ -51,6 +51,7 @@ const PAGES = [
   { slug: "installation-guides", priority: "0.7" },
   { slug: "contact", priority: "0.8" },
   { slug: "terms", priority: "0.2" },
+  { slug: "installation-terms-conditions", priority: "0.2" },
   { slug: "refund-policy", priority: "0.2" },
   { slug: "privacy-policy", priority: "0.2" },
 ];
