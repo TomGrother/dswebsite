@@ -44,6 +44,9 @@ db.exec(`
     finish_description     TEXT,
     paint_colour_1         TEXT,
     paint_colour_2         TEXT,
+    collection_date        TEXT,
+    drop_date              TEXT,
+    drop_time              TEXT,
     updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_door_ref     ON door (customer_acc_ref);
@@ -167,6 +170,9 @@ db.exec(`
     ["date_buff", "TEXT"], ["date_paint", "TEXT"], ["date_pack", "TEXT"],
     ["finish_description", "TEXT"], ["paint_colour_1", "TEXT"], ["paint_colour_2", "TEXT"],
     ["date_pack_complete", "TEXT"],
+    // From dbo.door_transport: the scheduled collection (the day the doors
+    // leave us) and the drop date + time (the day the delivery lands).
+    ["collection_date", "TEXT"], ["drop_date", "TEXT"], ["drop_time", "TEXT"],
   ];
   for (const [name, decl] of add) if (!have.has(name)) db.exec(`ALTER TABLE door ADD COLUMN ${name} ${decl}`);
 
@@ -346,6 +352,30 @@ function mapDoor(row) {
   };
 }
 
+// One collection / delivery for the whole order when every door (on-hold doors
+// aside, as they have no meaningful dates) shares it; otherwise "varies" and
+// each door shows its own.
+function sharedDate(doors, value) {
+  const live = doors.filter((d) => !d.onHold);
+  const vals = live.map(value);
+  if (!vals.some(Boolean)) return { value: null, varies: false };
+  const same = vals.every((v) => v === vals[0]);
+  return same ? { value: vals[0], varies: false } : { value: null, varies: true };
+}
+
+function transportSummary(doors) {
+  const collection = sharedDate(doors, (d) => d.collection_date || null);
+  const drop = sharedDate(doors, (d) => (d.drop_date ? `${d.drop_date}|${d.drop_time || ""}` : null));
+  const [dropDate, dropTime] = drop.value ? drop.value.split("|") : [null, null];
+  return {
+    collection_date: collection.value,
+    collectionVaries: collection.varies,
+    drop_date: dropDate,
+    drop_time: dropTime || null,
+    dropVaries: drop.varies,
+  };
+}
+
 function rowsToOrders(rows) {
   const byOrder = new Map();
   for (const r of rows) {
@@ -375,6 +405,7 @@ function rowsToOrders(rows) {
       onHold,
       allPacked,
       complete: o.doors.every((d) => d.status_id === 3),
+      transport: transportSummary(o.doors),
       summary: `${packed} of ${total} doors packed`,
       sortDate: dates.length ? dates[dates.length - 1] : "",
     };
@@ -444,12 +475,14 @@ const upsertStmt = db.prepare(`
                     customer_acc_ref, status_id, complete_program, complete_punch, complete_bend,
                     complete_weld, complete_buff, complete_paint, complete_pack,
                     date_punch, date_bend, date_weld, date_buff, date_paint, date_pack,
-                    date_completion, date_pack_complete, finish_description, paint_colour_1, paint_colour_2, updated_at)
+                    date_completion, date_pack_complete, finish_description, paint_colour_1, paint_colour_2,
+                    collection_date, drop_date, drop_time, updated_at)
   VALUES (@id, @order_id, @order_number, @order_ref, @door_ref, @door_type_description,
           @customer_acc_ref, @status_id, @complete_program, @complete_punch, @complete_bend,
           @complete_weld, @complete_buff, @complete_paint, @complete_pack,
           @date_punch, @date_bend, @date_weld, @date_buff, @date_paint, @date_pack,
-          @date_completion, @date_pack_complete, @finish_description, @paint_colour_1, @paint_colour_2, datetime('now'))
+          @date_completion, @date_pack_complete, @finish_description, @paint_colour_1, @paint_colour_2,
+          @collection_date, @drop_date, @drop_time, datetime('now'))
   ON CONFLICT(id) DO UPDATE SET
     order_id=excluded.order_id, order_number=excluded.order_number,
     order_ref=excluded.order_ref, door_ref=excluded.door_ref,
@@ -466,10 +499,15 @@ const upsertStmt = db.prepare(`
     date_pack_complete=excluded.date_pack_complete,
     finish_description=excluded.finish_description,
     paint_colour_1=excluded.paint_colour_1, paint_colour_2=excluded.paint_colour_2,
+    collection_date=excluded.collection_date, drop_date=excluded.drop_date, drop_time=excluded.drop_time,
     updated_at=datetime('now')
 `);
 
 const b = (v) => (v ? 1 : 0);
+// Transport dates arrive as YYYY-MM-DD and the drop time as HH:MM; anything else
+// (or a time with no drop date) is stored as unknown rather than shown wrongly.
+const isoDay = (v) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+const hhmm = (v) => (typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) && v !== "00:00" ? v : null);
 
 // Event capture: statements for detecting notable status changes on ingest.
 const prevStmt = db.prepare("SELECT complete_pack, status_id FROM door WHERE id = ?");
@@ -537,6 +575,9 @@ const ingestDoors = db.transaction((doors, { snapshot = false } = {}) => {
       finish_description: d.finish_description || null,
       paint_colour_1: d.paint_colour_1 || null,
       paint_colour_2: d.paint_colour_2 || null,
+      collection_date: isoDay(d.collection_date),
+      drop_date: isoDay(d.drop_date),
+      drop_time: isoDay(d.drop_date) ? hhmm(d.drop_time) : null,
     });
     upserted++;
   }

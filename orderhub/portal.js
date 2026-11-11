@@ -156,12 +156,35 @@ function renderDoorSpec(door) {
   return bits.length ? `<div class="door-spec">${bits.join("")}</div>` : "";
 }
 
+const COLLECTION_HINT = "The day your doors are due to leave our factory";
+const DELIVERY_HINT = "The day your delivery is due to arrive";
+const fmtDrop = (date, time) => fmtDate(date) + (time ? ` at ${esc(time)}` : "");
+
+// The order's collection and delivery dates, under its heading. When the doors
+// don't share one, it says so and each door shows its own.
+function renderOrderDates(t) {
+  if (!t) return "";
+  const bits = [];
+  if (t.collection_date) bits.push(`<span title="${COLLECTION_HINT}">Collection date: <b>${fmtDate(t.collection_date)}</b></span>`);
+  else if (t.collectionVaries) bits.push(`<span title="${COLLECTION_HINT}">Collection date: <b>varies by door</b></span>`);
+  if (t.drop_date) bits.push(`<span title="${DELIVERY_HINT}">Delivery date: <b>${fmtDrop(t.drop_date, t.drop_time)}</b></span>`);
+  else if (t.dropVaries) bits.push(`<span title="${DELIVERY_HINT}">Delivery date: <b>varies by door</b></span>`);
+  return bits.length ? `<div class="order-dates">${bits.join("")}</div>` : "";
+}
+
 function renderDoorRow(door, opts = {}) {
   // door_ref is how the customer recognises their door — show it prominently.
   const doorRef = door.door_ref ? `<span class="door-ref">${esc(door.door_ref)}</span>` : "";
   const parts = [];
   // On-hold doors have no meaningful scheduled completion — don't show one.
   if (!door.onHold) parts.push(`Scheduled Completion: ${fmtDate(door.date_completion)}`);
+  const t = opts.transport;
+  if (!door.onHold && t && t.collectionVaries && door.collection_date) {
+    parts.push(`<span title="${COLLECTION_HINT}">Collection: ${fmtDate(door.collection_date)}</span>`);
+  }
+  if (!door.onHold && t && t.dropVaries && door.drop_date) {
+    parts.push(`<span title="${DELIVERY_HINT}">Delivery: ${fmtDrop(door.drop_date, door.drop_time)}</span>`);
+  }
   if (opts.showRef) parts.push(`Acc: ${esc(door.customer_acc_ref)}`);
   const metaText = parts.length ? parts.join(" &nbsp;·&nbsp; ") + " &nbsp;·&nbsp; " : "";
   return `<div class="door-row">
@@ -186,11 +209,11 @@ function renderOrder(o, opts = {}) {
     : "";
   return `<div class="order-card${o.onHold ? " has-hold" : ""}">
     <div class="order-head">
-      <div><h3>Order ${esc(o.order_number || o.order_id)}</h3><span class="order-sub">${sub}</span></div>
+      <div><h3>Order ${esc(o.order_number || o.order_id)}</h3><span class="order-sub">${sub}</span>${renderOrderDates(o.transport)}</div>
       <div class="order-summary">${badges.join("")}</div>
     </div>
     ${holdNote}
-    ${o.doors.map((d) => renderDoorRow(d, opts)).join("")}
+    ${o.doors.map((d) => renderDoorRow(d, { ...opts, transport: o.transport })).join("")}
   </div>`;
 }
 

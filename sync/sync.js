@@ -70,10 +70,25 @@ const QUERY = `
     -- The date the door was ACTUALLY packed — drives per-order retention.
     d.date_pack_complete       AS date_pack_complete,
     -- Finish is 1:1 via dbo.door.finish_id -> dbo.finish.id
-    f.finish_description       AS finish_description
+    f.finish_description       AS finish_description,
+    -- Transport: the scheduled collection date (the day the doors leave us) and,
+    -- when entered, the drop date + time (the day the delivery lands).
+    tr.collection_date         AS collection_date,
+    tr.drop_date               AS drop_date,
+    tr.drop_time               AS drop_time
   FROM dbo.door d
   INNER JOIN dbo.door_type dt ON d.door_type_id = dt.id
   LEFT JOIN dbo.finish f ON f.id = d.finish_id
+  -- dbo.door_transport has no key and a few legacy doors have several rows, so
+  -- take one value per door rather than letting a join fan doors out.
+  LEFT JOIN (
+    SELECT door_id,
+           MAX(collection_date)                    AS collection_date,
+           MAX(drop_date)                          AS drop_date,
+           MAX(CONVERT(char(5), drop_time, 108))   AS drop_time
+    FROM dbo.door_transport
+    GROUP BY door_id
+  ) tr ON tr.door_id = d.id
   WHERE COALESCE(d.status_id, 1) NOT IN (4, 6)
     -- Steel doors only — Slimline architectural glazing is excluded from the hub.
     AND (dt.slimline_y_n = 0 OR dt.slimline_y_n IS NULL)
@@ -229,6 +244,12 @@ function normalise(rows) {
     const d = v instanceof Date ? v : new Date(v);
     return isNaN(d) ? null : d.toISOString().slice(0, 10); // YYYY-MM-DD (scheduled date)
   };
+  // "HH:MM" from CONVERT(char(5), …, 108); kept only alongside a drop date, and
+  // midnight means no time was entered.
+  const toTime = (v, withDate) => {
+    const t = v == null ? "" : String(v).trim();
+    return withDate && /^\d{2}:\d{2}$/.test(t) && t !== "00:00" ? t : null;
+  };
   return rows.map((r) => ({
     id: Number(r.id),
     order_id: String(r.order_id),
@@ -256,6 +277,9 @@ function normalise(rows) {
     finish_description: r.finish_description == null ? null : String(r.finish_description).trim() || null,
     paint_colour_1: r.paint_colour_1 == null ? null : String(r.paint_colour_1),
     paint_colour_2: r.paint_colour_2 == null ? null : String(r.paint_colour_2),
+    collection_date: toDate(r.collection_date),
+    drop_date: toDate(r.drop_date),
+    drop_time: toTime(r.drop_time, !!toDate(r.drop_date)),
   }));
 }
 
@@ -283,6 +307,9 @@ function diagnose(doors) {
   let withPaint = 0, withFinish = 0;
   for (const d of doors) { if (d.paint_colour_1) withPaint++; if (d.finish_description) withFinish++; }
   log(`  with paint colour: ${withPaint}, with finish: ${withFinish}`);
+  const withCollection = doors.filter((d) => d.collection_date).length;
+  const withDrop = doors.filter((d) => d.drop_date).length;
+  log(`  with collection date: ${withCollection}, with drop date: ${withDrop} (${doors.filter((d) => d.drop_time).length} with a time)`);
 }
 
 async function push(doors) {

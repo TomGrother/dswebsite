@@ -1256,6 +1256,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .order-head h3 { font-size: 23px; }
 .order-head .order-sub { color: var(--slate); font-size: 14px; }
+.order-dates { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 6px; font-size: 14px; color: var(--slate); }
+.order-dates b { color: var(--ink); font-weight: 600; }
 .order-summary { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .door-row { padding: 20px 26px; border-bottom: 1px solid var(--line); }
 .door-row:last-child { border-bottom: 0; }

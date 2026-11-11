@@ -154,15 +154,32 @@ function trackerEmail(door) {
   }).join("");
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;margin:10px 0 4px"><tr>${cells}</tr></table>`;
 }
-function doorEmail(door) {
+const fmtDropEmail = (date, time) => fmtDateEmail(date) + (time ? ` at ${esc(time)}` : "");
+// The order's collection / delivery line; "varies by door" when the doors differ
+// (each door then shows its own).
+function orderDatesEmail(t) {
+  if (!t) return "";
+  const bits = [];
+  if (t.collection_date) bits.push(`Collection date: <b>${fmtDateEmail(t.collection_date)}</b>`);
+  else if (t.collectionVaries) bits.push("Collection date: <b>varies by door</b>");
+  if (t.drop_date) bits.push(`Delivery date: <b>${fmtDropEmail(t.drop_date, t.drop_time)}</b>`);
+  else if (t.dropVaries) bits.push("Delivery date: <b>varies by door</b>");
+  return bits.length ? `<div style="font-size:12px;color:#5a6b66;margin-top:2px">${bits.join(" &nbsp;·&nbsp; ")}</div>` : "";
+}
+function doorEmail(door, t) {
   const ref = door.door_ref ? `${pill(door.door_ref, "#0a4a5c", "#dff2f7")} ` : "";
   const type = esc(door.door_type_description || "Doorset");
   const scheduled = door.onHold ? "" : `<span style="color:#5a6b66">Scheduled: ${fmtDateEmail(door.date_completion)}</span> &nbsp;`;
+  const own = [];
+  if (!door.onHold && t && t.collectionVaries && door.collection_date) own.push(`Collection: ${fmtDateEmail(door.collection_date)}`);
+  if (!door.onHold && t && t.dropVaries && door.drop_date) own.push(`Delivery: ${fmtDropEmail(door.drop_date, door.drop_time)}`);
+  const dates = own.length ? `<div style="font-size:12px;color:#5a6b66;margin-top:2px">${own.join(" &nbsp;·&nbsp; ")}</div>` : "";
   return `<div style="padding:12px 0;border-top:1px solid #eef1f0">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%"><tr>
       <td style="font-size:14px;color:#1a2b26"><b>Door #${esc(door.id)}</b> ${ref}${type}</td>
       <td style="text-align:right;font-size:12px;white-space:nowrap">${scheduled}${doorBadgeEmail(door)}</td>
     </tr></table>
+    ${dates}
     ${trackerEmail(door)}
   </div>`;
 }
@@ -176,8 +193,9 @@ function orderEmail(o) {
       <td style="text-align:right">${pill(o.summary, o.allPacked ? "#0E6551" : "#0a4a5c", o.allPacked ? "#e7f3ef" : "#eef4f6")}</td>
     </tr></table>
     ${o.order_ref ? `<div style="font-size:12px;color:#5a6b66;margin-top:2px">Ref: ${esc(o.order_ref)}</div>` : ""}
+    ${orderDatesEmail(o.transport)}
     ${holdNote}
-    ${o.doors.map(doorEmail).join("")}
+    ${o.doors.map((d) => doorEmail(d, o.transport)).join("")}
   </td></tr></table>`;
 }
 function renderOrdersEmail(user, orders) {
