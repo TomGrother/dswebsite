@@ -41,6 +41,8 @@ test("spec pack: marketing consent only from the explicit opt-in, with its wordi
   assert.match(yes.consent_text, /product news/);
   assert.strictEqual(specpack.parseRequest({ name: "A", email: "a@b.co", df_ref: "<x>" }).request.df_ref, "", "malformed ref dropped");
   assert.strictEqual(specpack.parseRequest({ name: "A", email: "a@b.co", df_ref: "DFREF-abc123" }).request.df_ref, "DFREF-abc123");
+  assert.strictEqual(specpack.parseRequest({ name: "A", email: "a@b.co", df_ref: "DFSRC-linkedin.social.spring-launch" }).request.df_ref,
+    "DFSRC-linkedin.social.spring-launch", "a visitor from a tagged post keeps its reference");
 });
 
 test("spec pack: emails the pack to the visitor and the lead to sales, and records consent", async () => {

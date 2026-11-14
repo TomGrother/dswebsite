@@ -13,6 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const store = require("./db");
 const notify = require("./orderhub/notify");
+const { cleanDfRef } = require("./dfref");
 
 const MANIFEST = path.join(__dirname, "content", "spec-pack.json");
 const SALES_TO = () => process.env.ENQUIRY_TO || "sales@designandsupply.co.uk";
@@ -35,7 +36,6 @@ function parseRequest(body) {
   const company = String(b.company || "").trim().slice(0, 160);
   if (!name) return { ok: false, error: "Please enter your name." };
   if (!EMAIL_RE.test(email)) return { ok: false, error: "Please enter a valid email address." };
-  const ref = String(b.df_ref || "").trim();
   // a ticked checkbox posts the literal "yes"; anything else is no consent
   const consent = b.marketing === "yes" || b.marketing === true;
   return {
@@ -46,7 +46,7 @@ function parseRequest(body) {
       company,
       marketing_consent: consent,
       consent_text: consent ? manifest().consentText : null,
-      df_ref: /^DFREF-[A-Za-z0-9_-]{1,64}$/.test(ref) ? ref : "",
+      df_ref: cleanDfRef(b.df_ref),
     },
   };
 }

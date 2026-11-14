@@ -11,6 +11,7 @@ const adminRouter = require("./admin");
 const portalRouter = require("./orderhub/portal");
 const ingestRouter = require("./orderhub/ingest");
 const notify = require("./orderhub/notify");
+const { cleanDfRef } = require("./dfref");
 
 const app = express();
 app.set("trust proxy", 1); // Railway sits behind a proxy; needed for correct client IPs and req.protocol
@@ -262,9 +263,9 @@ app.post("/api/contact", contactLimiter, async (req, res) => {
     phone: phone ? String(phone).trim().slice(0, 60) : "",
     subject: subject ? String(subject).trim().slice(0, 200) : "",
     message: String(message).trim().slice(0, 5000),
-    // DesignForce email-tracking reference: ties the enquiry to the marketing
-    // email the visitor came from. Only a well-formed value is kept.
-    df_ref: /^DFREF-[A-Za-z0-9_-]{1,64}$/.test(String(df_ref || "").trim()) ? String(df_ref).trim() : "",
+    // DesignForce tracking reference: ties the enquiry to the marketing email,
+    // post, advert or QR code the visitor came from. Only a well-formed value is kept.
+    df_ref: cleanDfRef(df_ref),
     received: new Date().toLocaleString("en-GB", { timeZone: "Europe/London" }),
   };
 
