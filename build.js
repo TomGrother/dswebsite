@@ -118,18 +118,22 @@ const OLD_GA_SNIPPET = `<!-- Google tag (gtag.js) -->
 
 // Consent-gated tracking, injected into every page's <head> at build time:
 // 1. DesignForce email-tracking stubs + script, exactly per their integration
-//    doc (the two inline lines MUST precede the script; the whole block must
-//    precede the cookie-banner code). At go-live, change 'email-staging.' to
-//    'email.' here and rebuild.
+//    doc (DesignForce docs/website-tracking.md: the two inline lines MUST
+//    precede the script; the whole block must precede the cookie-banner code).
+//    A rebuild replaces the block already in every page, so edits here reach them.
 // 2. GA4 loader — defines window.dsLoadGA but loads NOTHING until the consent
 //    banner grants analytics (hard gate: zero Google requests before consent).
 // 3. The consent banner itself (js/consent.js) wires both categories.
 const TRACKING_SNIPPET = (consentV) => `<!-- Design & Supply email tracking -->
 <script>
   window.dfTrackConsent = window.dfTrackConsent || function () { window.dfTrackConsentGiven = true; };
-  window.dfTrackRevoke = window.dfTrackRevoke || function () { window.dfTrackConsentGiven = false; document.cookie = 'df_t=; Max-Age=0; Path=/; SameSite=Lax; Secure'; };
+  window.dfTrackRevoke = window.dfTrackRevoke || function () {
+    window.dfTrackConsentGiven = false;
+    document.cookie = 'df_t=; Max-Age=0; Path=/; SameSite=Lax; Secure';
+    document.cookie = 'df_u=; Max-Age=0; Path=/; SameSite=Lax; Secure';
+  };
 </script>
-<script src="https://email-staging.designandsupply.co.uk/t/s.js" async></script>
+<script src="https://email.designandsupply.co.uk/t/s.js" async></script>
 <!-- Google Analytics (consent-gated: loads only after the banner grants analytics) -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -150,7 +154,9 @@ const TRACKING_SNIPPET = (consentV) => `<!-- Design & Supply email tracking -->
 function addAnalytics(html) {
   // Strip the v1 unconditional GA block wherever it was baked in.
   html = html.split(OLD_GA_SNIPPET + "\n").join("").split(OLD_GA_SNIPPET).join("");
-  if (html.includes("<!-- Design & Supply email tracking -->")) return html;
+  const block = /<!-- Design & Supply email tracking -->[\s\S]*?<script src="\/js\/consent\.js(?:\?v=[a-f0-9]+)?" defer><\/script>/;
+  if (block.test(html)) return html.replace(block, () => TRACKING_SNIPPET(CONSENT_V));
+  if (html.includes("<!-- Design & Supply email tracking -->")) throw new Error("Tracking block found but not in the expected form: check build.js addAnalytics.");
   return html.replace("</head>", TRACKING_SNIPPET(CONSENT_V) + "\n</head>");
 }
 
