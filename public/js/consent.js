@@ -122,7 +122,7 @@
       '</style>' +
       '<div class="dsc-card">' +
       '<h2>Cookies on this site</h2>' +
-      '<p>Essential cookies make the site work. With your permission we also use analytics cookies to understand how the site is used, and a marketing cookie that connects your visit to an email we’ve sent you, so we can follow up helpfully. See our <a href="/privacy-policy">privacy policy</a>.</p>' +
+      '<p>Essential cookies make the site work. With your permission we also use analytics cookies to understand how the site is used, and marketing cookies that connect your visit to an email we’ve sent you, or to the post, advert or QR code that brought you here, so we can follow up helpfully. See our <a href="/privacy-policy">privacy policy</a>.</p>' +
       '<div class="dsc-row">' +
       '<button type="button" class="dsc-accept" data-act="accept">Accept all</button>' +
       '<button type="button" class="dsc-plain" data-act="reject">Essential only</button>' +
@@ -131,7 +131,7 @@
       '<div class="dsc-manage">' +
       '<label><input type="checkbox" checked disabled><span><b>Essential</b><span class="dsc-cat">Required for the site to function. Always on.</span></span></label>' +
       '<label><input type="checkbox" id="dsc-analytics"><span><b>Analytics</b><span class="dsc-cat">Google Analytics — anonymous usage statistics that help us improve the site.</span></span></label>' +
-      '<label><input type="checkbox" id="dsc-marketing"><span><b>Marketing</b><span class="dsc-cat">Connects your visit to a Design &amp; Supply email you clicked, so our team can follow up with relevant information.</span></span></label>' +
+      '<label><input type="checkbox" id="dsc-marketing"><span><b>Marketing</b><span class="dsc-cat">Connects your visit to a Design &amp; Supply email you clicked, or to the post, advert or QR code that brought you here, so our team can follow up with relevant information.</span></span></label>' +
       '<div class="dsc-row" style="margin-top:4px"><button type="button" class="dsc-accept" data-act="save">Save choices</button></div>' +
       '</div>' +
       '</div>';
