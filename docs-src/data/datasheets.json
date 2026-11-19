@@ -1162,6 +1162,112 @@
     "Colour count: sheet benefit says 'Over 300 Colours Available'; website says 350+ – slimline-non-rated.html:114 (badge '350+ RAL & BS Colours'), slimline-non-rated.html:173 ('a choice of 350+ RAL and BS colours'), slimline-security.html:169 ('powder coating in 350+ RAL and BS colours'); also thermal-doors.html:123 ('350+' colours). Sheet value kept ('Over 300').",
     "Security standard wording: sheet says 'SBD licence product under the LPS 1175 SR2 and LPS 2081' (names grade SR2 and a Secured by Design licence); website states slimline is 'certified' / 'independently tested' to LPS1175 and LPS2081 with no SR grade and no SBD mention – slimline-security.html:113 ('independently certified to LPS1175 and LPS2081'), slimline-security.html:114 (badges 'LPS1175 Certified', 'LPS2081 Certified'), slimline-security.html:147 ('independently tested to LPS1175 and LPS2081'), slimline-security.html:166, slimline.html:7 and slimline.html:113 ('security rated to LPS1175 and LPS2081'). SBD appears on the website only as a general accreditation (index.html:155, index.html:280). Sheet wording kept."
    ]
+  },
+  {
+   "sourceFile": "Design-and-Supply-Data-Sheet-SR2-Fire-Protect.pdf",
+   "product": "SR2 Fire Protect",
+   "headline": "SR2 Fire Protect: security and fire protection in one doorset",
+   "overview": "SR2 Fire Protect brings security and fire protection together in one steel doorset. It is certified by LPCB to LPS 1175 SR2 for security, and fire tested to EN 1634-1 and certified by Efectis, with fire resistance of up to 120 minutes. Supplied as single and double outward-opening doorsets with panic hardware, for internal and external openings that must resist forced entry and hold back a fire.",
+   "applications": [
+    "Cash Rooms",
+    "Data Centres",
+    "Healthcare Facilities",
+    "Plant Rooms",
+    "Public Buildings",
+    "Warehouses"
+   ],
+   "dimensions": [
+    {
+     "label": "Minimum Size Single",
+     "value": "720mm x 1500mm"
+    },
+    {
+     "label": "Max Size Single",
+     "value": "1440mm x 2985mm"
+    },
+    {
+     "label": "Minimum Size Double",
+     "value": "1349mm x 1500mm"
+    },
+    {
+     "label": "Max Size Double",
+     "value": "2789mm x 2985mm"
+    }
+   ],
+   "features": [
+    {
+     "name": "Open In",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Open Out",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "External Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Internal Fit",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Personnel Hardware",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Panic Hardware",
+     "available": true,
+     "footnote": ""
+    },
+    {
+     "name": "Access Control Hardware",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Louvred",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Vision",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Overpanel",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Side Panel",
+     "available": false,
+     "footnote": ""
+    },
+    {
+     "name": "Smoke Rating",
+     "available": false,
+     "footnote": ""
+    }
+   ],
+   "benefits": [
+    "Dual certified: LPS 1175 SR2 and EN 1634-1",
+    "Fire resistance up to 120 minutes",
+    "Panic hardware for emergency exits",
+    "Interior and exterior use",
+    "Single and double doorsets",
+    "Powder coated finish"
+   ],
+   "notes": [],
+   "closingLine": "Contact us today: One doorset for security and fire protection.",
+   "extraSections": [],
+   "conflicts": []
   }
  ]
 }

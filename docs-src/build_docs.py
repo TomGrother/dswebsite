@@ -322,6 +322,9 @@ def _sr(n):
 
 SHEETS = [
     _sr(1), _sr(2), _sr(3), _sr(4),
+    dict(src="Design-and-Supply-Data-Sheet-SR2-Fire-Protect.pdf", title="SR2 Fire<br><em>Protect.</em>",
+         tag="LPS 1175 SR2 · EN 1634-1", sub="Security and fire protection in one doorset",
+         cutout=PHOTOS / "sr2-fire-protect-door.png", version="1.0", date="November 2026"),
     dict(src="Design-and-Supply-Data-Sheet-Steel-Fire-Rated-Doors.pdf", title="Fire rated<br><em>doors.</em>",
          tag="EN 1634-1", sub="Dependable fire compartmentation", cutout=ASSETS / "door-fire.png"),
     dict(src="Design-and-Supply-Data-Sheet-Multi-Storey-Car-Park.pdf", title="Car park<br><em>doors.</em>",
@@ -413,7 +416,7 @@ def build_sheet(cfg, s):
 <div class="order"><b>Ordering</b>Handings and sizes must be confirmed when ordering.</div></aside></section>
 <section class="ds-spec"><div class="spec-head"><h3>Product specification</h3>{legend}</div>
 <div class="grid">{cells}</div>{notes_html}</section>
-<footer class="ft"><div class="l"><b>Contact us today</b><span>{esc(closing)}</span></div><div class="r"><b>{PHONE}</b><span>{CONTACT}</span><i>{esc(title_plain)} · Issue {VERSION} · {DATE}</i></div></footer>
+<footer class="ft"><div class="l"><b>Contact us today</b><span>{esc(closing)}</span></div><div class="r"><b>{PHONE}</b><span>{CONTACT}</span><i>{esc(title_plain)} · Issue {cfg.get("version", VERSION)} · {cfg.get("date", DATE)}</i></div></footer>
 </section>"""
     name = cfg["src"].replace(".pdf", "")
     out = HTML / f"{name}.html"
@@ -803,6 +806,7 @@ DOC_SECTIONS = [
      "Sizes, key applications, benefits and the options available for each product — ready to drop into a specification or tender pack.", [
         (f"{DS}Steel-Security-Rated-SR1.pdf", "Data sheet", "Security Rated Doors — SR1", "LPCB-certified LPS 1175 SR1 steel doorsets: sizes, applications and options."),
         (f"{DS}Steel-Security-Rated-SR2.pdf", "Data sheet", "Security Rated Doors — SR2", "LPCB-certified LPS 1175 SR2 steel doorsets: sizes, applications and options."),
+        (f"{DS}SR2-Fire-Protect.pdf", "Data sheet", "SR2 Fire Protect", "LPS 1175 SR2 security and EN 1634-1 fire resistance up to 120 minutes in one doorset."),
         (f"{DS}Steel-Security-Rated-SR3.pdf", "Data sheet", "Security Rated Doors — SR3", "LPCB-certified LPS 1175 SR3 steel doorsets: sizes, applications and options."),
         (f"{DS}Steel-Security-Rated-SR4.pdf", "Data sheet", "Security Rated Doors — SR4", "LPCB-certified LPS 1175 SR4 steel doorsets: sizes, applications and options."),
         (f"{DS}Steel-Fire-Rated-Doors.pdf", "Data sheet", "Fire Rated Doors", "Steel doorsets tested to EN 1634-1 as complete assemblies."),
